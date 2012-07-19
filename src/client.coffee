@@ -187,8 +187,11 @@ class DropboxClient
   # @option options {Number} version if set, the call will return the metadata
   #     for the given revision of the file / folder; the latest version is used
   #     by default
-  # @option {Boolean} removed if set to true, this call will also look at files
+  # @option {Boolean} removed if set to true, the results will include files
   #     and folders that were deleted from the user's Dropbox
+  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
+  #     using this alias is not recommended, because it may cause confusion
+  #     with JavaScript's delete operation
   # @option options {Boolean, Number} contents only meaningful when stat-ing
   #     folders; if this is set, the API call will also retrieve the
   #     folder's contents; if this is a number, it specifies the maximum
@@ -213,7 +216,7 @@ class DropboxClient
     if options
       if options.version?
         params.rev = options.version
-      if options.removed
+      if options.removed or options.deleted
         params.include_deleted = 'true'
       if options.contents
         params.list = true
@@ -266,11 +269,11 @@ class DropboxClient
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
 
-  # Retrieves the revision history of a file or folder in a user's Dropbox.
+  # Retrieves the revision history of a file in a user's Dropbox.
   #
-  # @param {String} path the path to the file or folder whose revision history
-  #     will be retrieved, relative to the user's Dropbox or to the
-  #     application's folder
+  # @param {String} path the path to the file whose revision history will be
+  #     retrieved, relative to the user's Dropbox or to the application's
+  #     folder
   # @param {Object?} options the advanced settings below; for the default
   #     settings, skip the argument or pass null
   # @option options {Number} limit if specified, the call will return at most
@@ -301,55 +304,8 @@ class DropboxClient
   # @param {String} path to the file you want to retrieve
   # @param {function(data, error)} callback called with the result to the
   #     /files (GET) HTTP request. 
-  restore: (path, rev, locale, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.restore}/#{path}"
-    params = {}
-    if rev?
-        params['rev'] = rev
-    if locale?
-        params['locale'] = locale
-    @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request 'GET', url, params, null, callback
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  search: (path, query, fileLimit, includeDeleted, locale, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.search}/#{path}"
-    params = {query: query}
-    if fileLimit?
-        params['file_limit'] = fileLimit
-    if includeDeleted?
-        params['include_deleted'] = includeDeleted
-    if locale?
-        params['locale'] = locale
-    @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request 'GET', url, params, null, callback
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  copyRef: (path, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.copyRef}/#{path}"
-    params = {}
-    @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request 'GET', url, params, null, callback
-
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
   thumbnails: (path, format, size, callback) ->
-    path = @normalizePath path
-    url = "#{@urls.thumbnails}/#{path}"
+    url = "#{@urls.thumbnails}/#{@normalizePath(path)}"
     params = {}
     if format?
         params['format'] = format
@@ -358,17 +314,126 @@ class DropboxClient
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request 'GET', url, params, null, callback
 
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  delta: (cursor, locale, callback) ->
+  # Reverts a file's contents to a previous version.
+  #
+  # This is an atomic, bandwidth-optimized equivalent of reading the file
+  # contents at the given file version (readFile), and then using it to
+  # overwrite the file (writeFile).
+  #
+  # @param {String} path the path to the file whose contents will be reverted
+  #     to a previous version, relative to the user's Dropbox or to the
+  #     application's folder
+  # @param {String} versionTag the tag of the version that the file will be
+  #     reverted to; maps to the "rev" parameter in the HTTP API
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /restore HTTP request; the result is the file's stat after the revert
+  #     operation; if the call fails, the second argument is a string
+  #     containing the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  revertFile: (path, versionTag, callback) ->
+    url = "#{@urls.restore}/#{@normalizePath(path)}"
+    params = { rev: versionTag }
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
+
+  # Alias for "revertFile" that matches the HTTP API.
+  restore: (path, versionTag, callback) ->
+    @revertFile path, versionTag, callback
+
+  # Finds files / folders whose name match a pattern, in the user's Dropbox.
+  #
+  # @param {String} path the path to the file whose contents will be reverted
+  #     to a previous version, relative to the user's Dropbox or to the
+  #     application's folder
+  # @param {String} namePattern the string that file / folder names must
+  #     contain in order to match the search criteria;
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option options {Number} limit if specified, the call will return at most
+  #     this many versions
+  # @option {Boolean} removed if set to true, the results will include files
+  #     and folders that were deleted from the user's Dropbox; the default
+  #     limit is the maximum value of 1,000
+  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
+  #     using this alias is not recommended, because it may cause confusion
+  #     with JavaScript's delete operation
+  # @param {function(Array?, String?)} callback called with the result to the
+  #     /search HTTP request; the result is an array with one element for
+  #     each file for folder; if the call fails, the second argument is a
+  #     string containing the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  findByName: (path, namePattern, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    url = "#{@urls.search}/#{@normalizePath(path)}"
+    params = { query: namePattern }
+    if options
+      if options.limit?
+        params.file_limit = limit
+      if options.removed or options.deleted
+        params.include_deleted = true
+    @oauth.addAuthParams 'GET', url, params
+    DropboxXhr.request 'GET', url, params, null, callback
+
+  # Alias for "findByName" that matches the HTTP API.
+  search: (path, namePattern, options, callback) ->
+    @findByName path, namePattern, options, callback
+
+  # Creates a reference used to copy a file to another user's Dropbox.
+  #
+  # @param {String} path the path to the file whose contents will be
+  #     referenced, relative to the uesr's Dropbox or to the application's
+  #     folder
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /copy_ref HTTP request; the result is an Object with the properties
+  #     "copy_ref" and "expires; if the call fails, the second argument is a
+  #     string containing the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  makeCopyReference: (path, callback) ->
+    url = "#{@urls.copyRef}/#{@normalizePath(path)}"
+    params = @oauth.addAuthParams 'GET', url, {}
+    DropboxXhr.request 'GET', url, params, null, callback
+
+  # Alias for "makeCopyReference" that matches the HTTP API.
+  copyRef: (path, callback) ->
+    @makeCopyReference path, callback
+
+  # Fetches a list of changes in the user's Dropbox since the last call.
+  #
+  # This method is intended to make full sync implementations easier and more
+  # performant. Each call returns a cursor that can be used in a future call
+  # to obtain all the changes that happened in the user's Dropbox (or
+  # application directory) between the two calls.
+  #
+  # @param {String} cursor a tag representing the the Dropbox state that is
+  #     used as the baseline for the change list; this should be obtained from
+  #     a previous call to pullChanges, or be set to null / ommitted on the
+  #     first call to pullChanges
+  # @param {function(Object?, String?)} callback called with the result to the
+  #     /delta HTTP request; see the Dropbox API documentation for a detailed
+  #     explanation
+  #     folder; if the call fails, the second argument is a string containing
+  #     the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  pullChanges: (cursor, callback) ->
+    if (not callback) and (typeof cursor is 'function')
+      callback = cursor
+      cursor = null
+
     url = @urls.delta
     params = {}
-    if cursor?
-        params['cursor'] = cursor
-    if locale?
-        params['locale'] = locale
+    if cursor
+      params = { cursor:  cursor }
+    else
+      params = {}
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
+
+  # Alias for "pullChanges" that matches the HTTP API.
+  delta: (cursor, callback) ->
+    @pullChanges cursor, callback
 
   # Creates a folder in a user's Dropbox.
   #
@@ -507,7 +572,7 @@ class DropboxClient
       search: "#{@apiServer}/1/search/#{@fileRoot}"
       shares: "#{@apiServer}/1/shares/#{@fileRoot}"
       media: "#{@apiServer}/1/media/#{@fileRoot}"
-      copy_ref: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
+      copyRef: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
       thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
       
       # File operations.
@@ -576,5 +641,4 @@ class DropboxClient
   getAccessToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
     DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
-
 

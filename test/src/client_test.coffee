@@ -104,30 +104,41 @@ describe 'DropboxClient', ->
         expect(versions).to.have.length 1
         done()
 
-  describe 'restore', ->
-    it 'restores a file (deletes it first)', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.remove filePath, (metadata, error) ->
-        expect(error).not.to.be.ok
-        expect(metadata.path).to.equal filePath
-        done()
-
-  describe 'history', ->
-    it 'gets a list of revisions', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.history filePath, (metadata, error) =>
-        expect(error).not.to.be.ok
-        rev = metadata[1].rev
-        @client.restore filePath, rev, undefined, (metadata, error) ->
-          expect(metadata.path).to.equal filePath
+  describe 'revertFile', ->
+    describe 'with a previously removed file', ->
+      beforeEach (done) ->
+        @filePath = "#{@folderName}/api-test.txt"
+        @client.remove @filePath, (metadata, error) =>
+          expect(error).not.to.be.ok
+          @versionTag = metadata.rev
           done()
 
-  describe 'search', ->
-    it 'searches for files', (done) ->
-      folderName = @folderName.substring 1
-      @client.search '/', folderName, undefined, undefined, undefined, (metadata, error) ->
+      afterEach (done) ->
+        # Restore the file, just in case the test failed.
+        filePath = "#{@folderName}/api-test.txt"
+        contents = "This is the api secret\n"
+        @client.writeFile filePath, contents, (metadata, error) ->
+          expect(error).to.not.be.ok
+          done() 
+
+      # TODO(pwnall): rewrite these flaky tests
+      it 'reverts the file to a previous version', (done) ->
+        @client.revertFile @filePath, @versionTag, (metadata, error) =>
+          expect(error).not.to.be.ok
+          expect(metadata).to.have.property 'rev'
+          expect(metadata.rev).to.equal @versionTag
+          expect(metadata).to.have.property 'path'
+          expect(metadata.path).to.equal @filePath
+          done()
+
+  describe 'findByName', ->
+    it 'locates the test folder given a partial name', (done) ->
+      namePattern = @folderName.substring 5
+      @client.search '/', namePattern, (matches, error) =>
         expect(error).not.to.be.ok
-        expect(metadata.length).to.equal 1
+        expect(matches).to.have.length 1
+        expect(matches[0]).to.have.property 'path'
+        expect(matches[0].path).to.equal @folderName
         done()
 
   describe 'makeUrl for a short Web URL', ->
@@ -167,19 +178,73 @@ describe 'DropboxClient', ->
           expect(data).to.equal "This is the api secret\n"
           done()
 
-  describe 'delta', ->
-    it 'gets a list of changes', (done) ->
-      @client.delta undefined, undefined, (metadata, error) ->
+  describe 'pullChanges', ->
+    it 'gets a cursor, then it gets relevant changes', (done) ->
+      @client.pullChanges (changeInfo, error) =>
         expect(error).not.to.be.ok
-        done()
+        expect(changeInfo).to.have.property 'reset'
+        expect(changeInfo.reset).to.equal true
+        expect(changeInfo).to.have.property 'cursor'
+        expect(changeInfo.cursor).to.be.a 'string'
+        expect(changeInfo.cursor).to
+        expect(changeInfo).to.have.property 'entries'
+        cursor = changeInfo.cursor
+
+        # Calls pullChanges until it's done listing the user's Dropbox.
+        @timeout 15 * 1000  # Pulling the entire Dropbox takes time :( 
+        drainEntries = (client, callback) ->
+          return callback() unless changeInfo.has_more
+          client.pullChanges changeInfo.cursor, (_changeInfo, error) ->
+            expect(error).not.to.be.ok
+            changeInfo = _changeInfo
+            drainEntries client, callback
+        drainEntries @client, =>
+
+          filePath = "#{@folderName}/api-test-delta.txt"
+          contents = "This file is used to test the pullChanges method.\n"
+          @client.writeFile filePath, contents, (metadata, error) =>
+            expect(error).not.to.be.ok
+            expect(metadata).to.have.property 'path'
+            expect(metadata.path).to.equal filePath
+
+            @client.pullChanges cursor, (changeInfo, error) ->
+              expect(error).not.to.be.ok
+              expect(changeInfo).to.have.property 'reset'
+              expect(changeInfo.reset).to.equal false
+              expect(changeInfo).to.have.property 'cursor'
+              expect(changeInfo.cursor).not.to.equal cursor
+              expect(changeInfo).to.have.property 'entries'
+              expect(changeInfo.entries).to.have.length.greaterThan 0
+              entry = changeInfo.entries.length - 1
+              expect(changeInfo.entries[entry]).to.have.length 2
+              expect(changeInfo.entries[entry][1]).to.have.property 'path'
+              expect(changeInfo.entries[entry][1].path).to.equal filePath
+              done()
 
   describe 'copy', ->
-    it 'copies a file', (done) ->
+    it 'copies a file when given its path', (done) ->
       filePath = "#{@folderName}/api-test.txt"
       @client.copy filePath, "#{filePath}_copy", (metadata, error) ->
         expect(error).not.to.be.ok
         expect(metadata.path).to.equal "#{filePath}_copy"
         done()
+
+  describe 'makeCopyReference', ->
+    it 'creates a reference that can be used for copying', (done) ->
+      fromPath = "#{@folderName}/api-test.txt"
+      toPath = "#{@folderName}/api-test-copy-from-ref.txt"
+
+      @client.makeCopyReference fromPath, (refInfo, error) =>
+        expect(error).not.to.be.ok
+        expect(refInfo).to.have.property 'copy_ref'
+        @client.copy refInfo.copy_ref, toPath, (metadata, error) =>
+          expect(error).not.to.be.ok
+          expect(metadata).to.have.property 'path'
+          expect(metadata.path).to.equal toPath
+          @client.readFile toPath, (contents, error) ->
+            expect(error).not.to.be.ok
+            expect(contents).to.equal "This is the api secret\n"
+            done()
 
   describe 'move', ->
     it 'moves a file', (done) ->
