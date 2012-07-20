@@ -15,7 +15,12 @@ if global? and require? and module?
 
   testIconPath = './test/binary/dropbox.png'
   fs = require 'fs'
-  exports.testImageBytes = fs.readFileSync testIconPath, 'binary'
+  buffer = fs.readFileSync testIconPath
+  console.log buffer
+  bytes = []
+  for i in [0...buffer.length]
+    bytes.push String.fromCharCode(buffer.readUInt8(i))
+  exports.testImageBytes = bytes.join ''
   exports.testImageUrl = 'http://localhost:8913/favicon.ico'
   imageServer = null
   exports.testImageServerOn = ->
@@ -30,7 +35,7 @@ else
   # TODO: figure out authentication without popups
   authDriver = new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 
-  exports.testImageUrl = 'http://localhost:8912/test/binary/dropbox.png'
+  exports.testImageUrl = 'http://localhost:8911/test/binary/dropbox.png'
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
 

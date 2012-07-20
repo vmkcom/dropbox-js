@@ -40,7 +40,7 @@ build = (callback) ->
 
 vendor = (callback) ->
   # All the files will be dumped here.
-  unless fs.existsSync
+  unless fs.existsSync 'test/vendor'
     fs.mkdirSync 'test/vendor'
 
   # Embed the binary test image into a 7-bit ASCII JavaScript.

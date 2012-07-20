@@ -62,17 +62,6 @@ describe 'DropboxXhr', ->
       afterEach ->
         testImageServerOff()
 
-      it 'retrieves the bytes correctly', (done) ->
-        xhr = Dropbox.Xhr.request('GET',
-          testImageUrl,
-          {},
-          null,
-          (data, error) ->
-            expect(error).to.not.be.ok
-            expect(data).to.equal testImageBytes
-            done()
-          )
-
     it 'sends Authorize headers correctly', (done) ->
       # This test only works in node.js due to CORS issues on Dropbox.
       unless @node_js
@@ -103,6 +92,21 @@ describe 'DropboxXhr', ->
     afterEach ->
       testImageServerOff()
 
+    it 'retrieves a string where each character is a byte', (done) ->
+      xhr = Dropbox.Xhr.request2('GET',
+        testImageUrl,
+        {},
+        null,
+        'b',
+        (data, error) ->
+          expect(error).to.not.be.ok
+          expect(data).to.be.a 'string'
+          expect(data).to.equal testImageBytes
+          done()
+        )
+      assert.ok xhr instanceof Dropbox.Xhr.Request,
+        'Incorrect request2 return value'
+
     it 'retrieves a well-formed Blob', (done) ->
       # Skip this test on IE < 10.
       return done() unless Blob?
@@ -114,11 +118,12 @@ describe 'DropboxXhr', ->
         (blob, error) ->
           expect(error).to.not.be.ok
           expect(blob).to.be.instanceOf Blob
-          reader = new FileReader blob
-          reader.onloadend ->
+          reader = new FileReader
+          reader.onloadend = ->
             return unless reader.readyState == FileReader.DONE
             expect(reader.result).to.equal testImageBytes
             done()
+          reader.readAsBinaryString blob
         )
       assert.ok xhr instanceof Dropbox.Xhr.Request,
         'Incorrect request2 return value'

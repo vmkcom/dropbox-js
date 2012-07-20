@@ -90,20 +90,30 @@ describe 'DropboxClient', ->
         done()
 
     describe 'on a binary file', ->
-      ###
       beforeEach (done) ->
+        testImageServerOn()
         @imagePath = "#{@folderName}/api-test-binary.png"
-        console.log @imagePath
-        console.log testImageBytes
-        @client.writeFile @imagePath, testImageBytes, (metadata, error) =>
-          expect(error).to.not.be.ok
-          done()
+        if Blob?
+          Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
+              (blob, error) =>
+                expect(error).to.not.be.ok
+                @client.writeFile @imagePath, blob, (metadata, error) ->
+                  expect(error).to.not.be.ok
+                  done()
+              )
+        else
+          @client.writeFile(@imagePath, testImageBytes, { binary: true },
+              (metadata, error) ->
+                expect(error).to.not.be.ok
+                done()
+              )
 
       afterEach (done) ->
+        testImageServerOff()
         @client.remove @imagePath, (metadata, error) ->
           expect(error).to.not.be.ok
-          done()
-      ###
+        done()
+
       it 'reads the contents correctly as a string', (done) ->
         @client.readFile @imagePath, { binary: true }, (data, error) =>
           expect(error).to.not.be.ok

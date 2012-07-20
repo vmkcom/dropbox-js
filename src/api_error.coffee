@@ -8,10 +8,13 @@ class DropboxApiError
   #     request
   constructor: (xhr, @method, @url) ->
     @status = xhr.status
-    text = xhr.responseText or xhr.response
+    if xhr.responseType
+      text = xhr.response or xhr.responseText
+    else
+      text = xhr.responseText
     if text
-      @responseText = text
       try
+        @responseText = text.toString()
         @response = JSON.parse text
       catch e
         @response = null

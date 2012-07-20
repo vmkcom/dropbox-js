@@ -84,7 +84,17 @@ class DropboxXhr
   # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
     url = [url, '?', DropboxXhr.urlEncode(params)].join ''
-    if typeof fileField.value is 'string'
+
+    fileData = fileField.value
+    useFormData = (typeof(fileData) is 'object') and
+        ((Blob? and (fileField.value instanceof Blob)) or
+         (File? and (fileField.value instanceof File)))
+
+    if useFormData
+      headers = {}
+      body = new FormData()
+      body.append fileField.name, fileData, fileField.fileName 
+    else
       fileType = fileField.contentType or 'application/octet-stream'
       boundary = @multipartBoundary()
       headers = { 'Content-Type': "multipart/form-data; boundary=#{boundary}" }
@@ -93,13 +103,8 @@ class DropboxXhr
                   '"; filename="', fileField.fileName, "\"\r\n",
               'Content-Type: ', fileType, "\r\n",
               "Content-Transfer-Encoding: binary\r\n\r\n",
-              fileField.value,
+              fileData,
               "\r\n", '--', boundary, '--', "\r\n"].join ''
-    else if FormData?
-      headers = {}
-      body = new FormData()
-      console.log fileField.fileName
-      body.append(fileField.name, fileField.value, fileField.fileName)
     if authHeader
       headers['Authorization'] = authHeader
     DropboxXhr.xhrRequest 'POST', url, headers, body, null, callback
@@ -118,13 +123,14 @@ class DropboxXhr
   @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
     xhr.onreadystatechange = ->
-      DropboxXhr.onReadyStateChange(xhr, method, url, callback)
-    xhr.open method, url, true, null, null
+      DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
+    xhr.open method, url, true
     if responseType
-      if responseType is 'b' and xhr.overrideMimeType
-        # Hack for getting binary data as a string.
-        xhr.overrideMimeType 'application/octet-stream; charset=x-user-defined'
-      xhr.responseType = responseType
+      if responseType is 'b'
+        if xhr.overrideMimeType
+          xhr.overrideMimeType 'text/plain; charset=x-user-defined'
+      else
+        xhr.responseType = responseType
     for own header, value of headers
       xhr.setRequestHeader header, value
     if body
@@ -169,23 +175,44 @@ class DropboxXhr
     result
 
   # Handles the XHR readystate event.
-  @onReadyStateChange: (xhr, method, url, callback) ->
+  @onReadyStateChange: (xhr, method, url, responseType, callback) ->
     return true if xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
 
     if xhr.status < 200 or xhr.status >= 300
       apiError = new DropboxApiError xhr, method, url
       callback null, apiError
-      return
+      return true
 
-    if xhr.responseType
-      return callback(xhr.response)
+    if responseType
+      if responseType is 'b'
+        dirtyText = xhr.responseText or xhr.response
+        ###
+        jsString = ['["']
+        for i in [0...dirtyText.length]
+          hexByte = (dirtyText.charCodeAt(i) & 0xFF).toString(16)
+          if hexByte.length is 2
+            jsString.push "\\u00#{hexByte}"
+          else
+            jsString.push "\\u000#{hexByte}"
+        jsString.push '"]'
+        console.log jsString
+        text = JSON.parse(jsString.join(''))[0]
+        ###
+        bytes = []
+        for i in [0...dirtyText.length]
+          bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
+        text = bytes.join ''
+        callback text
+      else
+        callback xhr.response
+      return true
     
-    response = xhr.responseText
+    text = xhr.responseText or xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         callback DropboxXhr.urlDecode(response)
+         callback DropboxXhr.urlDecode(text)
        when 'application/json', 'text/javascript'
-         callback JSON.parse(response)
+         callback JSON.parse(text)
        else
-          callback response
+          callback text
     true
