@@ -1,6 +1,68 @@
 describe 'DropboxClient', ->
+  # Creates the global client and test directory.
+  setupClient = (test, done) ->
+    # True if running on node.js
+    test.node_js = module? and module?.exports? and require?
+    # Should only be used for fixture teardown.
+    test.__client = new Dropbox.Client testKeys
+    # All test data should go here.
+    test.testFolder = '/js tests.' + Math.random().toString(36)
+    test.__client.mkdir test.testFolder, (metadata, error) ->
+      expect(error).to.not.be.ok
+      done()
+
+  # Creates the binary image file in the test directory.
+  setupImageFile = (test, done) ->
+    test.imageFile = "#{test.testFolder}/test-binary-image.png"
+    test.imageFileData = testImageBytes
+    if Blob?
+      testImageServerOn()
+      Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
+          (blob, error) =>
+            testImageServerOff()
+            expect(error).to.not.be.ok
+            test.__client.writeFile test.imageFile, blob, (metadata, error) ->
+              expect(error).to.not.be.ok
+              test.imageFileTag = metadata.rev
+              done()
+          )
+    else
+      test.__client.writeFile(test.imageFile, test.imageFileData,
+          { binary: true },
+          (metadata, error) ->
+            expect(error).to.not.be.ok
+            test.imageFileTag = metadata.rev
+            done()
+          )
+
+  # Creates the plaintext file in the test directory.
+  setupTextFile = (test, done) ->
+    test.textFile = "#{test.testFolder}/test-file.txt"
+    test.textFileData = "Plaintext test file #{Math.random().toString(36)}.\n"
+    test.__client.writeFile(test.textFile, test.textFileData,
+        (metadata, error) ->
+          expect(error).to.not.be.ok
+          test.textFileTag = metadata.rev
+          done()
+        )
+
+  # Global (expensive) fixtures.
+  before (done) ->
+    @timeout 10 * 1000
+    setupClient this, =>
+      setupImageFile this, =>
+        setupTextFile this, ->
+          done()
+
+  # Teardown for global fixtures.
+  after (done) ->
+    @__client.remove @testFolder, (metadata, error) ->
+      expect(error).to.not.be.ok
+      done()
+
+  # Per-test (cheap) fixtures.
   beforeEach ->
-    @node_js = module? and module?.exports? and require?
+    @timeout 8 * 1000
     @client = new Dropbox.Client testKeys
 
   describe 'URLs for custom API server', ->
@@ -27,6 +89,14 @@ describe 'DropboxClient', ->
     it 'removes multiple leading /s from absolute paths', ->
       expect(@client.normalizePath('///aa/b/ccc/dd')).to.equal 'aa/b/ccc/dd'
 
+  describe 'urlEncodePath', ->
+    it 'encodes each segment separately', ->
+      expect(@client.urlEncodePath('a b+c/d?e"f/g&h')).to.
+          equal "a%20b%2Bc/d%3Fe%22f/g%26h"
+    it 'normalizes paths', ->
+      expect(@client.urlEncodePath('///a b+c/g&h')).to.
+          equal "a%20b%2Bc/g%26h"
+
   describe 'isCopyRef', ->
     it 'recognizes the copyRef in the API example', ->
       expect(@client.isCopyRef('z1X6ATl6aWtzOGq0c3g5Ng')).to.equal true
@@ -42,8 +112,7 @@ describe 'DropboxClient', ->
 
   describe 'authenticate', ->
     it 'completes the flow', (done) ->
-      @timeout 300 * 1000
-      # @timeout 15 * 1000  # Time-consuming because the user must click.
+      @timeout 30 * 1000  # Time-consuming because the user must click.
       @client.reset()
       @client.authDriver authDriverUrl, authDriver
       @client.authenticate (uid, error) ->
@@ -62,127 +131,244 @@ describe 'DropboxClient', ->
         done()
 
   describe 'mkdir', ->
-    it 'creates a folder', (done) ->
-      @folderName = '/jsapi-tests' + Math.random().toString(36)
-      @client.mkdir @folderName, (metadata, error) =>
+    afterEach (done) ->
+      return done() unless @newFolder
+      @client.remove @newFolder, (metadata, error) -> done()
+
+    it 'creates a folder in the test folder', (done) ->
+      @newFolder = "#{@testFolder}/test'folder"
+      @client.mkdir @newFolder, (metadata, error) =>
         expect(error).not.to.be.ok
         expect(metadata).to.have.property 'path'
-        expect(metadata.path).to.equal @folderName
-        done()
-
-  describe 'writeFile', ->
-    it 'writes a file to Dropbox', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      contents = "This is the api secret\n"
-      @client.writeFile filePath, contents, (metadata, error) ->
-        expect(error).to.not.be.ok
-        expect(metadata).to.have.property 'path'
-        expect(metadata.path).to.equal filePath
-        done() 
+        expect(metadata.path).to.equal @newFolder
+        @client.stat @newFolder, (metadata, error) =>
+          expect(metadata).to.have.property 'is_dir'
+          expect(metadata.is_dir).to.equal true
+          done()
 
   describe 'readFile', ->
-    it 'reads a file from Dropbox', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      contents = "This is the api secret\n"
-      @client.readFile filePath, (data, error) ->
+    it 'reads a text file', (done) ->
+      @client.readFile @textFile, (data, error) =>
         expect(error).to.not.be.ok
-        expect(data).to.equal contents
+        expect(data).to.equal @textFileData
         done()
 
-    describe 'on a binary file', ->
-      beforeEach (done) ->
-        testImageServerOn()
-        @imagePath = "#{@folderName}/api-test-binary.png"
-        if Blob?
-          Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
-              (blob, error) =>
-                expect(error).to.not.be.ok
-                @client.writeFile @imagePath, blob, (metadata, error) ->
-                  expect(error).to.not.be.ok
-                  done()
-              )
-        else
-          @client.writeFile(@imagePath, testImageBytes, { binary: true },
-              (metadata, error) ->
-                expect(error).to.not.be.ok
-                done()
-              )
-
-      afterEach (done) ->
-        testImageServerOff()
-        @client.remove @imagePath, (metadata, error) ->
-          expect(error).to.not.be.ok
+    it 'reads a binary file into a string', (done) ->
+      @client.readFile @imageFile, { binary: true }, (data, error) =>
+        expect(error).to.not.be.ok
+        expect(data).to.equal @imageFileData
         done()
 
-      it 'reads the contents correctly as a string', (done) ->
-        @client.readFile @imagePath, { binary: true }, (data, error) =>
+    it 'reads a binary file into a Blob', (done) ->
+      return done() unless Blob?
+      @client.readFile @imageFile, { blob: true }, (blob, error) =>
           expect(error).to.not.be.ok
-          expect(data).to.equal testImageBytes
+          expect(blob).to.be.instanceOf Blob
+          reader = new FileReader
+          reader.onloadend = =>
+            return unless reader.readyState == FileReader.DONE
+            expect(reader.result).to.equal @imageFileData
+            done()
+          reader.readAsBinaryString blob
+
+  describe 'writeFile', ->
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (metadata, error) -> done()
+
+    it 'writes a new text file', (done) ->
+      @newFile = "#{@testFolder}/another text file.txt"
+      @newFileData = "Another plaintext file #{Math.random().toString(36)}."
+      @client.writeFile @newFile, @newFileData, (metadata, error) =>
+        expect(error).to.not.be.ok
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal @newFile
+        @client.readFile @newFile, (data, error) =>
+          expect(error).to.not.be.ok
+          expect(data).to.equal @newFileData
           done()
 
-      it 'reads the contents correctly as a Blob', (done) ->
-        @client.readFile @imagePath, { binary: true }, (data, error) =>
-          expect(error).to.not.be.ok
-          expect(data).to.equal testImageBytes
-          done()
+    # TODO(pwnall): tests for writing binary files
+
 
   describe 'stat', ->
     it 'retrieves metadata for a file', (done) ->
-      @client.stat 'api-test.txt', (metadata, error) ->
+      @client.stat @textFile, (metadata, error) =>
         expect(error).not.to.be.ok
         expect(metadata).to.have.property 'path'
-        expect(metadata.path).to.equal '/api-test.txt'
+        expect(metadata.path).to.equal @textFile
+        expect(metadata).to.have.property 'is_dir'
+        expect(metadata.is_dir).to.equal false
         done()
+
+    it 'retrieves metadata for a folder', (done) ->
+      @client.stat @testFolder, (metadata, error) =>
+        expect(error).not.to.be.ok
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal @testFolder
+        expect(metadata).to.have.property 'is_dir'
+        expect(metadata.is_dir).to.equal true
+        expect(metadata).not.to.have.property 'contents'
+        done()
+
+    it 'retrieves metadata and entries for a folder', (done) ->
+      @client.stat @testFolder, { readDir: true }, (metadata, error) =>
+        expect(error).not.to.be.ok
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal @testFolder
+        expect(metadata).to.have.property 'is_dir'
+        expect(metadata.is_dir).to.equal true
+        expect(metadata).to.have.property 'contents'
+        expect(metadata.contents).to.have.length 2
+        done()
+
 
   describe 'history', ->
     it 'gets a list of revisions', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.history filePath, (versions, error) ->
+      @client.history @textFile, (versions, error) =>
         expect(error).not.to.be.ok
         expect(versions).to.have.length 1
+        expect(versions[0]).to.have.property 'path'
+        expect(versions[0].path).to.equal @textFile
+        expect(versions[0]).to.have.property 'rev'
+        expect(versions[0].rev).to.equal @textFileTag
         done()
 
-  describe 'revertFile', ->
-    describe 'with a previously removed file', ->
-      beforeEach (done) ->
-        @filePath = "#{@folderName}/api-test.txt"
-        @client.remove @filePath, (metadata, error) =>
+  describe 'copy', ->
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (metadata, error) -> done()
+
+    it 'copies a file given by path', (done) ->
+      @newFile = "#{@testFolder}/copy of test-file.txt"
+      @client.copy @textFile, @newFile, (metadata, error) =>
+        expect(error).not.to.be.ok
+        expect(metadata.path).to.equal @newFile
+        @client.readFile @newFile, (data, error) =>
           expect(error).not.to.be.ok
-          @versionTag = metadata.rev
+          expect(data).to.equal @textFileData
           done()
 
-      afterEach (done) ->
-        # Restore the file, just in case the test failed.
-        filePath = "#{@folderName}/api-test.txt"
-        contents = "This is the api secret\n"
-        @client.writeFile filePath, contents, (metadata, error) ->
-          expect(error).to.not.be.ok
-          done() 
+  describe 'makeCopyReference', ->
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (metadata, error) -> done()
 
-      # TODO(pwnall): rewrite these flaky tests
+    it 'creates a reference that can be used for copying', (done) ->
+      @newFile = "#{@testFolder}/ref copy of test-file.txt"
+
+      @client.makeCopyReference @textFile, (refInfo, error) =>
+        expect(error).not.to.be.ok
+        expect(refInfo).to.have.property 'copy_ref'
+        expect(refInfo.copy_ref).to.be.a 'string'
+        @client.copy refInfo.copy_ref, @newFile, (metadata, error) =>
+          expect(error).not.to.be.ok
+          expect(metadata).to.have.property 'path'
+          expect(metadata.path).to.equal @newFile
+          @client.readFile @newFile, (data, error) =>
+            expect(error).not.to.be.ok
+            expect(data).to.equal @textFileData
+            done()
+
+  describe 'move', ->
+    beforeEach (done) ->
+      @moveFrom = "#{@testFolder}/move source of test-file.txt"
+      @client.copy @textFile, @moveFrom, (metadata, error) ->
+        expect(error).not.to.be.ok
+        done()
+
+    afterEach (done) ->
+      @client.remove @moveFrom, (metadata, error) =>
+        return done() unless @moveTo
+        @client.remove @moveTo, (metadata, error) -> done()
+
+    it 'moves a file', (done) ->
+      @moveTo = "#{@testFolder}/moved test-file.txt"
+      @client.move @moveFrom, @moveTo, (metadata, error) =>
+        expect(error).not.to.be.ok
+        expect(metadata.path).to.equal @moveTo
+        @client.readFile @moveTo, (data, error) =>
+          expect(error).not.to.be.ok
+          expect(data).to.equal @textFileData
+          @client.readFile @moveFrom, (data, error) ->
+            expect(error).to.be.ok
+            expect(error).to.have.property 'status'
+            if @node_js
+              # Can't read errors in the browser, due to CORS server bugs.
+              expect(error).status.to.equal 404
+            done()
+
+  describe 'remove', ->
+    beforeEach (done) ->
+      @newFolder = "#{@testFolder}/folder delete test"
+      @client.mkdir @newFolder, (metadata, error) ->
+        expect(error).not.to.be.ok
+        done()
+
+    afterEach (done) ->
+      return done() unless @newFolder
+      @client.remove @newFolder, (metadata, error) -> done()
+
+    it 'deletes a folder', (done) ->
+      @client.remove @newFolder, (metadata, error) =>
+        expect(error).not.to.be.ok
+        expect(metadata).to.be.an 'object'
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal @newFolder
+        @client.stat @newFolder, (metadata, error) =>
+          expect(error).not.to.be.ok
+          expect(metadata).to.have.property 'is_deleted'
+          expect(metadata.is_deleted).to.equal true
+          ###
+          expect(error).to.have.property 'status'
+          if @node_js
+            # Can't read errors in the browser, due to CORS server bugs.
+            expect(error).status.to.equal 404
+          ###
+          done()
+
+  describe 'revertFile', ->
+    describe 'on a removed file', ->
+      beforeEach (done) ->
+        @newFile = "#{@testFolder}/file revert test.txt"
+        @client.copy @textFile, @newFile, (metadata, error) =>
+          expect(error).not.to.be.ok
+          @client.remove @newFile, (metadata, error) =>
+            expect(error).not.to.be.ok
+            expect(metadata).to.have.property 'rev'
+            expect(metadata.rev).to.be.a 'string'
+            @versionTag = metadata.rev
+            done()
+
+      afterEach (done) ->
+        return done() unless @newFile
+        @client.remove @newFile, (metadata, error) -> done()
+
       it 'reverts the file to a previous version', (done) ->
-        @client.revertFile @filePath, @versionTag, (metadata, error) =>
+        @client.revertFile @newFile, @versionTag, (metadata, error) =>
           expect(error).not.to.be.ok
           expect(metadata).to.have.property 'rev'
           expect(metadata.rev).to.equal @versionTag
           expect(metadata).to.have.property 'path'
-          expect(metadata.path).to.equal @filePath
-          done()
+          expect(metadata.path).to.equal @newFile
+          @client.readFile @newFile, (data, error) =>
+            expect(error).not.to.be.ok
+            expect(data).to.equal @textFileData
+            done()
 
   describe 'findByName', ->
     it 'locates the test folder given a partial name', (done) ->
-      namePattern = @folderName.substring 5
+      namePattern = @testFolder.substring 5
       @client.search '/', namePattern, (matches, error) =>
         expect(error).not.to.be.ok
         expect(matches).to.have.length 1
         expect(matches[0]).to.have.property 'path'
-        expect(matches[0].path).to.equal @folderName
+        expect(matches[0].path).to.equal @testFolder
         done()
 
   describe 'makeUrl for a short Web URL', ->
     it 'returns a shortened Dropbox URL', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.makeUrl filePath, (urlData, error) ->
+      @client.makeUrl @textFile, (urlData, error) ->
         expect(error).not.to.be.ok
         expect(urlData).to.have.property 'url'
         expect(urlData.url).to.contain '//db.tt/'
@@ -190,8 +376,7 @@ describe 'DropboxClient', ->
 
   describe 'makeUrl for a Web URL', ->
     it 'returns an URL to a preview page', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.makeUrl filePath, { long: true }, (urlData, error) ->
+      @client.makeUrl @textFile, { long: true }, (urlData, error) =>
         expect(error).not.to.be.ok
         expect(urlData).to.have.property 'url'
         
@@ -204,19 +389,22 @@ describe 'DropboxClient', ->
 
   describe 'makeUrl for a direct download URL', ->
     it 'gets a direct download URL', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.makeUrl filePath, { download: true }, (urlData, error) ->
+      @client.makeUrl @textFile, { download: true }, (urlData, error) =>
         expect(error).not.to.be.ok
         expect(urlData).to.have.property 'url'
 
         # The contents server does not return CORS headers.
         return done() unless @nodejs
-        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (data, error) ->
+        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (data, error) =>
           expect(error).not.to.be.ok
-          expect(data).to.equal "This is the api secret\n"
+          expect(data).to.equal @textFileData
           done()
 
   describe 'pullChanges', ->
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (metadata, error) -> done()
+
     it 'gets a cursor, then it gets relevant changes', (done) ->
       @client.pullChanges (changeInfo, error) =>
         expect(error).not.to.be.ok
@@ -224,7 +412,6 @@ describe 'DropboxClient', ->
         expect(changeInfo.reset).to.equal true
         expect(changeInfo).to.have.property 'cursor'
         expect(changeInfo.cursor).to.be.a 'string'
-        expect(changeInfo.cursor).to
         expect(changeInfo).to.have.property 'entries'
         cursor = changeInfo.cursor
 
@@ -238,14 +425,14 @@ describe 'DropboxClient', ->
             drainEntries client, callback
         drainEntries @client, =>
 
-          filePath = "#{@folderName}/api-test-delta.txt"
-          contents = "This file is used to test the pullChanges method.\n"
-          @client.writeFile filePath, contents, (metadata, error) =>
+          @newFile = "#{@testFolder}/delta-test.txt"
+          newFileData = "This file is used to test the pullChanges method.\n"
+          @client.writeFile @newFile, newFileData, (metadata, error) =>
             expect(error).not.to.be.ok
             expect(metadata).to.have.property 'path'
-            expect(metadata.path).to.equal filePath
+            expect(metadata.path).to.equal @newFile
 
-            @client.pullChanges cursor, (changeInfo, error) ->
+            @client.pullChanges cursor, (changeInfo, error) =>
               expect(error).not.to.be.ok
               expect(changeInfo).to.have.property 'reset'
               expect(changeInfo.reset).to.equal false
@@ -256,59 +443,34 @@ describe 'DropboxClient', ->
               entry = changeInfo.entries.length - 1
               expect(changeInfo.entries[entry]).to.have.length 2
               expect(changeInfo.entries[entry][1]).to.have.property 'path'
-              expect(changeInfo.entries[entry][1].path).to.equal filePath
+              expect(changeInfo.entries[entry][1].path).to.equal @newFile
               done()
 
-  describe 'copy', ->
-    it 'copies a file when given its path', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.copy filePath, "#{filePath}_copy", (metadata, error) ->
-        expect(error).not.to.be.ok
-        expect(metadata.path).to.equal "#{filePath}_copy"
-        done()
-
-  describe 'makeCopyReference', ->
-    it 'creates a reference that can be used for copying', (done) ->
-      fromPath = "#{@folderName}/api-test.txt"
-      toPath = "#{@folderName}/api-test-copy-from-ref.txt"
-
-      @client.makeCopyReference fromPath, (refInfo, error) =>
-        expect(error).not.to.be.ok
-        expect(refInfo).to.have.property 'copy_ref'
-        @client.copy refInfo.copy_ref, toPath, (metadata, error) =>
-          expect(error).not.to.be.ok
-          expect(metadata).to.have.property 'path'
-          expect(metadata.path).to.equal toPath
-          @client.readFile toPath, (contents, error) ->
-            expect(error).not.to.be.ok
-            expect(contents).to.equal "This is the api secret\n"
-            done()
-
-  describe 'move', ->
-    it 'moves a file', (done) ->
-      filePath = "#{@folderName}/api-test.txt"
-      @client.move filePath, "#{filePath}_copy2", (metadata, error) ->
-        expect(error).not.to.be.ok
-        expect(metadata.path).to.equal "#{filePath}_copy2"
-        done()
-
-  describe 'remove', ->
-    it 'deletes a folder', (done) ->
-      @client.remove @folderName, (metadata, error) =>
-        expect(error).not.to.be.ok
-        expect(metadata.path).to.equal @folderName
-        done()
-
   describe 'thumbnailUrl', ->
-    beforeEach ->
-      @filePath = "#{@folderName}/api-thumbnail-test.gif"
-
     it 'produces an URL that contains the file name', ->
-      url = @client.thumbnailUrl @filePath, { png: true, size: 'medium' }
-      expect(url).to.contain @filePath
+      url = @client.thumbnailUrl @imageFile, { png: true, size: 'medium' }
+      expect(url).to.contain 'tests'  # Fragment of the file name.
       expect(url).to.contain 'png'
       expect(url).to.contain 'medium'
 
   describe 'readThumbnail', ->
-    # TODO: write this out once we can deal with binary files
+    it 'reads the image into a string', (done) ->
+      @client.readThumbnail @imageFile, { png: true }, (data, error) =>
+        expect(error).to.not.be.ok
+        expect(data).to.be.a 'string'
+        expect(data).to.contain 'PNG'
+        done()
+
+    it 'reads the image into a Blob', (done) ->
+      return done() unless Blob?
+      options = { png: true, blob: true }
+      @client.readThumbnail @imageFile, options, (blob, error) =>
+          expect(error).to.not.be.ok
+          expect(blob).to.be.instanceOf Blob
+          reader = new FileReader
+          reader.onloadend = =>
+            return unless reader.readyState == FileReader.DONE
+            expect(reader.result).to.contain 'PNG'
+            done()
+          reader.readAsBinaryString blob
 

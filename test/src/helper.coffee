@@ -16,7 +16,6 @@ if global? and require? and module?
   testIconPath = './test/binary/dropbox.png'
   fs = require 'fs'
   buffer = fs.readFileSync testIconPath
-  console.log buffer
   bytes = []
   for i in [0...buffer.length]
     bytes.push String.fromCharCode(buffer.readUInt8(i))

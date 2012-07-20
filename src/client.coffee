@@ -121,8 +121,7 @@ class DropboxClient
       callback = options
       options = null
 
-    path = @normalizePath path
-    url = "#{@urls.getFile}/#{path}"
+    url = "#{@urls.getFile}/#{@urlEncodePath(path)}"
     
     params = {}
     responseType = null
@@ -169,7 +168,7 @@ class DropboxClient
       fileName = path.substring slashIndex
       path = path.substring 0, slashIndex
 
-    url = "#{@urls.postFile}/#{@normalizePath(path)}"
+    url = "#{@urls.postFile}/#{@urlEncodePath(path)}"
     params = { file: fileName }
     if options
       if options.noOverwrite
@@ -203,7 +202,7 @@ class DropboxClient
   # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
   #     using this alias is not recommended, because it may cause confusion
   #     with JavaScript's delete operation
-  # @option options {Boolean, Number} contents only meaningful when stat-ing
+  # @option options {Boolean, Number} readDir only meaningful when stat-ing
   #     folders; if this is set, the API call will also retrieve the
   #     folder's contents; if this is a number, it specifies the maximum
   #     number of files/directories that should be returned; the default limit
@@ -222,19 +221,21 @@ class DropboxClient
       callback = options
       options = null
 
-    url = "#{@urls.metadata}/#{@normalizePath(path)}"  
+    url = "#{@urls.metadata}/#{@urlEncodePath(path)}"  
     params = {}
     if options
       if options.version?
         params.rev = options.version
       if options.removed or options.deleted
         params.include_deleted = 'true'
-      if options.contents
-        params.list = true
-        if options.contents isnt true
-          params.file_limit = options.contents
+      if options.readDir
+        params.list = 'true'
+        if options.readDir isnt true
+          params.file_limit = options.readDir.toString()
       if options.cacheHash
         params.hash = options.cacheHash
+    params.include_deleted ||= 'false'
+    params.list ||= 'false'
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request 'GET', url, params, null, callback
@@ -266,7 +267,7 @@ class DropboxClient
       callback = options
       options = null
     
-    path = @normalizePath path
+    path = @urlEncodePath path
     if options and options.download
       url = "#{@urls.media}/#{path}"
     else
@@ -299,7 +300,7 @@ class DropboxClient
       callback = options
       options = null
 
-    url = "#{@urls.revisions}/#{@normalizePath(path)}"
+    url = "#{@urls.revisions}/#{@urlEncodePath(path)}"
     params = {}
     if options and options.limit?
       params.rev_limit = revLimit
@@ -331,7 +332,7 @@ class DropboxClient
   # @return {String} a URL to an image that can be used as the thumbnail for
   #     the given file
   thumbnailUrl: (path, options) ->
-    url = "#{@urls.thumbnails}/#{@normalizePath(path)}"
+    url = "#{@urls.thumbnails}/#{@urlEncodePath(path)}"
     params = {}
     if options
       if options.format
@@ -365,6 +366,9 @@ class DropboxClient
   #     supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
   #     's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
   #     value is "small"
+  # @option options {Boolean} blob if true, the file will be retrieved as a
+  #     Blob, instead of a String; this requires XHR Level 2 support, which is
+  #     not available in IE <= 9
   # @param {function(String?, String)} callback called with the result to the
   #     /thumbnails HTTP request; the result contains the raw image bytes; if
   #     the call fails, the second argument is a string containing the error
@@ -375,7 +379,11 @@ class DropboxClient
       options = null
 
     url = @thumbnailUrl path, options
-    DropboxXhr.request 'GET', url, {}, null, callback
+
+    responseType = 'b'
+    if options
+      responseType = 'blob' if options.blob
+    DropboxXhr.request2 'GET', url, {}, null, responseType, callback
 
   # Reverts a file's contents to a previous version.
   #
@@ -394,7 +402,7 @@ class DropboxClient
   #     containing the error
   # @return {XMLHttpRequest} the XHR object used for this API call
   revertFile: (path, versionTag, callback) ->
-    url = "#{@urls.restore}/#{@normalizePath(path)}"
+    url = "#{@urls.restore}/#{@urlEncodePath(path)}"
     params = { rev: versionTag }
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request 'GET', url, params, null, callback
@@ -430,7 +438,7 @@ class DropboxClient
       callback = options
       options = null
 
-    url = "#{@urls.search}/#{@normalizePath(path)}"
+    url = "#{@urls.search}/#{@urlEncodePath(path)}"
     params = { query: namePattern }
     if options
       if options.limit?
@@ -455,7 +463,7 @@ class DropboxClient
   #     string containing the error
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
-    url = "#{@urls.copyRef}/#{@normalizePath(path)}"
+    url = "#{@urls.copyRef}/#{@urlEncodePath(path)}"
     params = @oauth.addAuthParams 'GET', url, {}
     DropboxXhr.request 'GET', url, params, null, callback
 
@@ -595,7 +603,7 @@ class DropboxClient
     fromPath = @normalizePath fromPath
     toPath = @normalizePath toPath
     url = @urls.fileopsMove
-    params = {root: @fileRoot, from_path: fromPath, to_path: toPath}
+    params = { root: @fileRoot, from_path: fromPath, to_path: toPath }
     @oauth.addAuthParams 'POST', url, params
     DropboxXhr.request 'POST', url, params, null, callback
 
@@ -643,6 +651,10 @@ class DropboxClient
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
       fileopsMove: "#{@apiServer}/1/fileops/move" 
+
+  # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
+  urlEncodePath: (path) ->
+    DropboxXhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
 
   # Normalizes a Dropbox path for API requests.
   #
