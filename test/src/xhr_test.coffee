@@ -3,15 +3,30 @@ describe 'DropboxXhr', ->
     @node_js = module? and module?.exports? and require?
 
   describe '#request', ->
-    it 'processes errors correctly', (done) ->
+    it 'reports errors correctly', (done) ->
+      @url = 'https://api.dropbox.com/1/oauth/request_token'
       Dropbox.Xhr.request('POST',
-        'https://api.dropbox.com/1/oauth/request_token',
-        {},
-        'OAuth ',
-        (data, error) ->
+        @url, {}, null,
+        (data, error) =>
           expect(data).to.equal null
-          expect(error).to.be.a 'string'
-          expect(error).to.match /^Dropbox API error/
+          expect(error).to.be.instanceOf Dropbox.ApiError
+          expect(error).to.have.property 'url'
+          expect(error.url).to.equal @url
+          expect(error).to.have.property 'method'
+          expect(error.method).to.equal 'POST'
+          expect(error).to.have.property 'status'
+          expect(error).to.have.property 'responseText'
+          expect(error).to.have.property 'response'
+          if @node_js
+            expect(error.status).to.equal 401  # Bad OAuth request.
+            expect(error.responseText).to.be.a 'string'
+            expect(error.response).to.be.an 'object'
+          else
+            # Errors don't return CORS headers, we can't read them in browsers.
+            null
+          expect(error.toString()).to.match /^Dropbox API error/
+          expect(error.toString()).to.contain 'POST'
+          expect(error.toString()).to.contain @url
           done()
         )
 
@@ -32,13 +47,31 @@ describe 'DropboxXhr', ->
         params,
         null,
         (data, error) ->
-          expect(error).to.equal undefined
+          expect(error).to.not.be.ok
           expect(data).to.have.property 'oauth_token'
           expect(data).to.have.property 'oauth_token_secret'
           done()
         )
       assert.ok xhr instanceof Dropbox.Xhr.Request,
         'Incorrect Dropbox.Xhr.request return value'
+
+    describe 'with a binary response', ->
+      beforeEach ->
+        testImageServerOn()
+
+      afterEach ->
+        testImageServerOff()
+
+      it 'retrieves the bytes correctly', (done) ->
+        xhr = Dropbox.Xhr.request('GET',
+          testImageUrl,
+          {},
+          null,
+          (data, error) ->
+            expect(error).to.not.be.ok
+            expect(data).to.equal testImageBytes
+            done()
+          )
 
     it 'sends Authorize headers correctly', (done) ->
       # This test only works in node.js due to CORS issues on Dropbox.
@@ -61,7 +94,34 @@ describe 'DropboxXhr', ->
           done()
         )
       assert.ok xhr instanceof Dropbox.Xhr.Request,
-        'Incorrect Dropbox.Xhr.request return value'
+        'Incorrect request return value'
+
+  describe '#request2', ->
+    beforeEach ->
+      testImageServerOn()
+
+    afterEach ->
+      testImageServerOff()
+
+    it 'retrieves a well-formed Blob', (done) ->
+      # Skip this test on IE < 10.
+      return done() unless Blob?
+      xhr = Dropbox.Xhr.request2('GET',
+        testImageUrl,
+        {},
+        null,
+        'blob',
+        (blob, error) ->
+          expect(error).to.not.be.ok
+          expect(blob).to.be.instanceOf Blob
+          reader = new FileReader blob
+          reader.onloadend ->
+            return unless reader.readyState == FileReader.DONE
+            expect(reader.result).to.equal testImageBytes
+            done()
+        )
+      assert.ok xhr instanceof Dropbox.Xhr.Request,
+        'Incorrect request2 return value'
 
   describe '#urlEncode', ->
     it 'iterates properly', ->

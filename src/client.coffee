@@ -103,10 +103,14 @@ class DropboxClient
   #     user's Dropbox or to the application's folder
   # @param {Object?} options the advanced settings below; for the default
   #     settings, skip the argument or pass null
-  # @option options {Number} version the desired revision (version number) of
-  #      the file; the default gets the most recent version
-  # @option options {Number} rev alias for "version" that matches the HTTP API
-  # @option options {Boolean} fetchBinary get a binary file, defaults to false
+  # @option options {String} versionTag the tag string for the desired version
+  #     of the file contents; the most recent version is retrieved by default
+  # @option options {String} rev alias for "version" that matches the HTTP API
+  # @option options {Boolean} blob if true, the file will be retrieved as a
+  #     Blob, instead of a String; this requires XHR Level 2 support, which is
+  #     not available in IE <= 9
+  # @option options {Boolean} binary if true, the file will be retrieved as a
+  #     binary string; the default is an UTF-8 encoded string
   # @param {function(String?, String?)} callback called with the result of the
   #     /files (GET) HTTP request; the first argument is the contents of the
   #     file; if the call fails, the second argument is a string containing the
@@ -119,18 +123,21 @@ class DropboxClient
 
     path = @normalizePath path
     url = "#{@urls.getFile}/#{path}"
-    fetchBinary = false
+    
     params = {}
+    responseType = null
     if options
-      if options.version?
+      if options.version
         params.rev = options.version
-      else if options.rev?
+      else if options.rev
         params.rev = options.rev
-      if options.fetchBinary?
-        fetchBinary = options.fetchBinary
+      if options.blob
+        responseType = 'blob'
+      if options.binary
+        responseType = 'b'  # See the Dropbox.Xhr.request2 docs
     @oauth.addAuthParams 'GET', url, params
     # TODO: read the metadata from the x-dropbox-metadata header
-    DropboxXhr.request 'GET', url, params, null, callback, fetchBinary
+    DropboxXhr.request2 'GET', url, params, null, responseType, callback
 
   # Store a file into a user's Dropbox.
   #
@@ -153,36 +160,26 @@ class DropboxClient
       callback = options
       options = null
     
-    if Buffer? and typeof data is 'object'
-      url = "#{@urls.putFile}/#{@normalizePath(path)}"
-      params = {}
-      method = "PUT"
+    # Break down the path into a file/folder name and the containing folder.
+    slashIndex = path.lastIndexOf '/'
+    if slashIndex is -1
+      fileName = path
+      path = ''
     else
-      # Break down the path into a file/folder name and the containing folder.
-      slashIndex = path.lastIndexOf '/'
-      if slashIndex is -1
-        fileName = path
-        path = ''
-      else
-        fileName = path.substring slashIndex
-        path = path.substring 0, slashIndex
+      fileName = path.substring slashIndex
+      path = path.substring 0, slashIndex
 
-      url = "#{@urls.postFile}/#{@normalizePath(path)}"
-      params = { file: fileName }
-      method = "POST"
+    url = "#{@urls.postFile}/#{@normalizePath(path)}"
+    params = { file: fileName }
     if options
       if options.noOverwrite
         params.overwrite = 'false'
       if options.lastVersion?
           params.parent_rev = options.lastVersion
     # TODO: locale support would edit the params here
-    @oauth.addAuthParams method, url, params
+    @oauth.addAuthParams 'POST', url, params
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
     #       signing the request; the code below works as intended
-    if Buffer? and typeof(data) is 'object'
-      url = [url, '?', DropboxXhr.urlEncode(params)].join ''
-      return DropboxXhr.xhrRequest method, url, {}, data, callback
-
     delete params.file
     
     fileField =

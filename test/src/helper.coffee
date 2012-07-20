@@ -2,16 +2,27 @@ if global? and require? and module?
   # Node.JS
   exports = global
 
-  global.Dropbox = require '../../lib/dropbox'
-  global.chai = require 'chai'
-  global.sinon = require 'sinon'
-  global.sinonChai = require 'sinon-chai'
+  exports.Dropbox = require '../../lib/dropbox'
+  exports.chai = require 'chai'
+  exports.sinon = require 'sinon'
+  exports.sinonChai = require 'sinon-chai'
   
-  authDriver = new Dropbox.Drivers.NodeServer()
-
+  authDriver = new Dropbox.Drivers.NodeServer 8912
+                                              
   TokenStash = require './token_stash.js'
   (new TokenStash()).get (credentials) ->
-    global.testKeys = credentials
+    exports.testKeys = credentials
+
+  testIconPath = './test/binary/dropbox.png'
+  fs = require 'fs'
+  exports.testImageBytes = fs.readFileSync testIconPath, 'binary'
+  exports.testImageUrl = 'http://localhost:8913/favicon.ico'
+  imageServer = null
+  exports.testImageServerOn = ->
+    imageServer = new Dropbox.Drivers.NodeServer 8913, testIconPath
+  exports.testImageServerOff = ->
+    imageServer.closeServer()
+    imageServer = null
 else
   # Browser
   exports = window
@@ -19,7 +30,11 @@ else
   # TODO: figure out authentication without popups
   authDriver = new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 
-# Common setup
+  exports.testImageUrl = 'http://localhost:8912/test/binary/dropbox.png'
+  exports.testImageServerOn = -> null
+  exports.testImageServerOff = -> null
+
+# Shared setup.
 exports.assert = exports.chai.assert
 exports.expect = exports.chai.expect
 exports.authDriverUrl = authDriver.url()

@@ -10,7 +10,7 @@ class DropboxXhr
   # The object used to perform XHR requests.
   @Request = DropboxXhrRequest
 
-  # Send off an AJAX request.
+  # Sends off an AJAX request.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #     'POST', etc)
@@ -24,10 +24,34 @@ class DropboxXhr
   #     parsed result, and unsuccessful requests set the second parameter to
   #     an error string
   # @return {XMLHttpRequest} the XHR object used for this request
-  @request: (method, url, params, authHeader, callback, fetchBinary) ->
+  @request: (method, url, params, authHeader, callback) ->
+    @request2 method, url, params, authHeader, null, callback
+
+  # Sends off an AJAX request and requests a custom response type.
+  #
+  # This method requires XHR Level 2 support, which is not available in IE
+  # versions <= 9. If these browsers must be supported, it is recommended to
+  # check whether window.Blob is truthy, and fallback to the plain "request"
+  # method otherwise.
+  #
+  # @param {String} method the HTTP method used to make the request ('GET',
+  #     'POST', etc)
+  # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
+  #     that receives the request
+  # @param {Object} params an associative array (hash) containing the HTTP
+  #     request parameters
+  # @param {String} authHeader the value of the Authorization header
+  # @param {String} responseType the value that will be assigned to the XHR's
+  #     responseType property
+  # @param {function(?Object, ?String)}callback called with the AJAX result;
+  #     successful requests set the first parameter to an object containing the
+  #     parsed result, and unsuccessful requests set the second parameter to
+  #     an error string
+  # @return {XMLHttpRequest} the XHR object used for this request
+  @request2: (method, url, params, authHeader, responseType, callback) ->
     if method is 'GET'
       queryString = DropboxXhr.urlEncode params
-      if queryString.lenth isnt 0
+      if queryString.length isnt 0
         url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     headers = {}
     if authHeader
@@ -37,7 +61,7 @@ class DropboxXhr
       body = DropboxXhr.urlEncode params
     else
       body = null
-    @xhrRequest method, url, headers, body, callback, fetchBinary
+    DropboxXhr.xhrRequest method, url, headers, body, responseType, callback
 
   # Upload a file via a mulitpart/form-data method.
   # 
@@ -78,7 +102,7 @@ class DropboxXhr
       body.append(fileField.name, fileField.value, fileField.fileName)
     if authHeader
       headers['Authorization'] = authHeader
-    @xhrRequest 'POST', url, headers, body, callback
+    DropboxXhr.xhrRequest 'POST', url, headers, body, null, callback
 
   # Generates a bounday suitable for separating multipart data.
   #
@@ -89,16 +113,20 @@ class DropboxXhr
 
   # Implementation for request and multipartRequest.
   #
-  # @see request, multipartRequest
+  # @see request2, multipartRequest
   # @return {XMLHttpRequest} the XHR object created for this request
-  @xhrRequest: (method, url, headers, body, callback, fetchBinary) ->
+  @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
-    xhr.open method, url, true, null, null, fetchBinary
-    if fetchBinary
-      xhr.responseType = "blob"
+    xhr.onreadystatechange = ->
+      DropboxXhr.onReadyStateChange(xhr, method, url, callback)
+    xhr.open method, url, true, null, null
+    if responseType
+      if responseType is 'b' and xhr.overrideMimeType
+        # Hack for getting binary data as a string.
+        xhr.overrideMimeType 'application/octet-stream; charset=x-user-defined'
+      xhr.responseType = responseType
     for own header, value of headers
       xhr.setRequestHeader header, value
-    xhr.onreadystatechange = -> DropboxXhr.onReadyStateChange(xhr, callback)
     if body
       xhr.send body
     else
@@ -141,20 +169,23 @@ class DropboxXhr
     result
 
   # Handles the XHR readystate event.
-  @onReadyStateChange: (xhr, callback) ->
-    if xhr.readyState is 4  # XMLHttpRequest.DONE is 4
-      if xhr.responseType is 'blob'
-        response = xhr.response
-      else
-        response = xhr.responseText
-      if xhr.status < 200 or xhr.status >= 300
-        callback null, "Dropbox API error #{xhr.status}. #{response}"
-        return
-      switch xhr.getResponseHeader('Content-Type')
-         when 'application/x-www-form-urlencoded'
-           callback DropboxXhr.urlDecode(response)
-         when 'application/json', 'text/javascript'
-           callback JSON.parse(response)
-         else
-            callback response
+  @onReadyStateChange: (xhr, method, url, callback) ->
+    return true if xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
+
+    if xhr.status < 200 or xhr.status >= 300
+      apiError = new DropboxApiError xhr, method, url
+      callback null, apiError
+      return
+
+    if xhr.responseType
+      return callback(xhr.response)
+    
+    response = xhr.responseText
+    switch xhr.getResponseHeader('Content-Type')
+       when 'application/x-www-form-urlencoded'
+         callback DropboxXhr.urlDecode(response)
+       when 'application/json', 'text/javascript'
+         callback JSON.parse(response)
+       else
+          callback response
     true

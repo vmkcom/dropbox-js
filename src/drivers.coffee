@@ -88,10 +88,13 @@ class DropboxNodeServerDriver
   # Starts up the node app that intercepts the browser redirect.
   #
   # @param {Number} port the port number to listen to for requests
-  constructor: (@port = 8912) ->
+  # @param {String} faviconFile the path to a file that will be served at
+  #     /favicon.ico
+  constructor: (@port = 8912, @faviconFile = null) ->
     # Calling require in the constructor because this doesn't work in browsers.
-    @open = require 'open'
+    @fs = require 'fs'
     @http = require 'http'
+    @open = require 'open'
     
     @callback = () -> null
     @urlRe = new RegExp "^/oauth_callback\?"
@@ -132,7 +135,10 @@ class DropboxNodeServerDriver
     data = ''
     request.on 'data', (dataFragment) -> data += dataFragment
     request.on 'end', =>
-      @closeBrowser response
+      if @faviconFile and (request.url is '/favicon.ico')
+        @sendFavicon response
+      else
+        @closeBrowser response
 
   # Renders a response that will close the browser window used for OAuth.
   closeBrowser: (response) ->
@@ -145,3 +151,11 @@ class DropboxNodeServerDriver
       {'Content-Length': closeHtml.length, 'Content-Type': 'text/html' })
     response.write closeHtml
     response.end
+
+  # Renders the favicon file.
+  sendFavicon: (response) ->
+    @fs.readFile @faviconFile, (error, data) ->
+      response.writeHead(200,
+        { 'Content-Length': data.length, 'Content-Type': 'image/x-icon' })
+      response.write data
+      response.end

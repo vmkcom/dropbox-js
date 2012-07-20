@@ -13,6 +13,7 @@ else
   throw new Error('This library only supports node.js and modern browsers.')
 
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
+Dropbox.ApiError = DropboxApiError
 Dropbox.Client = DropboxClient
 Dropbox.Drivers =
   Popup: DropboxPopupDriver

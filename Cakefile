@@ -43,8 +43,20 @@ vendor = (callback) ->
   unless fs.existsSync
     fs.mkdirSync 'test/vendor'
 
+  # Embed the binary test image into a 7-bit ASCII JavaScript.
+  bytes = fs.readFileSync 'test/binary/dropbox.png'
+  fragments = []
+  for i in [0...bytes.length]
+    fragment = bytes.readUInt8(i).toString 16
+    while fragment.length < 4
+      fragment = '0' + fragment
+    fragments.push "\\u#{fragment}"
+  js = "window.testImageBytes = \"#{fragments.join('')}\";"
+  fs.writeFileSync 'test/vendor/favicon.js', js
+
   # chai.js ships different builds for browsers vs node.js
   download 'http://chaijs.com/chai.js', 'test/vendor/chai.js', ->
+    # sinon.js also ships special builds for browsers, and separate code for IE
     download 'http://sinonjs.org/releases/sinon.js', 'test/vendor/sinon.js', ->
       download 'http://sinonjs.org/releases/sinon-ie.js',
                'test/vendor/sinon-ie.js', callback
