@@ -299,20 +299,72 @@ class DropboxClient
   revisions: (path, options, callback) ->
     @history path, options, callback
     
-  # @param {String} root relative to which path is specified. Valid values
-  #     are 'sandbox' and 'dropbox'
-  # @param {String} path to the file you want to retrieve
-  # @param {function(data, error)} callback called with the result to the
-  #     /files (GET) HTTP request. 
-  thumbnails: (path, format, size, callback) ->
+
+  # Computes a URL that generates a thumbnail for a file in the user's Dropbox.
+  #
+  # @param {String} path the path to the file whose thumbnail image URL will be
+  #     computed, relative to the user's Dropbox or to the application's
+  #     folder
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option options {Boolean} png if true, the thumbnail's image will be a PNG
+  #     file; the default thumbnail format is JPEG
+  # @option options {String} format value that gets passed directly to the API;
+  #     this is intended for newly added formats that the API may not support;
+  #     use options such as "png" when applicable
+  # @option options {String} sizeCode specifies the image's dimensions; this
+  #     gets passed directly to the API; currently, the following values are
+  #     supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
+  #     's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
+  #     value is "small"
+  # @return {String} a URL to an image that can be used as the thumbnail for
+  #     the given file
+  thumbnailUrl: (path, options) ->
     url = "#{@urls.thumbnails}/#{@normalizePath(path)}"
     params = {}
-    if format?
-        params['format'] = format
-    if size?
-        params['size'] = size
+    if options
+      if options.format
+        params.format = options.format
+      else if options.png
+        params.format = 'png'
+      if options.size
+        # Can we do something nicer here?
+        params.size = options.size
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request 'GET', url, params, null, callback
+    "#{url}?#{Dropbox.Xhr.urlEncode(params)}"
+
+  # Retrieves the image data of a thumbnail for a file in the user's Dropbox.
+  #
+  # This method is intended to be used with low-level painting APIs. Whenever
+  # possible, it is easier to place the result of thumbnailUrl in a DOM
+  # element, and rely on the browser to fetch the file.
+  #
+  # @param {String} path the path to the file whose thumbnail image URL will be
+  #     computed, relative to the user's Dropbox or to the application's
+  #     folder
+  # @param {Object?} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option options {Boolean} png if true, the thumbnail's image will be a PNG
+  #     file; the default thumbnail format is JPEG
+  # @option options {String} format value that gets passed directly to the API;
+  #     this is intended for newly added formats that the API may not support;
+  #     use options such as "png" when applicable
+  # @option options {String} sizeCode specifies the image's dimensions; this
+  #     gets passed directly to the API; currently, the following values are
+  #     supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
+  #     's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
+  #     value is "small"
+  # @param {function(String?, String)} callback called with the result to the
+  #     /thumbnails HTTP request; the result contains the raw image bytes; if
+  #     the call fails, the second argument is a string containing the error
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  readThumbnail: (path, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    url = @thumbnailUrl path, options
+    DropboxXhr.request 'GET', url, {}, null, callback
 
   # Reverts a file's contents to a previous version.
   #

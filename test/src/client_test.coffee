@@ -254,10 +254,23 @@ describe 'DropboxClient', ->
         expect(metadata.path).to.equal "#{filePath}_copy2"
         done()
 
-
   describe 'remove', ->
     it 'deletes a folder', (done) ->
       @client.remove @folderName, (metadata, error) =>
         expect(error).not.to.be.ok
         expect(metadata.path).to.equal @folderName
         done()
+
+  describe 'thumbnailUrl', ->
+    beforeEach ->
+      @filePath = "#{@folderName}/api-thumbnail-test.gif"
+
+    it 'produces an URL that contains the file name', ->
+      url = @client.thumbnailUrl @filePath, { png: true, size: 'medium' }
+      expect(url).to.contain @filePath
+      expect(url).to.contain 'png'
+      expect(url).to.contain 'medium'
+
+  describe 'readThumbnail', ->
+    # TODO: write this out once we can deal with binary files
+

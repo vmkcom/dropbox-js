@@ -26,7 +26,9 @@ class DropboxXhr
   # @return {XMLHttpRequest} the XHR object used for this request
   @request: (method, url, params, authHeader, callback) ->
     if method is 'GET'
-      url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+      queryString = DropboxXhr.urlEncode params
+      if queryString.lenth isnt 0
+        url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     headers = {}
     if authHeader
       headers['Authorization'] = authHeader
