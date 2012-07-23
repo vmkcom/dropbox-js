@@ -249,6 +249,18 @@ describe 'DropboxClient', ->
         expect(entries[0].path).to.have.string @testFolder
         done()
 
+    it 'fails cleanly for a non-existing path', (done) ->
+      @client.stat @textFolder + '/should_404.txt', (error, stat, entries) =>
+        expect(stat).to.equal undefined
+        expect(entries).to.equal.undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'status'
+        if @node_js
+          # Browsers can't access the error status due to buggy CORS headers.
+          expect(error.status).to.equal 404
+        done()
+
+
 
   describe 'history', ->
     it 'gets a list of revisions', (done) ->

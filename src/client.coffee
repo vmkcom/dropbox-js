@@ -258,7 +258,7 @@ class DropboxClient
     DropboxXhr.request('GET', url, params, null,
         (error, metadata) ->
           stat = DropboxStat.parse metadata
-          if metadata.contents
+          if metadata?.contents
             entries = (DropboxStat.parse(entry) for entry in metadata.contents)
           else
             entries = undefined
