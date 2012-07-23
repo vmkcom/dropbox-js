@@ -7,8 +7,8 @@ describe 'DropboxXhr', ->
       @url = 'https://api.dropbox.com/1/oauth/request_token'
       Dropbox.Xhr.request('POST',
         @url, {}, null,
-        (data, error) =>
-          expect(data).to.equal null
+        (error, data) =>
+          expect(data).to.equal undefined
           expect(error).to.be.instanceOf Dropbox.ApiError
           expect(error).to.have.property 'url'
           expect(error.url).to.equal @url
@@ -46,7 +46,7 @@ describe 'DropboxXhr', ->
         'https://api.dropbox.com/1/oauth/request_token',
         params,
         null,
-        (data, error) ->
+        (error, data) ->
           expect(error).to.not.be.ok
           expect(data).to.have.property 'oauth_token'
           expect(data).to.have.property 'oauth_token_secret'
@@ -76,7 +76,7 @@ describe 'DropboxXhr', ->
         'https://api.dropbox.com/1/oauth/request_token',
         {},
         oauth_header,
-        (data, error) ->
+        (error, data) ->
           expect(error).to.equal undefined
           expect(data).to.have.property 'oauth_token'
           expect(data).to.have.property 'oauth_token_secret'
@@ -98,7 +98,7 @@ describe 'DropboxXhr', ->
         {},
         null,
         'b',
-        (data, error) ->
+        (error, data) ->
           expect(error).to.not.be.ok
           expect(data).to.be.a 'string'
           expect(data).to.equal testImageBytes
@@ -115,7 +115,7 @@ describe 'DropboxXhr', ->
         {},
         null,
         'blob',
-        (blob, error) ->
+        (error, blob) ->
           expect(error).to.not.be.ok
           expect(blob).to.be.instanceOf Blob
           reader = new FileReader

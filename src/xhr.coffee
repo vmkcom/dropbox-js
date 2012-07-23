@@ -5,12 +5,12 @@ else
   # Node.js needs an adapter for the XHR API.
   DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
 
-# Dispatches low-level AJAX calls (XmlHttpRequests).
+# Dispatches low-level AJAX calls (XMLHttpRequests).
 class DropboxXhr
-  # The object used to perform XHR requests.
+  # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
 
-  # Sends off an AJAX request.
+  # Sends off a AJAX request (XMLHttpRequest). 
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #     'POST', etc)
@@ -19,10 +19,11 @@ class DropboxXhr
   # @param {Object} params an associative array (hash) containing the HTTP
   #     request parameters
   # @param {String} authHeader the value of the Authorization header
-  # @param {function(?Object, ?String)}callback called with the AJAX result;
-  #     successful requests set the first parameter to an object containing the
-  #     parsed result, and unsuccessful requests set the second parameter to
-  #     an error string
+  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
+  #     the XHR completes; if an error occurs, the first parameter will be a
+  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #     instance of the required response type (e.g., String, Blob), and the
+  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request: (method, url, params, authHeader, callback) ->
     @request2 method, url, params, authHeader, null, callback
@@ -43,10 +44,11 @@ class DropboxXhr
   # @param {String} authHeader the value of the Authorization header
   # @param {String} responseType the value that will be assigned to the XHR's
   #     responseType property
-  # @param {function(?Object, ?String)}callback called with the AJAX result;
-  #     successful requests set the first parameter to an object containing the
-  #     parsed result, and unsuccessful requests set the second parameter to
-  #     an error string
+  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
+  #     the XHR completes; if an error occurs, the first parameter will be a
+  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #     instance of the required response type (e.g., String, Blob), and the
+  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request2: (method, url, params, authHeader, responseType, callback) ->
     if method is 'GET'
@@ -77,10 +79,11 @@ class DropboxXhr
   #     submitted in the multipart/form-data body
   # @param {String} data the file content to be uploaded
   # @param {String} authHeader the value of the Authorization header
-  # @param {function(?Object, ?String)}callback called with the AJAX result;
-  #     successful requests set the first parameter to an object containing the
-  #     parsed result, and unsuccessful requests set the second parameter to
-  #     an error string
+  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
+  #     the XHR completes; if an error occurs, the first parameter will be a
+  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #     instance of the required response type (e.g., String, Blob), and the
+  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
     url = [url, '?', DropboxXhr.urlEncode(params)].join ''
@@ -180,8 +183,18 @@ class DropboxXhr
 
     if xhr.status < 200 or xhr.status >= 300
       apiError = new DropboxApiError xhr, method, url
-      callback null, apiError
+      callback apiError
       return true
+
+    metadataJson = xhr.getResponseHeader 'x-dropbox-metadata'
+    if metadataJson?.length
+      try
+        metadata = JSON.parse metadataJson
+      catch e
+        # Make sure the app doesn't crash if the server goes crazy.
+        metadata = undefined
+    else
+      metadata = undefined
 
     if responseType
       if responseType is 'b'
@@ -202,17 +215,17 @@ class DropboxXhr
         for i in [0...dirtyText.length]
           bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
         text = bytes.join ''
-        callback text
+        callback undefined, text, metadata
       else
-        callback xhr.response
+        callback undefined, xhr.response, metadata
       return true
     
     text = xhr.responseText or xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         callback DropboxXhr.urlDecode(text)
+         callback undefined, DropboxXhr.urlDecode(text), metadata
        when 'application/json', 'text/javascript'
-         callback JSON.parse(text)
+         callback undefined, JSON.parse(text), metadata
        else
-          callback text
+          callback undefined, text, metadata
     true

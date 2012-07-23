@@ -19,6 +19,7 @@ Dropbox.Drivers =
   Popup: DropboxPopupDriver
   NodeServer: DropboxNodeServerDriver
 Dropbox.Oauth = DropboxOauth
+Dropbox.Stat = DropboxStat
 Dropbox.Xhr = DropboxXhr
 Dropbox.hmac = base64HmacSha1
 Dropbox.sha1 = base64Sha1
