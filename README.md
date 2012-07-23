@@ -70,6 +70,6 @@ cake webtest
 
 ## Copyright and License
 
-The library is (c) Copyright Dropbox, Inc. 2012, and distributed under the MIT
+The library is Copyright (c) 2012 Dropbox Inc., and distributed under the MIT
 License.
 
