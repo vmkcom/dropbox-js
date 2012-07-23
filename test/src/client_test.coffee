@@ -397,8 +397,8 @@ describe 'DropboxClient', ->
         @client.revertFile @newFile, @versionTag, (error, stat) =>
           expect(error).to.equal undefined
           expect(stat).to.be.instanceOf Dropbox.Stat
-          expect(stat.versionTag).to.equal @versionTag
           expect(stat.path).to.equal @newFile
+          expect(stat.isRemoved).to.equal false
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal undefined
             expect(data).to.equal @textFileData
@@ -406,6 +406,7 @@ describe 'DropboxClient', ->
               # Stat is not available in the browser due to CORS restrictions.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @newFile
+              expect(stat.isRemoved).to.equal false
             done()
 
   describe 'findByName', ->
@@ -508,7 +509,7 @@ describe 'DropboxClient', ->
 
   describe 'readThumbnail', ->
     it 'reads the image into a string', (done) ->
-      @timeout 4 * 1000  # Thumbnail generation is slow.
+      @timeout 12 * 1000  # Thumbnail generation is slow.
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
         expect(error).to.equal undefined
         expect(data).to.be.a 'string'
@@ -522,7 +523,7 @@ describe 'DropboxClient', ->
 
     it 'reads the image into a Blob', (done) ->
       return done() unless Blob?
-      @timeout 4 * 1000  # Thumbnail generation is slow.
+      @timeout 12 * 1000  # Thumbnail generation is slow.
       options = { png: true, blob: true }
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
         expect(error).to.equal undefined
