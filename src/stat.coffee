@@ -47,6 +47,10 @@ class DropboxStat
   #     folder contents twice
   versionTag: undefined
 
+  # @return {String} a guess of the MIME type representing the file or folder's
+  #     contents
+  mimeType: undefined
+
   # @return {Number} the size of the file, in bytes; undefined for folders
   size: undefined
 
@@ -106,5 +110,7 @@ class DropboxStat
 
     if @isFolder
       @versionTag = metadata.hash
+      @mimeType = metadata.mime_type || 'inode/directory'
     else
       @versionTag = metadata.rev
+      @mimeType = metadata.mime_type || 'application/octet-stream'

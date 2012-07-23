@@ -46,6 +46,10 @@ describe 'DropboxStat', ->
         expect(@stat).to.have.property 'versionTag'
         expect(@stat.versionTag).to.equal '35e97029684fe'
 
+      it 'parses mimeType correctly', ->
+        expect(@stat).to.have.property 'mimeType'
+        expect(@stat.mimeType).to.equal 'application/pdf'
+
       it 'parses size correctly', ->
         expect(@stat).to.have.property 'size'
         expect(@stat.size).to.equal 230783
@@ -115,6 +119,10 @@ describe 'DropboxStat', ->
       it 'parses versionTag correctly', ->
         expect(@stat).to.have.property 'versionTag'
         expect(@stat.versionTag).to.equal '37eb1ba1849d4b0fb0b28caf7ef3af52'
+
+      it 'parses mimeType correctly', ->
+        expect(@stat).to.have.property 'mimeType'
+        expect(@stat.mimeType).to.equal 'inode/directory'
 
       it 'parses size correctly', ->
         expect(@stat).to.have.property 'size'
