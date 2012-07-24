@@ -6,8 +6,10 @@ class DropboxStat
   # This constructor is used by Dropbox.Stat.parse, and should not be called
   # directly.
   #
-  # @param {Object} metadata the result of parsing JSON API responses that are
+  # @param {?Object} metadata the result of parsing JSON API responses that are
   #     called "metadata" in the API documentation
+  # @return {?Dropbox.Stat} a Stat instance wrapping the given API response;
+  #     parameters that aren't parsed JSON objects are returned as they are
   @parse: (metadata) ->
     if metadata and typeof metadata is 'object'
       new DropboxStat metadata
