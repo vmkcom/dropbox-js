@@ -283,10 +283,11 @@ class DropboxClient
   #     downlaod URLs can be generated for directories
   # @option options {Boolean} long if set, the URL will not be shortened using
   #     Dropbox's shortner; direct download URLs aren't shortened by default
-  # @param {function(?Dropbox.ApiError, ?Object)} callback called with the
-  #     result of the /shares or /media HTTP request; if the call succeeds, the
-  #     second parameter is an Object with the properties "url" and "expires",
-  #     and the first parameter is undefined
+  # @param {function(?Dropbox.ApiError, ?Dropbox.PublicUrl)} callback called
+  #     with the result of the /shares or /media HTTP request; if the call
+  #     succeeds, the second parameter is a Dropbox.PublicUrl instance, and the
+  #     first parameter is undefined
+  # @return {XMLHttpRequest} the XHR object used for this API call
   makeUrl: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
@@ -294,8 +295,10 @@ class DropboxClient
     
     path = @urlEncodePath path
     if options and options.download
+      isDirect = true
       url = "#{@urls.media}/#{path}"
     else
+      isDirect = false
       url = "#{@urls.shares}/#{path}"
 
     if options and options.long
@@ -304,7 +307,9 @@ class DropboxClient
       params = {}
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request 'POST', url, params, null, callback
+    DropboxXhr.request('POST', url, params, null,
+        (error, urlData) ->
+          callback error, DropboxPublicUrl.parse(urlData, isDirect))
 
   # Retrieves the revision history of a file in a user's Dropbox.
   #
@@ -406,6 +411,7 @@ class DropboxClient
   #     succeeds, the second parameter is the image data as a String or Blob,
   #     the third parameter is a Dropbox.Stat instance describing the
   #     thumbnailed file, and the first argument is undefined
+  # @return {XMLHttpRequest} the XHR object used for this API call
   readThumbnail: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
@@ -500,15 +506,17 @@ class DropboxClient
   # @param {String} path the path to the file whose contents will be
   #     referenced, relative to the uesr's Dropbox or to the application's
   #     folder
-  # @param {function(?Dropbox.ApiError, ?Object)} callback called with the
-  #     result of the /copy_ref HTTP request; if the call succeeds, the second
-  #     parameter is an Object with the properties "copy_ref" and "expires, and
+  # @param {function(?Dropbox.ApiError, ?Dropbox.CopyReference)} callback
+  #     called with the result of the /copy_ref HTTP request; if the call
+  #     succeeds, the second parameter is a Dropbox.CopyReference instance, and
   #     the first parameter is undefined
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
     url = "#{@urls.copyRef}/#{@urlEncodePath(path)}"
     params = @oauth.addAuthParams 'GET', url, {}
-    DropboxXhr.request 'GET', url, params, null, callback
+    DropboxXhr.request('GET', url, params, null,
+        (error, refData) ->
+          callback error, DropboxCopyReference.parse(refData))
 
   # Alias for "makeCopyReference" that matches the HTTP API.
   copyRef: (path, callback) ->
@@ -591,36 +599,27 @@ class DropboxClient
   # method. The method will process paths that start with multiple /s
   # correctly.
   #
-  # @param {String} from the path of the file or folder that will be copied,
-  #     or a reference obtained by calling makeCopyRef; if this is a path, it
-  #     is relative to the user's Dropbox or to the application's folder
+  # @param {String, Dropbox.CopyReference} from the path of the file or folder
+  #     that will be copied, or a Dropbox.CopyReference instance obtained by
+  #     calling makeCopyRef or Dropbox.CopyReference.parse; if this is a path,
+  #     it is relative to the user's Dropbox or to the application's folder
   # @param {String} toPath the path that the file or folder will have after
   #     the method call; the path is relative to the user's Dropbox or to the
   #     application folder
-  # @param {?Object} options the advanced setting below
-  # @option options {Boolean} copyRef if present, overrides the copy reference
-  #     detection heuristic; the value is used directly to decide how to
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #     the result of the /fileops/copy HTTP request; if the call succeeds, the
   #     second parameter is a Dropbox.Stat instance describing the file or
   #     folder created by the copy operation, and the first parameter is
   #     undefined
   # @return {XMLHttpRequest} the XHR object used for this API call
-  copy: (from, toPath, options, callback) ->
+  copy: (from, toPath, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
     
-    if options and options.copyRef?
-      copyRefOption = true
-      forceCopyRef = options.copyRef
-    else
-      copyRefOption = false
-      forceCopyRef = false
-    
     params = { root: @fileRoot, to_path: @normalizePath(toPath) }
-    if forceCopyRef or (not copyRefOption and @isCopyRef(from))
-      params.from_copy_ref = from
+    if from instanceof DropboxCopyReference
+      params.from_copy_ref = from.tag
     else
       params.from_path = @normalizePath from
     # TODO: locale support would edit the params here
@@ -720,16 +719,6 @@ class DropboxClient
       path.substring i
     else
       path
-
-  # Heuristic for figuring out whether a string is a path or a copyref.
-  #
-  # @private
-  # This is an internal method. It is used by all the client methods that can
-  # take either a path or a copyRef as an argument.
-  #
-  # @param
-  isCopyRef: (pathOrCopyRef) ->
-    pathOrCopyRef.indexOf('/') is -1 and pathOrCopyRef.indexOf('.') is -1
 
   # Really low-level call to /oauth/request_token
   #

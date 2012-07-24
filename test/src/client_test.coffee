@@ -97,19 +97,6 @@ describe 'DropboxClient', ->
       expect(@client.urlEncodePath('///a b+c/g&h')).to.
           equal "a%20b%2Bc/g%26h"
 
-  describe 'isCopyRef', ->
-    it 'recognizes the copyRef in the API example', ->
-      expect(@client.isCopyRef('z1X6ATl6aWtzOGq0c3g5Ng')).to.equal true
-
-    it 'rejects paths starting with /', ->
-      expect(@client.isCopyRef('/z1X6ATl6aWtzOGq0c3g5Ng')).to.equal false
-
-    it 'rejects paths containing /', ->
-      expect(@client.isCopyRef('z1X6ATl6aWtzOGq0c3g5N/g')).to.equal false
-
-    it 'rejects paths containing .', ->
-      expect(@client.isCopyRef('z1X6ATl6aWtzOGq0c3g5N.g')).to.equal false
-
   describe 'authenticate', ->
     it 'completes the flow', (done) ->
       @timeout 30 * 1000  # Time-consuming because the user must click.
@@ -260,8 +247,6 @@ describe 'DropboxClient', ->
           expect(error.status).to.equal 404
         done()
 
-
-
   describe 'history', ->
     it 'gets a list of revisions', (done) ->
       @client.history @textFile, (error, versions) =>
@@ -279,6 +264,8 @@ describe 'DropboxClient', ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'copies a file given by path', (done) ->
+      @timeout 12 * 1000  # This sequence is slow on the current API server.
+
       @newFile = "#{@testFolder}/copy of test-file.txt"
       @client.copy @textFile, @newFile, (error, stat) =>
         expect(error).to.equal undefined
@@ -306,14 +293,13 @@ describe 'DropboxClient', ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
-    it 'creates a reference that can be used for copying', (done) ->
+    it 'creates a Dropbox.CopyReference that copies the file', (done) ->
       @newFile = "#{@testFolder}/ref copy of test-file.txt"
 
-      @client.makeCopyReference @textFile, (error, refInfo) =>
+      @client.makeCopyReference @textFile, (error, copyRef) =>
         expect(error).to.equal undefined
-        expect(refInfo).to.have.property 'copy_ref'
-        expect(refInfo.copy_ref).to.be.a 'string'
-        @client.copy refInfo.copy_ref, @newFile, (error, stat) =>
+        expect(copyRef).to.be.instanceOf Dropbox.CopyReference
+        @client.copy copyRef, @newFile, (error, stat) =>
           expect(error).to.equal undefined
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
@@ -389,6 +375,8 @@ describe 'DropboxClient', ->
   describe 'revertFile', ->
     describe 'on a removed file', ->
       beforeEach (done) ->
+        @timeout 12 * 1000  # This sequence seems to be quite slow.
+
         @newFile = "#{@testFolder}/file revert test.txt"
         @client.copy @textFile, @newFile, (error, stat) =>
           expect(error).to.equal undefined
@@ -434,34 +422,39 @@ describe 'DropboxClient', ->
 
   describe 'makeUrl for a short Web URL', ->
     it 'returns a shortened Dropbox URL', (done) ->
-      @client.makeUrl @textFile, (error, urlData) ->
+      @client.makeUrl @textFile, (error, publicUrl) ->
         expect(error).to.equal undefined
-        expect(urlData).to.have.property 'url'
-        expect(urlData.url).to.contain '//db.tt/'
+        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+        expect(publicUrl.isDirect).to.equal false
+        expect(publicUrl.url).to.contain '//db.tt/'
         done()
 
   describe 'makeUrl for a Web URL', ->
     it 'returns an URL to a preview page', (done) ->
-      @client.makeUrl @textFile, { long: true }, (error, urlData) =>
+      @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
         expect(error).to.equal undefined
-        expect(urlData).to.have.property 'url'
+        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+        expect(publicUrl.isDirect).to.equal false
+        expect(publicUrl.url).not.to.contain '//db.tt/'
         
         # The contents server does not return CORS headers.
         return done() unless @nodejs
-        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (error, data) ->
+        Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
           expect(error).to.equal undefined
           expect(data).to.contain '<!DOCTYPE html>'
           done()
 
   describe 'makeUrl for a direct download URL', ->
     it 'gets a direct download URL', (done) ->
-      @client.makeUrl @textFile, { download: true }, (error, urlData) =>
+      @client.makeUrl @textFile, { download: true }, (error, publicUrl) =>
         expect(error).to.equal undefined
-        expect(urlData).to.have.property 'url'
+        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+        expect(publicUrl.isDirect).to.equal true
+        expect(publicUrl.url).not.to.contain '//db.tt/'
 
         # The contents server does not return CORS headers.
         return done() unless @nodejs
-        Dropbox.Xhr.request 'GET', urlData.url, {}, null, (error, data) =>
+        Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
           expect(error).to.equal undefined
           expect(data).to.equal @textFileData
           done()
@@ -550,5 +543,5 @@ describe 'DropboxClient', ->
           return unless reader.readyState == FileReader.DONE
           expect(reader.result).to.contain 'PNG'
           done()
-          reader.readAsBinaryString blob
+        reader.readAsBinaryString blob
 

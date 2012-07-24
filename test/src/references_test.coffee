@@ -15,7 +15,8 @@ describe 'DropboxPublicUrl', ->
       it 'parses expiresAt correctly', ->
         expect(@url).to.have.property 'expiresAt'
         expect(@url.expiresAt).to.be.instanceOf Date
-        expect(@url.expiresAt.toUTCString()).to.equal ''
+        expect(@url.expiresAt.toUTCString()).to.
+            equal 'Tue, 01 Jan 2030 00:00:00 GMT'
 
       it 'parses isDirect correctly', ->
         expect(@url).to.have.property 'isDirect'
@@ -43,7 +44,8 @@ describe 'DropboxCopyReference', ->
       it 'parses expiresAt correctly', ->
         expect(@ref).to.have.property 'expiresAt'
         expect(@ref.expiresAt).to.be.instanceOf Date
-        expect(@ref.expiresAt.toUTCString()).to.equal ''
+        expect(@ref.expiresAt.toUTCString()).to.
+            equal 'Fri, 31 Jan 2042 21:01:05 GMT'
 
     describe 'on a reference string', ->
       beforeEach ->

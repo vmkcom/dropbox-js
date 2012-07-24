@@ -8,7 +8,7 @@ class DropboxPublicUrl
   # @return {?Dropbox.PublicUrl} a PublicUrl instance wrapping the given public
   #     link info; parameters that don't look like parsed JSON are returned as
   #     they are
-  parse: (urlData, isDirect) -> 
+  @parse: (urlData, isDirect) -> 
     if urlData and typeof urlData is 'object'
       new DropboxPublicUrl urlData, isDirect
     else
@@ -46,6 +46,7 @@ class DropboxPublicUrl
       @isDirect = false
     else
       @isDirect = Date.now() - @expiresAt <= 86400000  # 1 day
+    @isPreview = !@isDirect
 
 
 # Reference to a file that can be used to make a copy across users' Dropboxes.
@@ -54,8 +55,11 @@ class DropboxCopyReference
   #
   # @param {?Object, ?String} refData the parsed JSON descring a copy
   #     reference, or the reference string
-  parse: (refData) ->
-    new DropboxCopyReference refData
+  @parse: (refData) ->
+    if refData and (typeof refData is 'object' or typeof refData is 'string')
+      new DropboxCopyReference refData
+    else
+      refData
 
   # @return {String} the raw reference, for use with Dropbox APIs
   tag: undefined
@@ -69,9 +73,9 @@ class DropboxCopyReference
   #     reference, or the reference string
   constructor: (refData) ->
     if typeof refData is 'object'
-      @tag = refData.ref
+      @tag = refData.copy_ref
       @expiresAt = new Date Date.parse(refData.expires)
-    else if typeof refData is 'string'
+    else
       @tag = refData
       @expiresAt = new Date()
 

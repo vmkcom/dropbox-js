@@ -15,10 +15,12 @@ else
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
 Dropbox.ApiError = DropboxApiError
 Dropbox.Client = DropboxClient
+Dropbox.CopyReference = DropboxCopyReference
 Dropbox.Drivers =
   Popup: DropboxPopupDriver
   NodeServer: DropboxNodeServerDriver
 Dropbox.Oauth = DropboxOauth
+Dropbox.PublicUrl = DropboxPublicUrl
 Dropbox.Stat = DropboxStat
 Dropbox.Xhr = DropboxXhr
 Dropbox.hmac = base64HmacSha1
