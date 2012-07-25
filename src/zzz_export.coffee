@@ -22,6 +22,7 @@ Dropbox.Drivers =
 Dropbox.Oauth = DropboxOauth
 Dropbox.PublicUrl = DropboxPublicUrl
 Dropbox.Stat = DropboxStat
+Dropbox.UserInfo = DropboxUserInfo
 Dropbox.Xhr = DropboxXhr
 Dropbox.hmac = base64HmacSha1
 Dropbox.sha1 = base64Sha1

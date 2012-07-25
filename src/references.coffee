@@ -68,6 +68,10 @@ class DropboxCopyReference
   expiresAt: undefined
 
   # Creates a CopyReference instance from a raw reference or API response.
+  # 
+  # @private
+  # This constructor is used by Dropbox.CopyReference.parse, and should not be
+  # called directly.
   #
   # @param {?Object, ?String} refData the parsed JSON descring a copy
   #     reference, or the reference string

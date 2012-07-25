@@ -26,7 +26,7 @@ class TokenStash
     client = new Dropbox.Client @clientOptions()
     @setupAuth()
     client.authDriver @authDriver.url(), @authDriver.authDriver()
-    client.authenticate (data, error) =>
+    client.authenticate (error, data) =>
       @killAuth()
       credentials = @clientOptions()
       if error

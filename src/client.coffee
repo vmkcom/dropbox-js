@@ -86,15 +86,16 @@ class DropboxClient
 
   # Retrieves information about the logged in user.
   #
-  # @params {function(?Dropbox.ApiError, ?Object)} callback called with the
-  #     result of the /account/info HTTP request; if the call succeeds, the
-  #     second parameter is an object containing the user information, and the
+  # @params {function(?Dropbox.ApiError, ?Dropbox.UserInfo)} callback called
+  #     with the result of the /account/info HTTP request; if the call
+  #     succeeds, the second parameter is a Dropbox.UserInfo instance, and the
   #     first parameter is undefined
   # @return {XMLHttpRequest} the XHR object used for this API call
   getUserInfo: (callback) ->
     url = @urls.accountInfo
     params = @oauth.addAuthParams 'GET', url, {}
-    DropboxXhr.request 'GET', url, params, null, callback
+    DropboxXhr.request('GET', url, params, null,
+        (error, userData) -> callback error, DropboxUserInfo.parse(userData))
 
   # Retrieves the contents of a file stored in Dropbox.
   #

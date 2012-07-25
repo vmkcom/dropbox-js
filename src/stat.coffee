@@ -2,10 +2,6 @@
 class DropboxStat
   # Creates a Stat instance from a raw "metadata" response.
   #
-  # @private
-  # This constructor is used by Dropbox.Stat.parse, and should not be called
-  # directly.
-  #
   # @param {?Object} metadata the result of parsing JSON API responses that are
   #     called "metadata" in the API documentation
   # @return {?Dropbox.Stat} a Stat instance wrapping the given API response;

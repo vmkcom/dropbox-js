@@ -111,10 +111,8 @@ describe 'DropboxClient', ->
     it 'returns reasonable information', (done) ->
       @client.getUserInfo (error, userInfo) ->
         expect(error).to.equal undefined
-        expect(userInfo).to.have.property 'uid'
-        expect(userInfo.uid.toString()).to.equal testKeys.uid
-        expect(userInfo).to.have.property 'referral_link'
-        expect(userInfo).to.have.property 'display_name'
+        expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+        expect(userInfo.uid).to.equal testKeys.uid
         done()
 
   describe 'mkdir', ->
@@ -180,6 +178,7 @@ describe 'DropboxClient', ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'writes a new text file', (done) ->
+      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       @newFile = "#{@testFolder}/another text file.txt"
       @newFileData = "Another plaintext file #{Math.random().toString(36)}."
       @client.writeFile @newFile, @newFileData, (error, stat) =>
@@ -294,6 +293,7 @@ describe 'DropboxClient', ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'creates a Dropbox.CopyReference that copies the file', (done) ->
+      @timeout 12 * 1000  # This sequence is slow on the current API server.
       @newFile = "#{@testFolder}/ref copy of test-file.txt"
 
       @client.makeCopyReference @textFile, (error, copyRef) =>
@@ -326,6 +326,7 @@ describe 'DropboxClient', ->
         @client.remove @moveTo, (error, stat) -> done()
 
     it 'moves a file', (done) ->
+      @timeout 15 * 1000  # This sequence is slow on the current API server.
       @moveTo = "#{@testFolder}/moved test-file.txt"
       @client.move @moveFrom, @moveTo, (error, stat) =>
         expect(error).to.equal undefined
@@ -465,6 +466,11 @@ describe 'DropboxClient', ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'gets a cursor, then it gets relevant changes', (done) ->
+      # Pulling an entire Dropbox can take a lot of time, so we need fancy
+      # logic here.
+      @timeoutValue = 10 * 1000
+      @timeout @timeoutValue
+
       @client.pullChanges (error, changeInfo) =>
         expect(error).to.equal undefined
         expect(changeInfo).to.have.property 'reset'
@@ -475,9 +481,10 @@ describe 'DropboxClient', ->
         cursor = changeInfo.cursor
 
         # Calls pullChanges until it's done listing the user's Dropbox.
-        @timeout 15 * 1000  # Pulling the entire Dropbox takes time :( 
-        drainEntries = (client, callback) ->
+        drainEntries = (client, callback) =>
           return callback() unless changeInfo.has_more
+          @timeoutValue += 2 * 1000  # 2 extra seconds per call
+          @timeout @timeoutValue
           client.pullChanges changeInfo.cursor, (error, _changeInfo) ->
             expect(error).to.equal undefined
             changeInfo = _changeInfo
