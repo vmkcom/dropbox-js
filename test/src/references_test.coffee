@@ -26,6 +26,12 @@ describe 'DropboxPublicUrl', ->
         expect(@url).to.have.property 'isPreview'
         expect(@url.isPreview).to.equal true
 
+    it 'passes null through', ->
+      expect(Dropbox.PublicUrl.parse(null)).to.equal null
+
+    it 'passes undefined through', ->
+      expect(Dropbox.PublicUrl.parse(undefined)).to.equal undefined
+
 
 describe 'DropboxCopyReference', ->
   describe 'parse', ->

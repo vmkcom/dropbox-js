@@ -21,6 +21,8 @@ Dropbox.Drivers =
   NodeServer: DropboxNodeServerDriver
 Dropbox.Oauth = DropboxOauth
 Dropbox.PublicUrl = DropboxPublicUrl
+Dropbox.PulledChanges = DropboxPulledChanges
+Dropbox.PullChange = DropboxPullChange
 Dropbox.Stat = DropboxStat
 Dropbox.UserInfo = DropboxUserInfo
 Dropbox.Xhr = DropboxXhr

@@ -246,6 +246,20 @@ describe 'DropboxClient', ->
           expect(error.status).to.equal 404
         done()
 
+  describe 'readdir', ->
+    it 'retrieves a Stat and entries for a folder', (done) ->
+      @client.readdir @testFolder, (error, stat, entries) =>
+        expect(error).to.equal undefined
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @testFolder
+        expect(stat.isFolder).to.equal true
+        expect(entries).to.be.ok
+        expect(entries).to.have.length 2
+        expect(entries[0]).to.be.instanceOf Dropbox.Stat
+        expect(entries[0].path).not.to.equal @testFolder
+        expect(entries[0].path).to.have.string @testFolder
+        done()
+
   describe 'history', ->
     it 'gets a list of revisions', (done) ->
       @client.history @textFile, (error, versions) =>
@@ -471,23 +485,19 @@ describe 'DropboxClient', ->
       @timeoutValue = 10 * 1000
       @timeout @timeoutValue
 
-      @client.pullChanges (error, changeInfo) =>
+      @client.pullChanges (error, changes) =>
         expect(error).to.equal undefined
-        expect(changeInfo).to.have.property 'reset'
-        expect(changeInfo.reset).to.equal true
-        expect(changeInfo).to.have.property 'cursor'
-        expect(changeInfo.cursor).to.be.a 'string'
-        expect(changeInfo).to.have.property 'entries'
-        cursor = changeInfo.cursor
+        expect(changes).to.be.instanceOf Dropbox.PulledChanges
+        expect(changes.blankSlate).to.equal true
 
         # Calls pullChanges until it's done listing the user's Dropbox.
         drainEntries = (client, callback) =>
-          return callback() unless changeInfo.has_more
+          return callback() unless changes.shouldPullAgain
           @timeoutValue += 2 * 1000  # 2 extra seconds per call
           @timeout @timeoutValue
-          client.pullChanges changeInfo.cursor, (error, _changeInfo) ->
+          client.pullChanges changes, (error, _changes) ->
             expect(error).to.equal undefined
-            changeInfo = _changeInfo
+            changes = _changes
             drainEntries client, callback
         drainEntries @client, =>
 
@@ -498,18 +508,16 @@ describe 'DropboxClient', ->
             expect(stat).to.have.property 'path'
             expect(stat.path).to.equal @newFile
 
-            @client.pullChanges cursor, (error, changeInfo) =>
+            @client.pullChanges changes, (error, changes) =>
               expect(error).to.equal undefined
-              expect(changeInfo).to.have.property 'reset'
-              expect(changeInfo.reset).to.equal false
-              expect(changeInfo).to.have.property 'cursor'
-              expect(changeInfo.cursor).not.to.equal cursor
-              expect(changeInfo).to.have.property 'entries'
-              expect(changeInfo.entries).to.have.length.greaterThan 0
-              entry = changeInfo.entries.length - 1
-              expect(changeInfo.entries[entry]).to.have.length 2
-              expect(changeInfo.entries[entry][1]).to.have.property 'path'
-              expect(changeInfo.entries[entry][1].path).to.equal @newFile
+              expect(changes).to.be.instanceof Dropbox.PulledChanges
+              expect(changes.blankSlate).to.equal false
+              expect(changes.changes).to.have.length.greaterThan 0
+              change = changes.changes[changes.changes.length - 1]
+              expect(change).to.be.instanceOf Dropbox.PullChange
+              expect(change.path).to.equal @newFile
+              expect(change.wasRemoved).to.equal false
+              expect(change.stat.path).to.equal @newFile
               done()
 
   describe 'thumbnailUrl', ->

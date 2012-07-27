@@ -21,7 +21,7 @@ class DropboxClient
     @apiServer = options.server or 'https://api.dropbox.com'
     @authServer = options.authServer or @apiServer.replace('api.', 'www.')
     @fileServer = options.fileServer or
-                    @apiServer.replace('api.', 'api-content.')
+        @apiServer.replace('api.', 'api-content.')
     
     @setupUrls()
 
@@ -265,6 +265,48 @@ class DropboxClient
             entries = undefined
           callback error, stat, entries
         )
+
+  # Lists the files and folders inside a folder in a user's Dropbox.
+  #
+  # @param {String} path the path to the folder whose contents will be
+  #     retrieved, relative to the user's Dropbox or to the application's
+  #     folder
+  # @param {?Object} options the advanced settings below; for the default
+  #     settings, skip the argument or pass null
+  # @option {Boolean} removed if set to true, the results will include files
+  #     and folders that were deleted from the user's Dropbox
+  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
+  #     using this alias is not recommended, because it may cause confusion
+  #     with JavaScript's delete operation
+  # @option options {Boolean, Number} limit the maximum number of files and
+  #     folders that should be returned; the default limit is 10,000 items; if
+  #     the limit is exceeded, the call will fail with an error
+  # @option options {String} versionTag used for saving bandwidth; if this
+  #     option is specified, and its value matches the folder's version tag,
+  #     the call will fail with a 304 (Contents not changed) error code
+  #     instead of returning the contents; a folder's version identifier can be
+  #     obtained from the versionTag attribute of a Dropbox.Stat instance
+  #     describing it
+  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat, ?Array<Dropbox.Stat>)}
+  #     callback called with the result of the /metadata HTTP request; if the
+  #     call succeeds, the second parameter is a Dropbox.Stat instance
+  #     describing the file / folder, the third parameter is an array of
+  #     Dropbox.Stat instances describing the folder's entries, and the first
+  #     parameter is undefined
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  readdir: (path, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    statOptions = { readDir: true }
+    if options
+      if options.limit
+        statOptions.readDir = options.limit
+      if options.versionTag
+        statOptions.versionTag = options.versionTag
+    @stat path, statOptions, callback
+
 
   # Alias for "stat" that matches the HTTP API.
   metadata: (path, options, callback) ->
@@ -530,15 +572,16 @@ class DropboxClient
   # to obtain all the changes that happened in the user's Dropbox (or
   # application directory) between the two calls.
   #
-  # @param {String} cursor a tag representing the the Dropbox state that is
-  #     used as the baseline for the change list; this should be obtained from
-  #     a previous call to pullChanges, or be set to null / ommitted on the
-  #     first call to pullChanges
-  # @param {function(?Dropbox.ApiError, ?Object)} callback called with the
-  #     result of the /delta HTTP request; if the call succeeds, the second
-  #     parameter contains the changes in the user's Dropbox since the call
-  #     that produced the given cursor (see the Dropbox API documentation
-  #     for a detailed explanation), and the first parameter is undefined
+  # @param {Dropbox.PulledChanges, String} cursorTag the result of a previous
+  #     call to pullChanges, or a string containing a tag representing the
+  #     Dropbox state that is used as the baseline for the change list; this
+  #     should be obtained from a previous call to pullChanges, or be set to
+  #     null / ommitted on the first call to pullChanges
+  # @param {function(?Dropbox.ApiError, ?Dropbox.PulledChanges)} callback
+  #     called with the result of the /delta HTTP request; if the call
+  #     succeeds, the second parameter is a Dropbox.PulledChanges describing
+  #     the changes to the user's Dropbox since the pullChanges call that
+  #     produced the given cursor, and the first parameter is undefined
   # @return {XMLHttpRequest} the XHR object used for this API call
   pullChanges: (cursor, callback) ->
     if (not callback) and (typeof cursor is 'function')
@@ -548,11 +591,16 @@ class DropboxClient
     url = @urls.delta
     params = {}
     if cursor
-      params = { cursor:  cursor }
+      if cursor.cursorTag
+        params = { cursor: cursor.cursorTag }
+      else
+        params = { cursor: cursor }
     else
       params = {}
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request 'POST', url, params, null, callback
+    DropboxXhr.request('POST', url, params, null,
+        (error, deltaInfo) -> callback error,
+          Dropbox.PulledChanges.parse(deltaInfo))
 
   # Alias for "pullChanges" that matches the HTTP API.
   delta: (cursor, callback) ->
