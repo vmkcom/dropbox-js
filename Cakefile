@@ -26,6 +26,9 @@ task 'vendor', ->
 
 task 'token', ->
   build ->
+    TokenStash = require './test/js/token_stash.js'
+    tokenStash = new TokenStash
+    tokenStash.deleteStash()
     token ->
       process.exit 0
 

@@ -1,10 +1,15 @@
-describe 'DropboxClient', ->
-  # Creates the global client and test directory.
+buildClientTests = (clientKeys) ->
+  # Creates the global client.
   setupClient = (test, done) ->
+    # Should only be used for fixture teardown.
+    test.__client = new Dropbox.Client clientKeys
+    done()
+
+  # Creates the test directory.
+  setupDirectory = (test, done) ->
     # True if running on node.js
     test.node_js = module? and module?.exports? and require?
-    # Should only be used for fixture teardown.
-    test.__client = new Dropbox.Client testKeys
+
     # All test data should go here.
     test.testFolder = '/js tests.' + Math.random().toString(36)
     test.__client.mkdir test.testFolder, (error, stat) ->
@@ -50,9 +55,10 @@ describe 'DropboxClient', ->
   before (done) ->
     @timeout 10 * 1000
     setupClient this, =>
-      setupImageFile this, =>
-        setupTextFile this, ->
-          done()
+      setupDirectory this, =>
+        setupImageFile this, =>
+          setupTextFile this, ->
+            done()
 
   # Teardown for global fixtures.
   after (done) ->
@@ -63,13 +69,13 @@ describe 'DropboxClient', ->
   # Per-test (cheap) fixtures.
   beforeEach ->
     @timeout 8 * 1000
-    @client = new Dropbox.Client testKeys
+    @client = new Dropbox.Client clientKeys
 
   describe 'URLs for custom API server', ->
     it 'computes the other URLs correctly', ->
       client = new Dropbox.Client
-        key: testKeys.key,
-        secret: testKeys.secret,
+        key: clientKeys.key,
+        secret: clientKeys.secret,
         server: 'https://api.sandbox.dropbox-proxy.com'
 
       expect(client.apiServer).to.equal(
@@ -97,22 +103,12 @@ describe 'DropboxClient', ->
       expect(@client.urlEncodePath('///a b+c/g&h')).to.
           equal "a%20b%2Bc/g%26h"
 
-  describe 'authenticate', ->
-    it 'completes the flow', (done) ->
-      @timeout 30 * 1000  # Time-consuming because the user must click.
-      @client.reset()
-      @client.authDriver authDriverUrl, authDriver
-      @client.authenticate (error, uid) ->
-        expect(error).to.equal undefined
-        expect(uid).to.be.a 'string'
-        done()
-
   describe 'getUserInfo', ->
     it 'returns reasonable information', (done) ->
       @client.getUserInfo (error, userInfo) ->
         expect(error).to.equal undefined
         expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-        expect(userInfo.uid).to.equal testKeys.uid
+        expect(userInfo.uid).to.equal clientKeys.uid
         done()
 
   describe 'mkdir', ->
@@ -208,7 +204,10 @@ describe 'DropboxClient', ->
         expect(stat.isFile).to.equal true
         expect(stat.versionTag).to.equal @textFileTag
         expect(stat.size).to.equal @textFileData.length
-        expect(stat.inAppFolder).to.equal false
+        if clientKeys.sandbox
+          expect(stat.inAppFolder).to.equal true
+        else
+          expect(stat.inAppFolder).to.equal false
         done()
 
     it 'retrieves a Stat for a folder', (done) ->
@@ -218,7 +217,10 @@ describe 'DropboxClient', ->
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
         expect(stat.size).to.equal 0
-        expect(stat.inAppFolder).to.equal false
+        if clientKeys.sandbox
+          expect(stat.inAppFolder).to.equal true
+        else
+          expect(stat.inAppFolder).to.equal false
         expect(entries).to.equal undefined
         done()
 
@@ -236,7 +238,7 @@ describe 'DropboxClient', ->
         done()
 
     it 'fails cleanly for a non-existing path', (done) ->
-      @client.stat @textFolder + '/should_404.txt', (error, stat, entries) =>
+      @client.stat @testFolder + '/should_404.txt', (error, stat, entries) =>
         expect(stat).to.equal undefined
         expect(entries).to.equal.undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
@@ -559,4 +561,22 @@ describe 'DropboxClient', ->
           expect(reader.result).to.contain 'PNG'
           done()
         reader.readAsBinaryString blob
+
+describe 'DropboxClient with full Dropbox access', ->
+  buildClientTests testFullDropboxKeys
+
+describe 'DropboxClient with Folder access', ->
+  buildClientTests testKeys
+
+  describe 'authenticate', ->
+    # NOTE: we're not duplicating this test in the full Dropbox acess suite,
+    #       because it's annoying to the tester
+    it 'completes the flow', (done) ->
+      @timeout 30 * 1000  # Time-consuming because the user must click.
+      @client.reset()
+      @client.authDriver authDriverUrl, authDriver
+      @client.authenticate (error, uid) ->
+        expect(error).to.equal undefined
+        expect(uid).to.be.a 'string'
+        done()
 

@@ -12,6 +12,8 @@ if global? and require? and module?
   TokenStash = require './token_stash.js'
   (new TokenStash()).get (credentials) ->
     exports.testKeys = credentials
+  (new TokenStash(fullDropbox: true)).get (credentials) ->
+    exports.testFullDropboxKeys = credentials
 
   testIconPath = './test/binary/dropbox.png'
   fs = require 'fs'

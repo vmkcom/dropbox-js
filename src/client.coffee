@@ -49,6 +49,7 @@ class DropboxClient
     value =
       key: @oauth.key
       secret: @oauth.secret
+      sandbox: @sandbox
     if @oauth.token
       value.token = @oauth.token
       value.tokenSecret = @oauth.tokenSecret
