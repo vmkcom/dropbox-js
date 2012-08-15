@@ -574,7 +574,7 @@ describe 'DropboxClient with Folder access', ->
     it 'completes the flow', (done) ->
       @timeout 30 * 1000  # Time-consuming because the user must click.
       @client.reset()
-      @client.authDriver authDriverUrl, authDriver
+      @client.authDriver authDriver
       @client.authenticate (error, uid) ->
         expect(error).to.equal undefined
         expect(uid).to.be.a 'string'

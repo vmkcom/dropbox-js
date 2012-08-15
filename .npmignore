@@ -1,0 +1,21 @@
+# Vim.
+*.swp
+
+# OSX
+.DS_Store
+
+# Git.
+.git
+
+# Npm modules.
+node_modules
+
+# Vendored javascript modules.
+test/vendor
+
+# Test build output.
+test/js
+tmp/*.js
+
+# Login credentials used for testing.
+test/.token

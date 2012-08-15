@@ -43,5 +43,4 @@ else
 # Shared setup.
 exports.assert = exports.chai.assert
 exports.expect = exports.chai.expect
-exports.authDriverUrl = authDriver.url()
-exports.authDriver = authDriver.authDriver()
+exports.authDriver = authDriver

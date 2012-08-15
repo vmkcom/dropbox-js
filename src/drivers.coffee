@@ -1,4 +1,5 @@
 # OAuth driver that uses a popup window and postMessage to complete the flow.
+# 
 class DropboxPopupDriver
   # Sets up a popup-based OAuth driver.
   #
@@ -12,14 +13,17 @@ class DropboxPopupDriver
   constructor: (options) ->
     @receiverUrl = @computeUrl options
 
-  # Builds a function that can be used as an OAuth driver by Dropbox.Client.
+  # Redirects users to /authorize and waits for them to complete the flow.
   #
-  # @return {function(String, function(String))} function that can be passed to
-  #     authDriver on Dropbox.Client.
-  authDriver: ->
-    (authUrl, callback) =>
-      @listenForMessage callback
-      @openWindow authUrl
+  # @param {String} authUrl the URL that users should be redirected to; this
+  #     points to a Web page on Dropbox' servers
+  # @param {function(String)} callback called when users have completed the
+  #     authorization flow; the driver can know this because Dropbox redirects
+  #     users to the URL returned by the url method after they complete the
+  #     authorization flow
+  doAuthorize: (url, callback) ->
+    @listenForMessage callback
+    @openWindow url
 
   # The URL of the HTML file that can receive OAuth redirects.
   #
@@ -104,11 +108,17 @@ class DropboxNodeServerDriver
   url: ->
     "http://localhost:#{@port}/oauth_callback"
 
-  # Returns a function that can be used as an OAuth driver.
-  authDriver: ->
-    (authUrl, callback) =>
-      @openBrowser authUrl
-      @callback = callback
+  # Redirects users to /authorize and waits for them to complete the flow.
+  #
+  # @param {String} authUrl the URL that users should be redirected to; this
+  #     points to a Web page on Dropbox' servers
+  # @param {function(String)} callback called when users have completed the
+  #     authorization flow; the driver can know this because Dropbox redirects
+  #     users to the URL returned by the url method after they complete the
+  #     authorization flow
+  doAuthorize: (authUrl, callback) ->
+    @openBrowser authUrl
+    @callback = callback
 
   # Opens the given URL in a browser.
   openBrowser: (url) ->

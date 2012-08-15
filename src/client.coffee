@@ -27,17 +27,11 @@ class DropboxClient
 
   # Plugs in the authentication driver.
   #
-  # @param {String} url the URL that will be used for OAuth callback; the
-  #     application must be able to intercept this URL and obtain the query
-  #     string provided by Dropbox
-  # @param {function(String, function(String))} driver the implementation of
-  #     the authorization flow; the function should redirect the user to the
-  #     URL received as the first argument, wait for the user to be redirected
-  #     to the URL provded to authCallback, and then call the supplied function
-  #     with
+  # @param {#url->String, #authorize(String, function(String))} driver object
+  #     that implements the methods url() and doAuthorize(); see the sample
+  #     drivers in Dropbox.AuthDriver for details
   # @return {Dropbox.Client} this, for easy call chaining
-  authDriver: (url, driver) ->
-    @authDriverUrl = url
+  authDriver: (driver) ->
     @authDriver = driver
     @
 
@@ -72,7 +66,7 @@ class DropboxClient
       token = data.oauth_token
       tokenSecret = data.oauth_token_secret
       @oauth.setToken token, tokenSecret
-      @authDriver @authorizeUrl(token), (url) =>
+      @authDriver.doAuthorize @authorizeUrl(token), (url) =>
         @getAccessToken (error, data) =>
           if error
             @reset()
@@ -791,7 +785,7 @@ class DropboxClient
   # @return {String} the URL that the user's browser should be redirected to
   #     in order to perform an /oauth/authorize request
   authorizeUrl: (token) ->
-    params = { oauth_token: token, oauth_callback: @authDriverUrl }
+    params = { oauth_token: token, oauth_callback: @authDriver.url() }
     "#{@urls.authorize}?" + DropboxXhr.urlEncode(params)
 
   # Exchanges an OAuth request token with an access token.
