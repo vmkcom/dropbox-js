@@ -1,33 +1,159 @@
-# OAuth driver that uses a popup window and postMessage to complete the flow.
-# 
-class DropboxPopupDriver
-  # Sets up a popup-based OAuth driver.
+# Documentation for the interface to a Dropbox OAuth driver.
+class DropboxAuthDriver
+  # The callback URL that should be supplied to the OAuth /authorize call.
   #
-  # @param {Object?} options one of the settings below; leave out the argument
-  #     to use the current location for redirecting
-  # @param {String} receiverUrl URL to the page that receives the /authorize
-  #     redirect and performs the postMessage
-  # @param {String} receiverFile the URL to the receiver page will be computed
-  #     by replacing the file name (everything after the last /) of the current
-  #     location with this parameter's value
-  constructor: (options) ->
-    @receiverUrl = @computeUrl options
+  # The driver must be able to intercept redirects to the returned URL, in
+  # order to know when a user has completed the authorization flow.
+  #
+  # @return {String} an absolute URL
+  url: ->
+    'https://some.url'
 
   # Redirects users to /authorize and waits for them to complete the flow.
   #
-  # @param {String} authUrl the URL that users should be redirected to; this
-  #     points to a Web page on Dropbox' servers
-  # @param {function(String)} callback called when users have completed the
-  #     authorization flow; the driver can know this because Dropbox redirects
-  #     users to the URL returned by the url method after they complete the
-  #     authorization flow
-  doAuthorize: (url, callback) ->
-    @listenForMessage callback
-    @openWindow url
+  # @param {String} authUrl the URL that users should be sent to in order to
+  #     authorize the application's token; this points to a Web page on
+  #     Dropbox' servers
+  # @param {String} token the OAuth token that the user is authorizing; this
+  #     will be provided by the Dropbox servers as a query parameter when the
+  #     user is redirected to the URL returned by the driver's url() method 
+  # @param {String} tokenSecret the secret associated with the given OAuth
+  #     token; the driver may store this together with the token
+  # @param {function()} callback called when users have completed the
+  #     authorization flow; the driver should call this when Dropbox redirects
+  #     users to the URL returned by the url() method, and the 'token' query
+  #     parameter matches the value of the token parameter
+  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+    callback 'oauth-token'
 
-  # The URL of the HTML file that can receive OAuth redirects.
+  # Supplies a token to be used instead of calling /oauth/request_token.
   #
-  # @return {String} an URL
+  # @return {Array<?String>} 2-element array containing an OAuth request token
+  #     and secret, or two nulls if the Dropbox server should be asked to
+  #     generate a new request token
+  presetToken: ->
+    [null, null]
+
+
+# OAuth driver that uses a redirect and localStorage to complete the flow.
+class DropboxRedirectDriver
+  # Sets up the redirect-based OAuth driver.
+  #
+  # @param {?Object} options the advanced settings below
+  # @option options {String} scope embedded in the localStorage key that holds
+  #     the authentication data; useful for having multiple OAuth tokens in a
+  #     single application
+  constructor: (options) ->
+    @scope = options?.scope or 'default'
+    @storageKey = "dropbox-auth:#{@scope}"
+    @receiverUrl = @computeUrl options
+    @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
+
+  # URL of the current page, since the user will be sent right back.
+  url: ->
+    @receiverUrl
+
+  # Redirects to the authorize page, and waits for the user to come back.
+  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+    [_token, _secret] = @getStoredToken()
+    if _token is token
+      @deleteStoredToken()
+      callback()
+    else
+      @storeToken token, tokenSecret
+      window.location.assign authUrl
+
+  # Gets the old request token from localStorage, if it's available.
+  presetToken: ->
+    @getStoredToken()
+
+  # Pre-computes the return value of url.
+  computeUrl: ->
+    querySuffix = "_dropboxjs_scope=#{encodeURIComponent @scope}"
+    location = DropboxRedirectDriver.currentLocation()
+    if location.indexOf('#') is -1
+      fragment = null
+    else
+      locationPair = location.split '#', 2
+      location = locationPair[0]
+      fragment = locationPair[1]
+    if location.indexOf('?') is -1
+      location += "?#{querySuffix}"  # No query string in the URL.
+    else
+      location += "&#{querySuffix}"  # The URL already has a query string.
+
+    if fragment
+      location + '#' + fragment
+    else
+      location
+
+  # Figures out if the user completed the OAuth flow based on the current URL.
+  #
+  # @return {?String} the OAuth token that the user just authorized, or null if
+  #     the user accessed this directly, without having authorized a token
+  locationToken: ->
+    location = DropboxRedirectDriver.currentLocation()
+    
+    # Check for the scope.
+    scopePattern = "_dropboxjs_scope=#{encodeURIComponent @scope}&"
+    return null if location.indexOf?(scopePattern) is -1
+
+    # Extract the token.
+    match = @tokenRe.exec location
+    if match then decodeURIComponent(match[2]) else null
+
+  # Wrapper for window.location, for testing purposes.
+  #
+  # @return {String} the current page's URL
+  @currentLocation: ->
+    window.location.href
+
+  # Stores a token and secret to localStorage.
+  storeToken: (token, tokenSecret) ->
+    json = token: token, secret: tokenSecret
+    localStorage.setItem @storageKey, JSON.stringify json
+
+  # Retrieves a token and secret from localStorage.
+  #
+  # @return {Array<?String>} 2-element array with the OAuth token and secret
+  #     stored by a previous call to storeToken, or two null elements if no
+  #     such token and secret were stored
+  getStoredToken: ->
+    jsonString = localStorage.getItem @storageKey
+    return [null, null] unless jsonString
+
+    try
+      json = JSON.parse jsonString
+      return [json.token, json.secret]
+    catch e
+      # Parse errors
+      return [null, null]
+
+  # Deletes information previously stored by a call to storeToken.
+  deleteStoredToken: ->
+    localStorage.removeItem @storageKey
+
+# OAuth driver that uses a popup window and postMessage to complete the flow.
+class DropboxPopupDriver
+  # Sets up a popup-based OAuth driver.
+  #
+  # @param {?Object} options one of the settings below; leave out the argument
+  #     to use the current location for redirecting
+  # @option options {String} receiverUrl URL to the page that receives the
+  #     /authorize redirect and performs the postMessage
+  # @option options {String} receiverFile the URL to the receiver page will be
+  #     computed by replacing the file name (everything after the last /) of
+  #     the current location with this parameter's value
+  constructor: (options) ->
+    @receiverUrl = @computeUrl options
+    @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
+
+  # Shows the authorization URL in a pop-up, waits for it to send a message.
+  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+    @listenForMessage token, callback
+    @openWindow authUrl
+
+  # URL of the redirect receiver page, which posts a message back to this page.
   url: ->
     @receiverUrl
 
@@ -46,11 +172,13 @@ class DropboxPopupDriver
   #
   # @return {String} the current page's URL
   @currentLocation: ->
-    window.location.toString()
+    window.location.href
 
   # Creates a popup window.
   #
   # @param {String} url the URL that will be loaded in the popup window
+  # @return {?DOMRef} reference to the opened window, or null if the call
+  #     failed
   openWindow: (url) ->
     window.open url, '_dropboxOauthSigninWindow', @popupWindowSpec(980, 980)
 
@@ -77,11 +205,16 @@ class DropboxPopupDriver
 
   # Listens for a postMessage from a previously opened popup window.
   #
-  # @param {function(Object)} called when the message is received
-  listenForMessage: (callback) ->
+  # @param {String} token the token string that must be received from the popup
+  #     window
+  # @param {function()} called when the received message matches the token
+  listenForMessage: (token, callback) ->
+    tokenRe = @tokenRe
     listener = (event) ->
-      callback event.data
-      window.removeEventListener 'message', listener
+      match = tokenRe.exec event.data.toString()
+      if match and decodeURIComponent(match[2]) is token
+        callback()
+        window.removeEventListener 'message', listener
     window.addEventListener 'message', listener, false
 
 
@@ -100,25 +233,19 @@ class DropboxNodeServerDriver
     @http = require 'http'
     @open = require 'open'
     
-    @callback = () -> null
-    @urlRe = new RegExp "^/oauth_callback\?"
+    @callbacks = {}
+    @urlRe = new RegExp "^/oauth_callback\\?"
+    @tokenRe = new RegExp "(\\?|&)oauth_token=([^&]+)(&|$)"
     @createApp()
 
-  # The callback URL that should be supplied to the OAuth /authorize call.
+  # URL to the node.js OAuth callback handler.
   url: ->
     "http://localhost:#{@port}/oauth_callback"
 
-  # Redirects users to /authorize and waits for them to complete the flow.
-  #
-  # @param {String} authUrl the URL that users should be redirected to; this
-  #     points to a Web page on Dropbox' servers
-  # @param {function(String)} callback called when users have completed the
-  #     authorization flow; the driver can know this because Dropbox redirects
-  #     users to the URL returned by the url method after they complete the
-  #     authorization flow
-  doAuthorize: (authUrl, callback) ->
+  # Opens the token 
+  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+    @callbacks[token] = callback
     @openBrowser authUrl
-    @callback = callback
 
   # Opens the given URL in a browser.
   openBrowser: (url) ->
@@ -141,7 +268,12 @@ class DropboxNodeServerDriver
   # Reads out an /authorize callback.
   doRequest: (request, response) ->
     if @urlRe.exec request.url
-      @callback request.url
+      match = @tokenRe.exec request.url
+      if match
+        token = decodeURIComponent match[2]
+        if @callbacks[token]
+          @callbacks[token]()
+          delete @callbacks[token]
     data = ''
     request.on 'data', (dataFragment) -> data += dataFragment
     request.on 'end', =>

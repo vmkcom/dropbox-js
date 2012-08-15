@@ -31,13 +31,13 @@ class TokenStash
     sandboxClient = new Dropbox.Client @clientOptions().sandbox
     fullClient = new Dropbox.Client @clientOptions().full
     @setupAuth()
-    sandboxClient.authDriver @authDriver.url(), @authDriver.authDriver()
+    sandboxClient.authDriver @authDriver
     sandboxClient.authenticate (error, data) =>
       if error
         @killAuth()
         callback null
         return
-      fullClient.authDriver @authDriver.url(), @authDriver.authDriver()
+      fullClient.authDriver @authDriver
       fullClient.authenticate (error, data) =>
         @killAuth()
         if error
@@ -79,9 +79,9 @@ class TokenStash
 
   # Removes the stashed access credentials.
   deleteStash: ->
-    @fs.unlinkSync @jsonPath
-    @fs.unlinkSync @jsPath
-    @fs.rmdirSync @dirPath
+    @fs.unlinkSync @jsonPath if @fs.exists @jsonPath
+    @fs.unlinkSync @jsPath if @fs.exists @jsPath
+    @fs.rmdirSync @dirPath if @fs.exists @dirPath
 
   # Sets up a node.js server-based authentication driver.
   setupAuth: ->

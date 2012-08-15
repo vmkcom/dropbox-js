@@ -331,6 +331,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'move', ->
     beforeEach (done) ->
+      @timeout 10 * 1000  # This sequence is slow on the current API server.
       @moveFrom = "#{@testFolder}/move source of test-file.txt"
       @client.copy @textFile, @moveFrom, (error, stat) ->
         expect(error).to.equal undefined
@@ -411,6 +412,8 @@ buildClientTests = (clientKeys) ->
         @client.remove @newFile, (error, stat) -> done()
 
       it 'reverts the file to a previous version', (done) ->
+        @timeout 12 * 1000  # This sequence seems to be quite slow.
+
         @client.revertFile @newFile, @versionTag, (error, stat) =>
           expect(error).to.equal undefined
           expect(stat).to.be.instanceOf Dropbox.Stat

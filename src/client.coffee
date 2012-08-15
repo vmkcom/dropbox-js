@@ -25,11 +25,12 @@ class DropboxClient
     
     @setupUrls()
 
-  # Plugs in the authentication driver.
+  # Plugs in the OAuth / application integration code.
   #
-  # @param {#url->String, #authorize(String, function(String))} driver object
-  #     that implements the methods url() and doAuthorize(); see the sample
-  #     drivers in Dropbox.AuthDriver for details
+  # @param {DropboxAuthDriver} driver provides the integration between the
+  #     application and the Dropbox OAuth flow; most applications should be
+  #     able to use instances of Dropbox.Driver.Redirect, Dropbox.Driver.Popup,
+  #     or Dropbox.Driver.NodeServer
   # @return {Dropbox.Client} this, for easy call chaining
   authDriver: (driver) ->
     @authDriver = driver
@@ -59,14 +60,15 @@ class DropboxClient
   #     and the first parameter is undefined
   # @return {Dropbox.Client} this, for easy call chaining
   authenticate: (callback) ->
-    @requestToken (error, data) =>
+    onRequestToken = (error, data) =>
       if error
         callback error
         return
       token = data.oauth_token
       tokenSecret = data.oauth_token_secret
       @oauth.setToken token, tokenSecret
-      @authDriver.doAuthorize @authorizeUrl(token), (url) =>
+      authUrl = @authorizeUrl token
+      @authDriver.doAuthorize authUrl, token, tokenSecret, (url) =>
         @getAccessToken (error, data) =>
           if error
             @reset()
@@ -77,6 +79,17 @@ class DropboxClient
           @oauth.setToken token, tokenSecret
           @uid = data.uid
           callback undefined, data.uid
+
+    if @authDriver.presetToken
+      [token, tokenSecret] = @authDriver.presetToken()
+    else
+      token = tokenSecret = null
+
+    if token
+      onRequestToken null,
+                     oauth_token: token, oauth_token_secret: tokenSecret
+    else
+      @requestToken onRequestToken
     @
 
   # Retrieves information about the logged in user.

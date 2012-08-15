@@ -19,7 +19,7 @@ class WebFileServer
 
   # The server code.
   createApp: ->
-    @app = express.createServer()
+    @app = express()
     @app.get '/diediedie', (request, response) =>
       process.exit 0
 

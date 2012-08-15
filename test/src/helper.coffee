@@ -7,8 +7,8 @@ if global? and require? and module?
   exports.sinon = require 'sinon'
   exports.sinonChai = require 'sinon-chai'
   
-  authDriver = new Dropbox.Drivers.NodeServer 8912
-                                              
+  exports.authDriver = new Dropbox.Drivers.NodeServer 8912
+
   TokenStash = require './token_stash.js'
   (new TokenStash()).get (credentials) ->
     exports.testKeys = credentials
@@ -34,7 +34,8 @@ else
   exports = window
   
   # TODO: figure out authentication without popups
-  authDriver = new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
+  exports.authDriver =
+      new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 
   exports.testImageUrl = 'http://localhost:8911/test/binary/dropbox.png'
   exports.testImageServerOn = -> null
@@ -43,4 +44,3 @@ else
 # Shared setup.
 exports.assert = exports.chai.assert
 exports.expect = exports.chai.expect
-exports.authDriver = authDriver

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="/lib/dropbox.js"></script>
+    <script src="/test/.token/token.js"></script>
+    <script type="text/javascript">
+      (function() {
+        var opener = window.opener;
+        if (!opener && window.parent != window.top) {
+          opener = window.parent;
+        }
+        if (opener) {
+          var client = new Dropbox.Client(window.testFullDropboxKeys);
+          client.reset();
+          client.authDriver(new Dropbox.Drivers.Redirect());
+          client.authenticate(function(error, uid) {
+            var message = [error || null, uid]
+            opener.postMessage(JSON.stringify(message), '*');
+            window.close();
+          });
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Please close this window.</p>
+  </body>
+</html>

@@ -18,6 +18,7 @@ Dropbox.Client = DropboxClient
 Dropbox.CopyReference = DropboxCopyReference
 Dropbox.Drivers =
   Popup: DropboxPopupDriver
+  Redirect: DropboxRedirectDriver
   NodeServer: DropboxNodeServerDriver
 Dropbox.Oauth = DropboxOauth
 Dropbox.PublicUrl = DropboxPublicUrl
