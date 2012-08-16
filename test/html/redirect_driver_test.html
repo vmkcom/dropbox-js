@@ -13,8 +13,8 @@
           var client = new Dropbox.Client(window.testFullDropboxKeys);
           client.reset();
           client.authDriver(new Dropbox.Drivers.Redirect());
-          client.authenticate(function(error, uid) {
-            var message = [error || null, uid]
+          client.authenticate(function(error, _client) {
+            var message = [error || null, _client && _client.credentials()];
             opener.postMessage(JSON.stringify(message), '*');
             window.close();
           });

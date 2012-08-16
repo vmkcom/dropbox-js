@@ -13,11 +13,23 @@ class DropboxClient
   # @option {String} token if set, the user's access token
   # @option {String} tokenSecret if set, the secret for the user's access token
   # @option {String} uid if set, the user's Dropbox UID
+  # @option {Number} authState if set, indicates that the token and tokenSecret
+  #     are in an intermediate state in the authentication process; this option
+  #     should never be set by hand, however it may be returned by calls to
+  #     credentials()
   constructor: (options) ->
-    @sandbox = options.sandbox or false
     @oauth = new DropboxOauth options
     @uid = options.uid or null
+    if options.authState and options.authState isnt DropboxClient.ERROR
+      @authState = options.authState
+    else
+      if options.token
+        @authState = DropboxClient.DONE
+      else
+        @authState = DropboxClient.RESET
+    @authError = null
 
+    @sandbox = options.sandbox or false
     @apiServer = options.server or 'https://api.dropbox.com'
     @authServer = options.authServer or @apiServer.replace('api.', 'www.')
     @fileServer = options.fileServer or
@@ -36,6 +48,16 @@ class DropboxClient
     @authDriver = driver
     @
 
+  # The authenticated user's Dropbx user ID.
+  #
+  # This user ID is guaranteed to be consistent across API calls from the same
+  # application (not across applications, though).
+  #
+  # @return {?String} a short ID that identifies the user, or null if no user
+  #     is authenticated
+  dropboxUid: ->
+    @uid
+
   # OAuth credentials.
   #
   # @return {Object} a plain object whose properties can be passed to the
@@ -49,47 +71,64 @@ class DropboxClient
       value.token = @oauth.token
       value.tokenSecret = @oauth.tokenSecret
       value.uid = @uid
+    if @authState isnt DropboxClient.ERROR and
+       @authState isnt DropboxClient.RESET and
+       @authState isnt DropboxClient.DONE
+      value.authState = @authState
     value
       
   # Authenticates the app's user to Dropbox' API server.
   #
-  # @param {function(?Dropbox.ApiError, ?String)} callback called when the
-  #     authentication completes; if successful, the second parameter is the
-  #     user's Dropbox user id, which is guaranteed to be consistent across
-  #     API calls from the same application (not across applications, though),
-  #     and the first parameter is undefined
+  # @param {function(?Dropbox.ApiError, ?Dropbox.Client)} callback called when
+  #     the authentication completes; if successful, the second parameter is
+  #     this client and the first parameter is null
   # @return {Dropbox.Client} this, for easy call chaining
   authenticate: (callback) ->
-    onRequestToken = (error, data) =>
-      if error
-        callback error
-        return
-      token = data.oauth_token
-      tokenSecret = data.oauth_token_secret
-      @oauth.setToken token, tokenSecret
-      authUrl = @authorizeUrl token
-      @authDriver.doAuthorize authUrl, token, tokenSecret, (url) =>
-        @getAccessToken (error, data) =>
-          if error
-            @reset()
-            callback error
-            return
-          token = data.oauth_token
-          tokenSecret = data.oauth_token_secret
-          @oauth.setToken token, tokenSecret
-          @uid = data.uid
-          callback undefined, data.uid
+    # Advances the authentication FSM by one step.
+    _fsmStep = =>
+      switch @authState
+        when DropboxClient.RESET  # No user credentials -> request token.
+          if @authDriver.presetToken
+            [token, tokenSecret] = @authDriver.presetToken()
+            if token
+              @oauth.setToken token, tokenSecret
+              @authState = DropboxClient.REQUEST
+              return _fsmStep()
+          @requestToken (error, data) =>
+            if error
+              @authError = error
+              @authState = DropboxClient.ERROR
+            else
+              token = data.oauth_token
+              tokenSecret = data.oauth_token_secret
+              @oauth.setToken token, tokenSecret
+              @authState = DropboxClient.REQUEST
+            _fsmStep()
 
-    if @authDriver.presetToken
-      [token, tokenSecret] = @authDriver.presetToken()
-    else
-      token = tokenSecret = null
+        when DropboxClient.REQUEST  # Have request token, get it authorized.
+          authUrl = @authorizeUrl @oauth.token
+          @authDriver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
+            @authState = DropboxClient.AUTH
+            _fsmStep()
 
-    if token
-      onRequestToken null,
-                     oauth_token: token, oauth_token_secret: tokenSecret
-    else
-      @requestToken onRequestToken
+        when DropboxClient.AUTH  # Authorized request token -> access token.
+          @getAccessToken (error, data) =>
+            if error
+              @authError = error
+              @authState = DropboxClient.ERROR
+            else
+              @oauth.setToken data.oauth_token, data.oauth_token_secret
+              @uid = data.uid
+              @authState = DropboxClient.DONE
+            _fsmStep()
+
+        when DropboxClient.DONE  # We have an access token.
+          callback null, @
+
+        when DropboxClient.ERROR  # An error occurred during authentication.
+          callback @authError
+    
+    _fsmStep()  # Start up the state machine.
     @
 
   # Retrieves information about the logged in user.
@@ -97,7 +136,7 @@ class DropboxClient
   # @params {function(?Dropbox.ApiError, ?Dropbox.UserInfo)} callback called
   #     with the result of the /account/info HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.UserInfo instance, and the
-  #     first parameter is undefined
+  #     first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   getUserInfo: (callback) ->
     url = @urls.accountInfo
@@ -124,7 +163,7 @@ class DropboxClient
   #     called with the result of the /files (GET) HTTP request; the second
   #     parameter is the contents of the file, the third parameter is a
   #     Dropbox.Stat instance describing the file, and the first parameter is
-  #     undefined
+  #     null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readFile: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -170,7 +209,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #     the result of the /files (POST) HTTP request; the second paramter is a
   #     Dropbox.Stat instance describing the newly created file, and the first
-  #     parameter is undefined
+  #     parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   writeFile: (path, data, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -237,7 +276,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat, ?Array<Dropbox.Stat>)}
   #     callback called with the result of the /metadata HTTP request; if the
   #     call succeeds, the second parameter is a Dropbox.Stat instance
-  #     describing the file / folder, and the first parameter is undefined;
+  #     describing the file / folder, and the first parameter is null;
   #     if the readDir option is true and the call succeeds, the third
   #     parameter is an array of Dropbox.Stat instances describing the folder's
   #     entries
@@ -300,7 +339,7 @@ class DropboxClient
   #     call succeeds, the second parameter is a Dropbox.Stat instance
   #     describing the file / folder, the third parameter is an array of
   #     Dropbox.Stat instances describing the folder's entries, and the first
-  #     parameter is undefined
+  #     parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readdir: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -337,7 +376,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.PublicUrl)} callback called
   #     with the result of the /shares or /media HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.PublicUrl instance, and the
-  #     first parameter is undefined
+  #     first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeUrl: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -374,7 +413,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
   #     with the result of the /revisions HTTP request; if the call succeeds,
   #     the second parameter is an array with one Dropbox.Stat instance per
-  #     file version, and the first parameter is undefined
+  #     file version, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   history: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -461,7 +500,7 @@ class DropboxClient
   #     called with the result of the /thumbnails HTTP request; if the call
   #     succeeds, the second parameter is the image data as a String or Blob,
   #     the third parameter is a Dropbox.Stat instance describing the
-  #     thumbnailed file, and the first argument is undefined
+  #     thumbnailed file, and the first argument is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readThumbnail: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -491,7 +530,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #     the result of the /restore HTTP request; if the call succeeds, the
   #     second parameter is a Dropbox.Stat instance describing the file after
-  #     the revert operation, and the first parameter is undefined
+  #     the revert operation, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   revertFile: (path, versionTag, callback) ->
     url = "#{@urls.restore}/#{@urlEncodePath(path)}"
@@ -524,7 +563,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
   #     with the result of the /search HTTP request; if the call succeeds, the
   #     second parameter is an array with one Dropbox.Stat instance per search
-  #     result, and the first parameter is undefined
+  #     result, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   findByName: (path, namePattern, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -560,7 +599,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.CopyReference)} callback
   #     called with the result of the /copy_ref HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.CopyReference instance, and
-  #     the first parameter is undefined
+  #     the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
     url = "#{@urls.copyRef}/#{@urlEncodePath(path)}"
@@ -589,7 +628,7 @@ class DropboxClient
   #     called with the result of the /delta HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.PulledChanges describing
   #     the changes to the user's Dropbox since the pullChanges call that
-  #     produced the given cursor, and the first parameter is undefined
+  #     produced the given cursor, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   pullChanges: (cursor, callback) ->
     if (not callback) and (typeof cursor is 'function')
@@ -621,7 +660,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #     the result of the /fileops/create_folder HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.Stat instance describing
-  #     the newly created folder, and the first parameter is undefined
+  #     the newly created folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   mkdir: (path, callback) ->
     url = @urls.fileopsCreateFolder
@@ -637,7 +676,7 @@ class DropboxClient
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #     the result of the /fileops/delete HTTP request; if the call succeeds,
   #     the second parameter is a Dropbox.Stat instance describing the removed
-  #     file or folder, and the first parameter is undefined
+  #     file or folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   remove: (path, callback) ->
     url = @urls.fileopsDelete
@@ -667,7 +706,7 @@ class DropboxClient
   #     the result of the /fileops/copy HTTP request; if the call succeeds, the
   #     second parameter is a Dropbox.Stat instance describing the file or
   #     folder created by the copy operation, and the first parameter is
-  #     undefined
+  #     null
   # @return {XMLHttpRequest} the XHR object used for this API call
   copy: (from, toPath, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -697,7 +736,7 @@ class DropboxClient
   #     the result of the /fileops/move HTTP request; if the call succeeds, the
   #     second parameter is a Dropbox.Stat instance describing the moved
   #     file or folder at its new location, and the first parameter is
-  #     undefined 
+  #     null 
   # @return {XMLHttpRequest} the XHR object used for this API call
   move: (fromPath, toPath, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -718,6 +757,8 @@ class DropboxClient
   reset: ->
     @uid = null
     @oauth.setToken null, ''
+    @authState = DropboxClient.RESET
+    @authError = null
     @
 
   # Computes the URLs of all the Dropbox API calls.
@@ -756,6 +797,21 @@ class DropboxClient
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
       fileopsMove: "#{@apiServer}/1/fileops/move" 
+
+  # authState value for a client that experienced an authentication error.
+  @ERROR: 0
+
+  # authState value for a properly initialized client with no user credentials.
+  @RESET: 1
+
+  # authState value for a client with a request token that must be authorized.
+  @REQUEST: 2
+
+  # authState value for a client whose request token was authorized.
+  @AUTH: 3
+
+  # authState value for a client that has a proper API token.
+  @DONE: 4
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
   urlEncodePath: (path) ->

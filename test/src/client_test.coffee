@@ -13,7 +13,7 @@ buildClientTests = (clientKeys) ->
     # All test data should go here.
     test.testFolder = '/js tests.' + Math.random().toString(36)
     test.__client.mkdir test.testFolder, (error, stat) ->
-      expect(error).to.equal undefined
+      expect(error).to.equal null
       done()
 
   # Creates the binary image file in the test directory.
@@ -25,9 +25,9 @@ buildClientTests = (clientKeys) ->
       Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
           (error, blob) =>
             testImageServerOff()
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             test.__client.writeFile test.imageFile, blob, (error, stat) ->
-              expect(error).to.equal undefined
+              expect(error).to.equal null
               test.imageFileTag = stat.rev
               done()
           )
@@ -35,7 +35,7 @@ buildClientTests = (clientKeys) ->
       test.__client.writeFile(test.imageFile, test.imageFileData,
           { binary: true },
           (error, stat) ->
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             test.imageFileTag = stat.versionTag
             done()
           )
@@ -46,7 +46,7 @@ buildClientTests = (clientKeys) ->
     test.textFileData = "Plaintext test file #{Math.random().toString(36)}.\n"
     test.__client.writeFile(test.textFile, test.textFileData,
         (error, stat) ->
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           test.textFileTag = stat.versionTag
           done()
         )
@@ -63,7 +63,7 @@ buildClientTests = (clientKeys) ->
   # Teardown for global fixtures.
   after (done) ->
     @__client.remove @testFolder, (error, stat) ->
-      expect(error).to.equal undefined
+      expect(error).to.equal null
       done()
 
   # Per-test (cheap) fixtures.
@@ -103,10 +103,14 @@ buildClientTests = (clientKeys) ->
       expect(@client.urlEncodePath('///a b+c/g&h')).to.
           equal "a%20b%2Bc/g%26h"
 
+  describe 'dropboxUid', ->
+    it 'matches the uid in the credentials', ->
+      expect(@client.dropboxUid()).to.equal clientKeys.uid
+
   describe 'getUserInfo', ->
     it 'returns reasonable information', (done) ->
       @client.getUserInfo (error, userInfo) ->
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(userInfo).to.be.instanceOf Dropbox.UserInfo
         expect(userInfo.uid).to.equal clientKeys.uid
         done()
@@ -119,19 +123,19 @@ buildClientTests = (clientKeys) ->
     it 'creates a folder in the test folder', (done) ->
       @newFolder = "#{@testFolder}/test'folder"
       @client.mkdir @newFolder, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFolder
         expect(stat.isFolder).to.equal true
         @client.stat @newFolder, (error, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(stat.isFolder).to.equal true
           done()
 
   describe 'readFile', ->
     it 'reads a text file', (done) ->
       @client.readFile @textFile, (error, data, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(data).to.equal @textFileData
         if @node_js
           # Stat is not available in the browser due to CORS restrictions.
@@ -142,7 +146,7 @@ buildClientTests = (clientKeys) ->
 
     it 'reads a binary file into a string', (done) ->
       @client.readFile @imageFile, { binary: true }, (error, data, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(data).to.equal @imageFileData
         if @node_js
           # Stat is not available in the browser due to CORS restrictions.
@@ -154,7 +158,7 @@ buildClientTests = (clientKeys) ->
     it 'reads a binary file into a Blob', (done) ->
       return done() unless Blob?
       @client.readFile @imageFile, { blob: true }, (error, blob, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
         if @node_js
           # Stat is not available in the browser due to CORS restrictions.
@@ -178,12 +182,12 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/another text file.txt"
       @newFileData = "Another plaintext file #{Math.random().toString(36)}."
       @client.writeFile @newFile, @newFileData, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         @client.readFile @newFile, (error, data, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.equal @newFileData
           if @node_js
             # Stat is not available in the browser due to CORS restrictions.
@@ -198,7 +202,7 @@ buildClientTests = (clientKeys) ->
   describe 'stat', ->
     it 'retrieves a Stat for a file', (done) ->
       @client.stat @textFile, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
@@ -212,7 +216,7 @@ buildClientTests = (clientKeys) ->
 
     it 'retrieves a Stat for a folder', (done) ->
       @client.stat @testFolder, (error, stat, entries) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
@@ -226,7 +230,7 @@ buildClientTests = (clientKeys) ->
 
     it 'retrieves a Stat and entries for a folder', (done) ->
       @client.stat @testFolder, { readDir: true }, (error, stat, entries) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
@@ -240,7 +244,7 @@ buildClientTests = (clientKeys) ->
     it 'fails cleanly for a non-existing path', (done) ->
       @client.stat @testFolder + '/should_404.txt', (error, stat, entries) =>
         expect(stat).to.equal undefined
-        expect(entries).to.equal.undefined
+        expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'status'
         if @node_js
@@ -251,7 +255,7 @@ buildClientTests = (clientKeys) ->
   describe 'readdir', ->
     it 'retrieves a Stat and entries for a folder', (done) ->
       @client.readdir @testFolder, (error, stat, entries) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
@@ -265,7 +269,7 @@ buildClientTests = (clientKeys) ->
   describe 'history', ->
     it 'gets a list of revisions', (done) ->
       @client.history @textFile, (error, versions) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(versions).to.have.length 1
         expect(versions[0]).to.be.instanceOf Dropbox.Stat
         expect(versions[0].path).to.equal @textFile
@@ -283,18 +287,18 @@ buildClientTests = (clientKeys) ->
 
       @newFile = "#{@testFolder}/copy of test-file.txt"
       @client.copy @textFile, @newFile, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         @client.readFile @newFile, (error, data, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.equal @textFileData
           if @node_js
             # Stat is not available in the browser due to CORS restrictions.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
           @client.readFile @textFile, (error, data, stat) =>
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             expect(data).to.equal @textFileData
             if @node_js
               # Stat is not available in the browser due to CORS restrictions.
@@ -313,15 +317,15 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/ref copy of test-file.txt"
 
       @client.makeCopyReference @textFile, (error, copyRef) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(copyRef).to.be.instanceOf Dropbox.CopyReference
         @client.copy copyRef, @newFile, (error, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
           @client.readFile @newFile, (error, data, stat) =>
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             expect(data).to.equal @textFileData
             if @node_js
               # Stat is not available in the browser due to CORS restrictions.
@@ -334,7 +338,7 @@ buildClientTests = (clientKeys) ->
       @timeout 10 * 1000  # This sequence is slow on the current API server.
       @moveFrom = "#{@testFolder}/move source of test-file.txt"
       @client.copy @textFile, @moveFrom, (error, stat) ->
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         done()
 
     afterEach (done) ->
@@ -346,12 +350,12 @@ buildClientTests = (clientKeys) ->
       @timeout 15 * 1000  # This sequence is slow on the current API server.
       @moveTo = "#{@testFolder}/moved test-file.txt"
       @client.move @moveFrom, @moveTo, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @moveTo
         expect(stat.isFile).to.equal true
         @client.readFile @moveTo, (error, data, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.equal @textFileData
           if @node_js
             # Stat is not available in the browser due to CORS restrictions.
@@ -371,7 +375,7 @@ buildClientTests = (clientKeys) ->
     beforeEach (done) ->
       @newFolder = "#{@testFolder}/folder delete test"
       @client.mkdir @newFolder, (error, stat) ->
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         done()
 
     afterEach (done) ->
@@ -380,12 +384,12 @@ buildClientTests = (clientKeys) ->
 
     it 'deletes a folder', (done) ->
       @client.remove @newFolder, (error, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(stat).to.be.an 'object'
         expect(stat).to.have.property 'path'
         expect(stat.path).to.equal @newFolder
         @client.stat @newFolder, { removed: true }, (error, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.isRemoved).to.equal true
           done()
@@ -397,12 +401,12 @@ buildClientTests = (clientKeys) ->
 
         @newFile = "#{@testFolder}/file revert test.txt"
         @client.copy @textFile, @newFile, (error, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           @versionTag = stat.versionTag
           @client.remove @newFile, (error, stat) =>
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
             done()
@@ -415,12 +419,12 @@ buildClientTests = (clientKeys) ->
         @timeout 12 * 1000  # This sequence seems to be quite slow.
 
         @client.revertFile @newFile, @versionTag, (error, stat) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isRemoved).to.equal false
           @client.readFile @newFile, (error, data, stat) =>
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             expect(data).to.equal @textFileData
             if @node_js
               # Stat is not available in the browser due to CORS restrictions.
@@ -433,7 +437,7 @@ buildClientTests = (clientKeys) ->
     it 'locates the test folder given a partial name', (done) ->
       namePattern = @testFolder.substring 5
       @client.search '/', namePattern, (error, matches) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(matches).to.have.length 1
         expect(matches[0]).to.be.instanceOf Dropbox.Stat
         expect(matches[0].path).to.equal @testFolder
@@ -443,7 +447,7 @@ buildClientTests = (clientKeys) ->
   describe 'makeUrl for a short Web URL', ->
     it 'returns a shortened Dropbox URL', (done) ->
       @client.makeUrl @textFile, (error, publicUrl) ->
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
         expect(publicUrl.isDirect).to.equal false
         expect(publicUrl.url).to.contain '//db.tt/'
@@ -452,7 +456,7 @@ buildClientTests = (clientKeys) ->
   describe 'makeUrl for a Web URL', ->
     it 'returns an URL to a preview page', (done) ->
       @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
         expect(publicUrl.isDirect).to.equal false
         expect(publicUrl.url).not.to.contain '//db.tt/'
@@ -460,14 +464,14 @@ buildClientTests = (clientKeys) ->
         # The contents server does not return CORS headers.
         return done() unless @nodejs
         Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.contain '<!DOCTYPE html>'
           done()
 
   describe 'makeUrl for a direct download URL', ->
     it 'gets a direct download URL', (done) ->
       @client.makeUrl @textFile, { download: true }, (error, publicUrl) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
         expect(publicUrl.isDirect).to.equal true
         expect(publicUrl.url).not.to.contain '//db.tt/'
@@ -475,7 +479,7 @@ buildClientTests = (clientKeys) ->
         # The contents server does not return CORS headers.
         return done() unless @nodejs
         Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.equal @textFileData
           done()
 
@@ -491,7 +495,7 @@ buildClientTests = (clientKeys) ->
       @timeout @timeoutValue
 
       @client.pullChanges (error, changes) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(changes).to.be.instanceOf Dropbox.PulledChanges
         expect(changes.blankSlate).to.equal true
 
@@ -501,7 +505,7 @@ buildClientTests = (clientKeys) ->
           @timeoutValue += 2 * 1000  # 2 extra seconds per call
           @timeout @timeoutValue
           client.pullChanges changes, (error, _changes) ->
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             changes = _changes
             drainEntries client, callback
         drainEntries @client, =>
@@ -509,12 +513,12 @@ buildClientTests = (clientKeys) ->
           @newFile = "#{@testFolder}/delta-test.txt"
           newFileData = "This file is used to test the pullChanges method.\n"
           @client.writeFile @newFile, newFileData, (error, stat) =>
-            expect(error).to.equal undefined
+            expect(error).to.equal null
             expect(stat).to.have.property 'path'
             expect(stat.path).to.equal @newFile
 
             @client.pullChanges changes, (error, changes) =>
-              expect(error).to.equal undefined
+              expect(error).to.equal null
               expect(changes).to.be.instanceof Dropbox.PulledChanges
               expect(changes.blankSlate).to.equal false
               expect(changes.changes).to.have.length.greaterThan 0
@@ -536,7 +540,7 @@ buildClientTests = (clientKeys) ->
     it 'reads the image into a string', (done) ->
       @timeout 12 * 1000  # Thumbnail generation is slow.
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(data).to.be.a 'string'
         expect(data).to.contain 'PNG'
         if @node_js
@@ -551,7 +555,7 @@ buildClientTests = (clientKeys) ->
       @timeout 12 * 1000  # Thumbnail generation is slow.
       options = { png: true, blob: true }
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
-        expect(error).to.equal undefined
+        expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
         if @node_js
           # Stat is not available in the browser due to CORS restrictions.
@@ -578,8 +582,8 @@ describe 'DropboxClient with Folder access', ->
       @timeout 30 * 1000  # Time-consuming because the user must click.
       @client.reset()
       @client.authDriver authDriver
-      @client.authenticate (error, uid) ->
-        expect(error).to.equal undefined
-        expect(uid).to.be.a 'string'
+      @client.authenticate (error, client) =>
+        expect(error).to.equal null
+        expect(client).to.equal @client
         done()
 

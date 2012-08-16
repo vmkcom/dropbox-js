@@ -1,11 +1,10 @@
 describe 'DropboxRedirectDriver', ->
-  beforeEach ->
-    @stub = sinon.stub Dropbox.Drivers.Redirect, 'currentLocation'
-
-  afterEach ->
-    @stub.restore()
-
   describe 'url', ->
+    beforeEach ->
+      @stub = sinon.stub Dropbox.Drivers.Redirect, 'currentLocation'
+    afterEach ->
+      @stub.restore()
+
     it 'adds a query string to a static URL', ->
       @stub.returns 'http://test/file'
       driver = new Dropbox.Drivers.Redirect
@@ -37,6 +36,11 @@ describe 'DropboxRedirectDriver', ->
           equal 'http://test/file?_dropboxjs_scope=not%20default'
 
   describe 'locationToken', ->
+    beforeEach ->
+      @stub = sinon.stub Dropbox.Drivers.Redirect, 'currentLocation'
+    afterEach ->
+      @stub.restore()
+
     it 'returns null if the location does not contain the arg', ->
       @stub.returns 'http://test/file?_dropboxjs_scope=default& ' +
                     'another_token=ab%20cd&oauth_tok=en'
@@ -69,9 +73,10 @@ describe 'DropboxRedirectDriver', ->
       @timeout 30 * 1000  # Time-consuming because the user must click.
 
       listener = (event) ->
-        [error, uid] = JSON.parse event.data
+        [error, credentials] = JSON.parse event.data
         expect(error).to.equal null
-        expect(uid).to.be.a 'string'
+        expect(credentials).to.have.property 'uid'
+        expect(credentials.uid).to.be.a 'string'
         window.removeEventListener 'message', listener
         done()      
 

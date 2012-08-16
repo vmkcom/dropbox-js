@@ -215,17 +215,17 @@ class DropboxXhr
         for i in [0...dirtyText.length]
           bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
         text = bytes.join ''
-        callback undefined, text, metadata
+        callback null, text, metadata
       else
-        callback undefined, xhr.response, metadata
+        callback null, xhr.response, metadata
       return true
     
     text = xhr.responseText or xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         callback undefined, DropboxXhr.urlDecode(text), metadata
+         callback null, DropboxXhr.urlDecode(text), metadata
        when 'application/json', 'text/javascript'
-         callback undefined, JSON.parse(text), metadata
+         callback null, JSON.parse(text), metadata
        else
-          callback undefined, text, metadata
+          callback null, text, metadata
     true

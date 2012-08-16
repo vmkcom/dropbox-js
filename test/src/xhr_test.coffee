@@ -77,7 +77,7 @@ describe 'DropboxXhr', ->
         {},
         oauth_header,
         (error, data) ->
-          expect(error).to.equal undefined
+          expect(error).to.equal null
           expect(data).to.have.property 'oauth_token'
           expect(data).to.have.property 'oauth_token_secret'
           done()
