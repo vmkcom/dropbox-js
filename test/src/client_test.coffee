@@ -374,7 +374,7 @@ buildClientTests = (clientKeys) ->
   describe 'remove', ->
     beforeEach (done) ->
       @newFolder = "#{@testFolder}/folder delete test"
-      @client.mkdir @newFolder, (error, stat) ->
+      @client.mkdir @newFolder, (error, stat) =>
         expect(error).to.equal null
         done()
 
@@ -385,8 +385,18 @@ buildClientTests = (clientKeys) ->
     it 'deletes a folder', (done) ->
       @client.remove @newFolder, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.an 'object'
-        expect(stat).to.have.property 'path'
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFolder
+        @client.stat @newFolder, { removed: true }, (error, stat) =>
+          expect(error).to.equal null
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.isRemoved).to.equal true
+          done()
+
+    it 'deletes a folder when called as unlink', (done) ->
+      @client.unlink @newFolder, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFolder
         @client.stat @newFolder, { removed: true }, (error, stat) =>
           expect(error).to.equal null

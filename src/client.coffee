@@ -437,7 +437,6 @@ class DropboxClient
   # Alias for "history" that matches the HTTP API.
   revisions: (path, options, callback) ->
     @history path, options, callback
-    
 
   # Computes a URL that generates a thumbnail for a file in the user's Dropbox.
   #
@@ -685,6 +684,14 @@ class DropboxClient
     DropboxXhr.request('POST', url, params, null,
         (error, metadata) -> callback error, DropboxStat.parse(metadata))
 
+  # node.js-friendly alias for "remove".
+  unlink: (path, callback) ->
+    @remove path, callback
+
+  # Alias for "remove" that matches the HTTP API.
+  delete: (path, callback) ->
+    @remove path, callback
+    
   # Copies a file or folder in the user's Dropbox.
   #
   # This method's "from" parameter can be either a path or a copy reference

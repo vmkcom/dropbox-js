@@ -24,6 +24,10 @@ describe 'DropboxStat', ->
         expect(@stat).to.have.property 'path'
         expect(@stat.path).to.equal '/Getting_Started.pdf'
 
+      it 'parses name correctly', ->
+        expect(@stat).to.have.property 'name'
+        expect(@stat.name).to.equal 'Getting_Started.pdf'
+
       it 'parses inAppFolder corectly', ->
         expect(@stat).to.have.property 'inAppFolder'
         expect(@stat.inAppFolder).to.equal true
@@ -94,9 +98,13 @@ describe 'DropboxStat', ->
         }
         @stat = Dropbox.Stat.parse metadata
 
-      it 'parses the path correctly', ->
+      it 'parses path correctly', ->
         expect(@stat).to.have.property 'path'
         expect(@stat.path).to.equal '/Public'
+
+      it 'parses name correctly', ->
+        expect(@stat).to.have.property 'name'
+        expect(@stat.name).to.equal 'Public'
 
       it 'parses inAppFolder corectly', ->
         expect(@stat).to.have.property 'inAppFolder'

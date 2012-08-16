@@ -16,6 +16,9 @@ class DropboxStat
   #     Dropbox or to the application's folder
   path: undefined
 
+  # @return {String} the name of this file or folder
+  name: undefined
+
   # @return {Boolean} if true, the file or folder's path is relative to the
   #     application's folder; otherwise, the path is relative to the user's
   #     Dropbox
@@ -80,6 +83,9 @@ class DropboxStat
   #     called "metadata" in the API documentation
   constructor: (metadata) ->
     @path = metadata.path
+    nameSlash = @path.lastIndexOf '/'
+    @name = @path.substring nameSlash + 1
+
     @isFolder = metadata.is_dir || false
     @isFile = !@isFolder
     @isRemoved = metadata.is_deleted || false
