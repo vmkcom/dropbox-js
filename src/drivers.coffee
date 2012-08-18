@@ -40,11 +40,16 @@ class DropboxRedirectDriver
   # Sets up the redirect-based OAuth driver.
   #
   # @param {?Object} options the advanced settings below
+  # @option options {Boolean} useHash if true, the page will receive OAuth
+  #     data in the fragment part of the URL (the string following the #,
+  #     available as document.location.hash); by default, the page receives
+  #     OAuth data as query parameters
   # @option options {String} scope embedded in the localStorage key that holds
   #     the authentication data; useful for having multiple OAuth tokens in a
   #     single application
   constructor: (options) ->
     @scope = options?.scope or 'default'
+    @useHash = options?.useHash or false
     @storageKey = "dropbox-auth:#{@scope}"
     @receiverUrl = @computeUrl options
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
@@ -77,10 +82,13 @@ class DropboxRedirectDriver
       locationPair = location.split '#', 2
       location = locationPair[0]
       fragment = locationPair[1]
-    if location.indexOf('?') is -1
-      location += "?#{querySuffix}"  # No query string in the URL.
+    if @useHash
+      fragment = "?#{querySuffix}"
     else
-      location += "&#{querySuffix}"  # The URL already has a query string.
+      if location.indexOf('?') is -1
+        location += "?#{querySuffix}"  # No query string in the URL.
+      else
+        location += "&#{querySuffix}"  # The URL already has a query string.
 
     if fragment
       location + '#' + fragment
