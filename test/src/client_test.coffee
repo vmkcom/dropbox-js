@@ -109,10 +109,12 @@ buildClientTests = (clientKeys) ->
 
   describe 'getUserInfo', ->
     it 'returns reasonable information', (done) ->
-      @client.getUserInfo (error, userInfo) ->
+      @client.getUserInfo (error, userInfo, rawUserInfo) ->
         expect(error).to.equal null
         expect(userInfo).to.be.instanceOf Dropbox.UserInfo
         expect(userInfo.uid).to.equal clientKeys.uid
+        expect(rawUserInfo).not.to.be.instanceOf Dropbox.UserInfo
+        expect(rawUserInfo).to.have.property 'uid'
         done()
 
   describe 'mkdir', ->
@@ -254,16 +256,21 @@ buildClientTests = (clientKeys) ->
 
   describe 'readdir', ->
     it 'retrieves a Stat and entries for a folder', (done) ->
-      @client.readdir @testFolder, (error, stat, entries) =>
+      @client.readdir @testFolder, (error, entries, dir_stat, entry_stats) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
-        expect(stat.path).to.equal @testFolder
-        expect(stat.isFolder).to.equal true
         expect(entries).to.be.ok
         expect(entries).to.have.length 2
-        expect(entries[0]).to.be.instanceOf Dropbox.Stat
-        expect(entries[0].path).not.to.equal @testFolder
-        expect(entries[0].path).to.have.string @testFolder
+        expect(entries[0]).to.be.a 'string'
+        expect(entries[0]).not.to.have.string '/'
+        expect(entries[0]).to.match /^(test-binary-image.png)|(test-file.txt)$/
+        expect(dir_stat).to.be.instanceOf Dropbox.Stat
+        expect(dir_stat.path).to.equal @testFolder
+        expect(dir_stat.isFolder).to.equal true
+        expect(entry_stats).to.be.ok
+        expect(entry_stats).to.have.length 2
+        expect(entry_stats[0]).to.be.instanceOf Dropbox.Stat
+        expect(entry_stats[0].path).not.to.equal @testFolder
+        expect(entry_stats[0].path).to.have.string @testFolder
         done()
 
   describe 'history', ->
@@ -470,7 +477,7 @@ buildClientTests = (clientKeys) ->
         expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
         expect(publicUrl.isDirect).to.equal false
         expect(publicUrl.url).not.to.contain '//db.tt/'
-        
+
         # The contents server does not return CORS headers.
         return done() unless @nodejs
         Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->

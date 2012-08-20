@@ -34,7 +34,7 @@ class DropboxClient
     @authServer = options.authServer or @apiServer.replace('api.', 'www.')
     @fileServer = options.fileServer or
         @apiServer.replace('api.', 'api-content.')
-    
+
     @setupUrls()
 
   # Plugs in the OAuth / application integration code.
@@ -76,7 +76,7 @@ class DropboxClient
        @authState isnt DropboxClient.DONE
       value.authState = @authState
     value
-      
+
   # Authenticates the app's user to Dropbox' API server.
   #
   # @param {function(?Dropbox.ApiError, ?Dropbox.Client)} callback called when
@@ -127,22 +127,24 @@ class DropboxClient
 
         when DropboxClient.ERROR  # An error occurred during authentication.
           callback @authError
-    
+
     _fsmStep()  # Start up the state machine.
     @
 
   # Retrieves information about the logged in user.
   #
-  # @params {function(?Dropbox.ApiError, ?Dropbox.UserInfo)} callback called
-  #     with the result of the /account/info HTTP request; if the call
-  #     succeeds, the second parameter is a Dropbox.UserInfo instance, and the
-  #     first parameter is null
+  # @params {function(?Dropbox.ApiError, ?Dropbox.UserInfo, ?Object)} callback
+  #     called with the result of the /account/info HTTP request; if the call
+  #     succeeds, the second parameter is a Dropbox.UserInfo instance, the
+  #     third parameter is the parsed JSON data behind the Dropbox.UserInfo
+  #     instance, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   getUserInfo: (callback) ->
     url = @urls.accountInfo
     params = @oauth.addAuthParams 'GET', url, {}
     DropboxXhr.request('GET', url, params, null,
-        (error, userData) -> callback error, DropboxUserInfo.parse(userData))
+        (error, userData) ->
+          callback error, DropboxUserInfo.parse(userData), userData)
 
   # Retrieves the contents of a file stored in Dropbox.
   #
@@ -171,7 +173,7 @@ class DropboxClient
       options = null
 
     url = "#{@urls.getFile}/#{@urlEncodePath(path)}"
-    
+
     params = {}
     responseType = null
     if options
@@ -215,7 +217,7 @@ class DropboxClient
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
-    
+
     # Break down the path into a file/folder name and the containing folder.
     slashIndex = path.lastIndexOf '/'
     if slashIndex is -1
@@ -239,7 +241,7 @@ class DropboxClient
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
     #       signing the request; the code below works as intended
     delete params.file
-    
+
     fileField =
       name: 'file',
       value: data,
@@ -286,7 +288,7 @@ class DropboxClient
       callback = options
       options = null
 
-    url = "#{@urls.metadata}/#{@urlEncodePath(path)}"  
+    url = "#{@urls.metadata}/#{@urlEncodePath(path)}"
     params = {}
     if options
       if options.version?
@@ -334,12 +336,13 @@ class DropboxClient
   #     instead of returning the contents; a folder's version identifier can be
   #     obtained from the versionTag attribute of a Dropbox.Stat instance
   #     describing it
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat, ?Array<Dropbox.Stat>)}
-  #     callback called with the result of the /metadata HTTP request; if the
-  #     call succeeds, the second parameter is a Dropbox.Stat instance
-  #     describing the file / folder, the third parameter is an array of
-  #     Dropbox.Stat instances describing the folder's entries, and the first
-  #     parameter is null
+  # @param {function(?Dropbox.ApiError, ?Array<String>, ?Dropbox.Stat,
+  #                  ?Array<Dropbox.Stat>)} callback called with the result of
+  #     the /metadata HTTP request; if the call succeeds, the second parameter
+  #     is an array containing the names of the files and folders in the given
+  #     folder, the third parameter is a Dropbox.Stat instance describing the
+  #     folder, the fourth parameter is an array of Dropbox.Stat instances
+  #     describing the folder's entries, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readdir: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -352,7 +355,12 @@ class DropboxClient
         statOptions.readDir = options.limit
       if options.versionTag
         statOptions.versionTag = options.versionTag
-    @stat path, statOptions, callback
+    @stat path, statOptions, (error, stat, entry_stats) ->
+      if entry_stats
+        entries = (entry_stat.name for entry_stat in entry_stats)
+      else
+        entries = null
+      callback error, entries, stat, entry_stats
 
 
   # Alias for "stat" that matches the HTTP API.
@@ -382,7 +390,7 @@ class DropboxClient
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
-    
+
     path = @urlEncodePath path
     if options and options.download
       isDirect = true
@@ -691,7 +699,7 @@ class DropboxClient
   # Alias for "remove" that matches the HTTP API.
   delete: (path, callback) ->
     @remove path, callback
-    
+
   # Copies a file or folder in the user's Dropbox.
   #
   # This method's "from" parameter can be either a path or a copy reference
@@ -719,7 +727,7 @@ class DropboxClient
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
-    
+
     params = { root: @fileRoot, to_path: @normalizePath(toPath) }
     if from instanceof DropboxCopyReference
       params.from_copy_ref = from.tag
@@ -743,13 +751,13 @@ class DropboxClient
   #     the result of the /fileops/move HTTP request; if the call succeeds, the
   #     second parameter is a Dropbox.Stat instance describing the moved
   #     file or folder at its new location, and the first parameter is
-  #     null 
+  #     null
   # @return {XMLHttpRequest} the XHR object used for this API call
   move: (fromPath, toPath, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
-    
+
     fromPath = @normalizePath fromPath
     toPath = @normalizePath toPath
     url = @urls.fileopsMove
@@ -775,16 +783,16 @@ class DropboxClient
   # not be used directly.
   setupUrls: ->
     @fileRoot = if @sandbox then 'sandbox' else 'dropbox'
-    
-    @urls = 
+
+    @urls =
       # Authentication.
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
       accessToken: "#{@apiServer}/1/oauth/access_token"
-      
+
       # Accounts.
       accountInfo: "#{@apiServer}/1/account/info"
-      
+
       # Files and metadata.
       getFile: "#{@fileServer}/1/files/#{@fileRoot}"
       postFile: "#{@fileServer}/1/files/#{@fileRoot}"
@@ -798,12 +806,12 @@ class DropboxClient
       media: "#{@apiServer}/1/media/#{@fileRoot}"
       copyRef: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
       thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
-      
+
       # File operations.
       fileopsCopy: "#{@apiServer}/1/fileops/copy"
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
-      fileopsMove: "#{@apiServer}/1/fileops/move" 
+      fileopsMove: "#{@apiServer}/1/fileops/move"
 
   # authState value for a client that experienced an authentication error.
   @ERROR: 0
@@ -830,7 +838,7 @@ class DropboxClient
   # This is an internal method. It is used by all the client methods that take
   # paths as arguments.
   #
-  # @param {String} path a path 
+  # @param {String} path a path
   normalizePath: (path) ->
     if path.substring(0, 1) is '/'
       i = 1
@@ -850,7 +858,7 @@ class DropboxClient
   requestToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.requestToken, {}
     DropboxXhr.request 'POST', @urls.requestToken, params, null, callback
-  
+
   # The URL for /oauth/authorize, embedding the user's token.
   #
   # @private

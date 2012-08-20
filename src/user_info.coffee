@@ -27,7 +27,7 @@ class DropboxUserInfo
   #     returned by the authentication process
   uid: undefined
 
-  # @return {String} 
+  # @return {String}
   referralUrl: undefined
 
   # @return {Number} the maximum amount of bytes that the user can store
