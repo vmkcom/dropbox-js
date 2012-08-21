@@ -14,35 +14,40 @@ class DropboxUserInfo
       userInfo
 
   # @return {String} the user's name, in a form that is fit for display
-  name: undefined
+  name: null
 
   # @return {?String} the user's email; this is not in the official API
   #     documentation, so it might not be supported
-  email: undefined
+  email: null
 
   # @return {?String} two-letter country code, or null if unavailable
-  countryCode: undefined
+  countryCode: null
 
   # @return {String} unique ID for the user; this ID matches the unique ID
   #     returned by the authentication process
-  uid: undefined
+  uid: null
 
   # @return {String}
-  referralUrl: undefined
+  referralUrl: null
+
+  # Specific to applications whose access type is "public app folder".
+  #
+  # @return {String} prefix for URLs to the application's files
+  publicAppUrl: null
 
   # @return {Number} the maximum amount of bytes that the user can store
-  quota: undefined
+  quota: null
 
   # @return {Number} the number of bytes taken up by the user's data
-  usedQuota: undefined
+  usedQuota: null
 
   # @return {Number} the number of bytes taken up by the user's data that is
   #     not shared with other users
-  privateBytes: undefined
+  privateBytes: null
 
   # @return {Number} the number of bytes taken up by the user's data that is
   #     shared with other users
-  sharedBytes: undefined
+  sharedBytes: null
 
   # Creates a UserInfo instance from a raw API response.
   #
@@ -57,6 +62,15 @@ class DropboxUserInfo
     @email = userInfo.email
     @countryCode = userInfo.country or null
     @uid = userInfo.uid.toString()
+    if userInfo.public_app_url
+      @publicAppUrl = userInfo.public_app_url
+      lastIndex = @publicAppUrl.length - 1
+      # Strip any trailing /, to make path joining predictable.
+      if lastIndex >= 0 and @publicAppUrl.substring(lastIndex) is '/'
+        @publicAppUrl = @publicAppUrl.substring 0, lastIndex
+    else
+      @publicAppUrl = null
+
     @referralUrl = userInfo.referral_link
     @quota = userInfo.quota_info.quota
     @privateBytes = userInfo.quota_info.normal or 0

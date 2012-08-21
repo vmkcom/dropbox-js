@@ -40,18 +40,21 @@ describe 'DropboxUserInfo', ->
       it 'parses quota correctly', ->
         expect(@userInfo).to.have.property 'quota'
         expect(@userInfo.quota).to.equal 107374182400000
-        
+
       it 'parses usedQuota correctly', ->
         expect(@userInfo).to.have.property 'usedQuota'
         expect(@userInfo.usedQuota).to.equal 933770288436
-        
+
       it 'parses privateBytes correctly', ->
         expect(@userInfo).to.have.property 'privateBytes'
         expect(@userInfo.privateBytes).to.equal 680031877871
-        
+
       it 'parses sharedBytes correctly', ->
         expect(@userInfo).to.have.property 'usedQuota'
         expect(@userInfo.sharedBytes).to.equal 253738410565
+
+      it 'parses publicAppUrl correctly', ->
+        expect(@userInfo.publicAppUrl).to.equal null
 
     it 'passes null through', ->
       expect(Dropbox.UserInfo.parse(null)).to.equal null
@@ -59,3 +62,23 @@ describe 'DropboxUserInfo', ->
     it 'passes undefined through', ->
       expect(Dropbox.UserInfo.parse(undefined)).to.equal undefined
 
+    describe 'on real data from a "public app folder" application', ->
+      beforeEach ->
+        userData = {
+          "referral_link": "https://www.dropbox.com/referrals/NTM1OTg4MTA5",
+          "display_name": "Victor Costan",
+          "uid": 87654321,  # Anonymized.
+          "public_app_url": "https://dl-web.dropbox.com/spa/90vw6zlu4268jh4/",
+          "country": "US",
+          "quota_info": {
+            "shared": 6074393565,
+            "quota": 73201090560,
+            "normal": 4684642723
+          },
+          "email": "spam@gmail.com"  # Anonymized.
+        }
+        @userInfo = Dropbox.UserInfo.parse userData
+
+      it 'parses publicAppUrl correctly', ->
+        expect(@userInfo.publicAppUrl).to.
+          equal 'https://dl-web.dropbox.com/spa/90vw6zlu4268jh4'
