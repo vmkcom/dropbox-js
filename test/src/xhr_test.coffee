@@ -17,13 +17,9 @@ describe 'DropboxXhr', ->
           expect(error).to.have.property 'status'
           expect(error).to.have.property 'responseText'
           expect(error).to.have.property 'response'
-          if @node_js
-            expect(error.status).to.equal 401  # Bad OAuth request.
-            expect(error.responseText).to.be.a 'string'
-            expect(error.response).to.be.an 'object'
-          else
-            # Errors don't return CORS headers, we can't read them in browsers.
-            null
+          expect(error.status).to.equal 401  # Bad OAuth request.
+          expect(error.responseText).to.be.a 'string'
+          expect(error.response).to.be.an 'object'
           expect(error.toString()).to.match /^Dropbox API error/
           expect(error.toString()).to.contain 'POST'
           expect(error.toString()).to.contain @url
@@ -131,16 +127,16 @@ describe 'DropboxXhr', ->
   describe '#urlEncode', ->
     it 'iterates properly', ->
       expect(Dropbox.Xhr.urlEncode({foo: 'bar', baz: 5})).to.
-        equal 'baz=5&foo=bar' 
+        equal 'baz=5&foo=bar'
     it 'percent-encodes properly', ->
       expect(Dropbox.Xhr.urlEncode({'a +x()': "*b'"})).to.
-        equal 'a%20%2Bx%28%29=%2Ab%27' 
+        equal 'a%20%2Bx%28%29=%2Ab%27'
 
   describe '#urlDecode', ->
     it 'iterates properly', ->
       decoded = Dropbox.Xhr.urlDecode('baz=5&foo=bar')
-      expect(decoded['baz']).to.equal '5' 
-      expect(decoded['foo']).to.equal 'bar' 
+      expect(decoded['baz']).to.equal '5'
+      expect(decoded['foo']).to.equal 'bar'
     it 'percent-decodes properly', ->
       decoded = Dropbox.Xhr.urlDecode('a%20%2Bx%28%29=%2Ab%27')
       expect(decoded['a +x()']).to.equal "*b'"

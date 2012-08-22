@@ -249,9 +249,7 @@ buildClientTests = (clientKeys) ->
         expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'status'
-        if @node_js
-          # Browsers can't access the error status due to buggy CORS headers.
-          expect(error.status).to.equal 404
+        expect(error.status).to.equal 404
         done()
 
   describe 'readdir', ->
@@ -372,8 +370,8 @@ buildClientTests = (clientKeys) ->
             expect(error).to.be.ok
             expect(error).to.have.property 'status'
             if @node_js
-              # Can't read errors in the browser, due to CORS server bugs.
-              expect(error).status.to.equal 404
+              # The api-contents server does not return CORS headers on errors.
+              expect(error.status).to.equal 404
             expect(data).to.equal undefined
             expect(stat).to.equal undefined
             done()
