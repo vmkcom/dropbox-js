@@ -10,9 +10,9 @@ modern browsers and in server-side code running under
 This library is tested against the following JavaScript platforms
 
 * node.js 0.8
-* Chrome 20
-* Firefox 12
-* Internet Explorer 8, 9, 10
+* Chrome 20+
+* Firefox 12+
+* Internet Explorer 8+
 
 
 ## Installation
@@ -40,32 +40,59 @@ TBD
 
 ## Development
 
-The library is written using [CoffeeScript](http://coffeescript.org/), packaged
-using [uglify.js](https://github.com/mishoo/UglifyJS/), and tested using
-[mocha](http://visionmedia.github.com/mocha/).
+The library is written using [CoffeeScript](http://coffeescript.org/), built
+using [cake](http://coffeescript.org/documentation/docs/cake.html), minified
+using [uglify.js](https://github.com/mishoo/UglifyJS/), tested using
+[mocha](http://visionmedia.github.com/mocha/) and
+[chai.js](http://chaijs.com/), and packaged using [npm](https://npmjs.org/).
 
+### Dev Environment Setup
 
-### Running the Tests
-
-First install [node.js](http://nodejs.org/#download) to get `npm` (the node
+Install [node.js](http://nodejs.org/#download) to get `npm` (the node
 package manager), then use it to install the libraries required by the test
-suite. Last, use `cake` to get a Dropbox token that will be used by tests.
+suite.
 
 ```bash
-git clone https://github.com/pwnall/dropbox-sdk.git
+git clone https://github.com/dropbox/dropbox-sdk.git
 cd dropbox-sdk
-npm install -g coffee-script mocha uglify-js
+npm install -g coffee-script mocha uglify-js  # Prefix with sudo if necessary.
 npm install
-cake token
 ```
 
-After the one-time setup is completed, you can run the node.js tests and/or
-the browser tests.
+### Build
+
+Run `npm pack` and ignore the deprecation warnings.
+
+```bash
+npm pack
+```
+
+The build output is in the `lib/` directory. `dropbox.js` is the compiled
+library that ships in the npm package, and `dropbox.min.js` is a minified
+version, optimized for browser apps.
+
+### Test
+
+First, you will need to obtain a couple of Dropbox tokens that will be used by
+the automated tests.
+
+```bash
+cake tokens
+```
+
+Re-run the command above if the tests fail due to authentication errors.
+
+Once you have Dropbox tokens, you can run the test suite in node.js or in your
+default browser.
 
 ```bash
 cake test
 cake webtest
 ```
+
+The library is automatically re-built when running tests, so you don't need to
+run `npm pack`. Please run the tests in both node.js and a browser before
+submitting pull requests.
 
 
 ## Copyright and License

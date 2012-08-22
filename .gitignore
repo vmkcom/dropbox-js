@@ -16,5 +16,8 @@ lib/dropbox.min.js
 test/js
 tmp/*.js
 
+# Node packaging output.
+dropbox-*.tgz
+
 # Login credentials used for testing.
 test/.token

@@ -1,6 +1,7 @@
 {spawn, exec} = require 'child_process'
 fs = require 'fs'
 log = console.log
+remove = require 'remove'
 
 task 'build', ->
   build()
@@ -8,28 +9,27 @@ task 'build', ->
 task 'test', ->
   vendor ->
     build ->
-      token ->
+      tokens ->
         run 'mocha --colors --require test/js/helper.js test/js/*test.js'
 
 task 'webtest', ->
   vendor ->
     build ->
-      token ->
+      tokens ->
         webFileServer = require './test/js/web_file_server.js'
         webFileServer.openBrowser()
-    
+
 task 'docs', ->
   run 'docco src/*.coffee'
-  
+
 task 'vendor', ->
+  remove.removeSync './test/vendor', ignoreMissing: true
   vendor()
 
-task 'token', ->
+task 'tokens', ->
+  remove.removeSync './test/.token', ignoreMissing: true
   build ->
-    TokenStash = require './test/js/token_stash.js'
-    tokenStash = new TokenStash
-    tokenStash.deleteStash()
-    token ->
+    tokens ->
       process.exit 0
 
 build = (callback) ->
@@ -64,7 +64,7 @@ vendor = (callback) ->
       download 'http://sinonjs.org/releases/sinon-ie.js',
                'test/vendor/sinon-ie.js', callback
 
-token = (callback) ->
+tokens = (callback) ->
   TokenStash = require './test/js/token_stash.js'
   tokenStash = new TokenStash
   (new TokenStash()).get ->
@@ -78,7 +78,7 @@ run = (args...) ->
         if a instanceof Array then params = a
         else options = a
       when 'function' then callback = a
-  
+
   command += ' ' + params.join ' ' if params?
   cmd = spawn '/bin/sh', ['-c', command], options
   cmd.stdout.on 'data', (data) -> process.stdout.write data

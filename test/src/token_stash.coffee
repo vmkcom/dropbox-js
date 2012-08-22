@@ -16,7 +16,7 @@ class TokenStash
     if @getCache
       callback @getCache
       return null
-    
+
     @liveLogin (fullCredentials, sandboxCredentials) =>
       unless fullCredentials and sandboxCredentials
         throw new Error('Dropbox API authorization failed')
@@ -59,7 +59,7 @@ class TokenStash
     }
 
   # Reads the file containing the access credentials, if it is available.
-  # 
+  #
   # @return {Object?} parsed access credentials, or null if they haven't been
   #     stashed
   readStash: ->
@@ -77,23 +77,17 @@ class TokenStash
          "window.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
     @fs.writeFileSync @jsPath, js
 
-  # Removes the stashed access credentials.
-  deleteStash: ->
-    @fs.unlinkSync @jsonPath if @fs.exists @jsonPath
-    @fs.unlinkSync @jsPath if @fs.exists @jsPath
-    @fs.rmdirSync @dirPath if @fs.exists @dirPath
-
   # Sets up a node.js server-based authentication driver.
   setupAuth: ->
     return if @authDriver
 
     Dropbox = require '../../lib/dropbox'
     @authDriver = new Dropbox.Drivers.NodeServer
-  
+
   # Shuts down the node.js server behind the authentication server.
   killAuth: ->
     return unless @authDriver
-    
+
     @authDriver.closeServer()
     @authDriver = null
 

@@ -13,9 +13,17 @@ node_modules
 # Vendored javascript modules.
 test/vendor
 
+# Minified library and .gitkeep.
+lib/.gitkeep
+lib/dropbox.min.js
+
 # Test build output.
 test/js
 tmp/*.js
 
+# Test app logos.
+test/app_icon
+
 # Login credentials used for testing.
 test/.token
+
