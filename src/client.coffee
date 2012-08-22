@@ -30,10 +30,9 @@ class DropboxClient
     @authError = null
 
     @sandbox = options.sandbox or false
-    @apiServer = options.server or 'https://api.dropbox.com'
-    @authServer = options.authServer or @apiServer.replace('api.', 'www.')
-    @fileServer = options.fileServer or
-        @apiServer.replace('api.', 'api-content.')
+    @apiServer = options.server or @defaultApiServer()
+    @authServer = options.authServer or @defaultAuthServer()
+    @fileServer = options.fileServer or @defaultFileServer()
 
     @setupUrls()
 
@@ -75,6 +74,12 @@ class DropboxClient
        @authState isnt DropboxClient.RESET and
        @authState isnt DropboxClient.DONE
       value.authState = @authState
+    if @apiServer isnt @defaultApiServer()
+      value.server = @apiServer
+    if @authServer isnt @defaultAuthServer()
+      value.authServer = @authServer
+    if @fileServer isnt @defaultFileServer()
+      value.fileServer = @fileServer
     value
 
   # Authenticates the app's user to Dropbox' API server.
@@ -882,4 +887,16 @@ class DropboxClient
   getAccessToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
     DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
+
+  # @return {String} the URL to the default value for the "server" option
+  defaultApiServer: ->
+    'https://api.dropbox.com'
+
+  # @return {String} the URL to the default value for the "authServer" option
+  defaultAuthServer: ->
+    @apiServer.replace 'api.', 'www.'
+
+  # @return {String} the URL to the default value for the "fileServer" option
+  defaultFileServer: ->
+    @apiServer.replace 'api.', 'api-content.'
 
