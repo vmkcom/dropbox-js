@@ -369,9 +369,7 @@ buildClientTests = (clientKeys) ->
           @client.readFile @moveFrom, (error, data, stat) ->
             expect(error).to.be.ok
             expect(error).to.have.property 'status'
-            if @node_js
-              # The api-contents server does not return CORS headers on errors.
-              expect(error.status).to.equal 404
+            expect(error.status).to.equal 404
             expect(data).to.equal undefined
             expect(stat).to.equal undefined
             done()
