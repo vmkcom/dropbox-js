@@ -1,10 +1,17 @@
+# dropbox.js Development
+
+Read this document if you want to modify the source of dropbox.js itself. If
+you want to write applications using dropbox.js, check out the
+[Getting Started](getting_started.md).
+
 The library is written using [CoffeeScript](http://coffeescript.org/), built
 using [cake](http://coffeescript.org/documentation/docs/cake.html), minified
 using [uglify.js](https://github.com/mishoo/UglifyJS/), tested using
 [mocha](http://visionmedia.github.com/mocha/) and
 [chai.js](http://chaijs.com/), and packaged using [npm](https://npmjs.org/).
 
-### Dev Environment Setup
+
+## Dev Environment Setup
 
 Install [node.js](http://nodejs.org/#download) to get `npm` (the node
 package manager), then use it to install the libraries required by the test
@@ -17,7 +24,7 @@ npm install -g coffee-script mocha uglify-js  # Prefix with sudo if necessary.
 npm install
 ```
 
-### Build
+## Build
 
 Run `npm pack` and ignore the deprecation warnings.
 
@@ -29,7 +36,7 @@ The build output is in the `lib/` directory. `dropbox.js` is the compiled
 library that ships in the npm package, and `dropbox.min.js` is a minified
 version, optimized for browser apps.
 
-### Test
+## Test
 
 First, you will need to obtain a couple of Dropbox tokens that will be used by
 the automated tests.

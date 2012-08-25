@@ -18,6 +18,11 @@ class DropboxClient
   #     should never be set by hand, however it may be returned by calls to
   #     credentials()
   constructor: (options) ->
+    @sandbox = options.sandbox or false
+    @apiServer = options.server or @defaultApiServer()
+    @authServer = options.authServer or @defaultAuthServer()
+    @fileServer = options.fileServer or @defaultFileServer()
+
     @oauth = new DropboxOauth options
     @uid = options.uid or null
     if options.authState and options.authState isnt DropboxClient.ERROR
@@ -28,11 +33,7 @@ class DropboxClient
       else
         @authState = DropboxClient.RESET
     @authError = null
-
-    @sandbox = options.sandbox or false
-    @apiServer = options.server or @defaultApiServer()
-    @authServer = options.authServer or @defaultAuthServer()
-    @fileServer = options.fileServer or @defaultFileServer()
+    @computeCredentials()
 
     @setupUrls()
 
@@ -62,25 +63,8 @@ class DropboxClient
   # @return {Object} a plain object whose properties can be passed to the
   #     Dropbox.Client constructor to reuse this client's login credentials
   credentials: ->
-    value =
-      key: @oauth.key
-      secret: @oauth.secret
-      sandbox: @sandbox
-    if @oauth.token
-      value.token = @oauth.token
-      value.tokenSecret = @oauth.tokenSecret
-      value.uid = @uid
-    if @authState isnt DropboxClient.ERROR and
-       @authState isnt DropboxClient.RESET and
-       @authState isnt DropboxClient.DONE
-      value.authState = @authState
-    if @apiServer isnt @defaultApiServer()
-      value.server = @apiServer
-    if @authServer isnt @defaultAuthServer()
-      value.authServer = @authServer
-    if @fileServer isnt @defaultFileServer()
-      value.fileServer = @fileServer
-    value
+    @computeCredentials() unless @_credentials
+    @_credentials
 
   # Authenticates the app's user to Dropbox' API server.
   #
@@ -98,6 +82,7 @@ class DropboxClient
             if token
               @oauth.setToken token, tokenSecret
               @authState = DropboxClient.REQUEST
+              @_credentials = null
               return _fsmStep()
           @requestToken (error, data) =>
             if error
@@ -108,12 +93,14 @@ class DropboxClient
               tokenSecret = data.oauth_token_secret
               @oauth.setToken token, tokenSecret
               @authState = DropboxClient.REQUEST
+            @_credentials = null
             _fsmStep()
 
         when DropboxClient.REQUEST  # Have request token, get it authorized.
           authUrl = @authorizeUrl @oauth.token
           @authDriver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
             @authState = DropboxClient.AUTH
+            @_credentials = null
             _fsmStep()
 
         when DropboxClient.AUTH  # Authorized request token -> access token.
@@ -125,6 +112,7 @@ class DropboxClient
               @oauth.setToken data.oauth_token, data.oauth_token_secret
               @uid = data.uid
               @authState = DropboxClient.DONE
+            @_credentials = null
             _fsmStep()
 
         when DropboxClient.DONE  # We have an access token.
@@ -899,4 +887,26 @@ class DropboxClient
   # @return {String} the URL to the default value for the "fileServer" option
   defaultFileServer: ->
     @apiServer.replace 'api.', 'api-content.'
+
+  # Computes the cached value returned by credentials.
+  computeCredentials: ->
+    value =
+      key: @oauth.key
+      secret: @oauth.secret
+      sandbox: @sandbox
+    if @oauth.token
+      value.token = @oauth.token
+      value.tokenSecret = @oauth.tokenSecret
+      value.uid = @uid
+    if @authState isnt DropboxClient.ERROR and
+       @authState isnt DropboxClient.RESET and
+       @authState isnt DropboxClient.DONE
+      value.authState = @authState
+    if @apiServer isnt @defaultApiServer()
+      value.server = @apiServer
+    if @authServer isnt @defaultAuthServer()
+      value.authServer = @authServer
+    if @fileServer isnt @defaultFileServer()
+      value.fileServer = @fileServer
+    @_credentials = value
 

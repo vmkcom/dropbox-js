@@ -16,7 +16,7 @@ class DropboxAuthDriver
   #     Dropbox' servers
   # @param {String} token the OAuth token that the user is authorizing; this
   #     will be provided by the Dropbox servers as a query parameter when the
-  #     user is redirected to the URL returned by the driver's url() method 
+  #     user is redirected to the URL returned by the driver's url() method
   # @param {String} tokenSecret the secret associated with the given OAuth
   #     token; the driver may store this together with the token
   # @param {function()} callback called when users have completed the
@@ -101,7 +101,7 @@ class DropboxRedirectDriver
   #     the user accessed this directly, without having authorized a token
   locationToken: ->
     location = DropboxRedirectDriver.currentLocation()
-    
+
     # Check for the scope.
     scopePattern = "_dropboxjs_scope=#{encodeURIComponent @scope}&"
     return null if location.indexOf?(scopePattern) is -1
@@ -240,7 +240,7 @@ class DropboxNodeServerDriver
     @fs = require 'fs'
     @http = require 'http'
     @open = require 'open'
-    
+
     @callbacks = {}
     @urlRe = new RegExp "^/oauth_callback\\?"
     @tokenRe = new RegExp "(\\?|&)oauth_token=([^&]+)(&|$)"
@@ -250,7 +250,7 @@ class DropboxNodeServerDriver
   url: ->
     "http://localhost:#{@port}/oauth_callback"
 
-  # Opens the token 
+  # Opens the token
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
     @callbacks[token] = callback
     @openBrowser authUrl
