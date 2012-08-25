@@ -83,8 +83,10 @@ class DropboxStat
   #     called "metadata" in the API documentation
   constructor: (metadata) ->
     @path = metadata.path
-    lastIndex = @path.length - 1
+    # Ensure there is a trailing /, to make path processing reliable.
+    @path = '/' + @path if @path.substring(0, 1) isnt '/'
     # Strip any trailing /, to make path joining predictable.
+    lastIndex = @path.length - 1
     if lastIndex >= 0 and @path.substring(lastIndex) is '/'
       @path = @path.substring 0, lastIndex
 

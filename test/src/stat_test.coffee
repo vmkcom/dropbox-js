@@ -169,7 +169,7 @@ describe 'DropboxStat', ->
           "bytes": 230783,
           "modified": "Tue, 19 Jul 2011 21:55:38 +0000",
           "client_mtime": "Mon, 18 Jul 2011 18:04:35 +0000",
-          "path": "/path/to/a/file/named/Getting_Started.pdf/",
+          "path": "path/to/a/file/named/Getting_Started.pdf/",
           "is_dir": false,
           "icon": "page_white_acrobat",
           "root": "app_folder",  # Changed to test app_folder code path.
