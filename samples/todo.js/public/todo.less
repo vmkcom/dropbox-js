@@ -1,0 +1,117 @@
+// vim: set tabstop=2 shiftwidth=2 softtabstop=2 expandtab :
+
+html, body {
+  width: 600px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+#error-notice {
+  display: block;
+  color: hsl(0, 75%, 33%);
+  border: 1px solid hsl(0, 50%, 50%);
+  border-top: none;
+  font-size: 12pt;
+  font-family: Cambria, Georgia, serif;
+  line-height: 1.3;
+  text-align: center;
+  margin: 0;
+  padding: 0.2em 0 0.1em 0;
+
+  #error-refresh-button {
+    margin: 0;
+    border: none;
+    background: none;
+    text-decoration: underline;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    display: inline;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  &.hidden {
+    display: none;
+  }
+}
+
+h1 {
+  font-family: "Arial Black", "Arial Bold", Gadget, sans-serif;
+  font-size: 18pt;
+  font-weight: bold;
+  line-height: 1.5;
+  text-align: center;
+
+  margin: 0;
+  padding: 0.5em 0 0 0;
+}
+
+#app-ui {
+  border: 1px solid hsl(0, 0%, 33%);
+  border-top: none;
+
+  h2 {
+    font-family: "Arial Black", "Arial Bold", Gadget, sans-serif;
+    font-size: 14pt;
+    font-weight: bold;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0.4em 0.5em 0 1em;
+  }
+  #new-task-form {
+    #new-task-name {
+      font-family: inherit;
+      font-size: inherit;
+      line-height: 1.2;
+      border: 1px solid hsl(0, 0%, 90%);
+    }
+  }
+  .task-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;  
+  }
+  .task {
+    font-size: 13pt;
+    line-height: 1.6;
+    border-bottom: 1px solid hsl(0, 0%, 85%);
+    padding: 0 15px 0 10px;
+    vertical-align: middle;
+
+    span.task-name {
+      display: inline-block;
+    }
+    .task-name {
+      width: 390px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      vertical-align: middle;
+    }
+    .task-actions {
+      width: 178px;
+      display: inline-block;
+      text-align: right;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    &:hover {
+      background-color: hsl(0, 0%, 97%);
+    }
+  }
+  .task:first-child {
+    border-top: 1px solid hsl(0, 0%, 85%);
+  }
+}
+
+footer {
+  font-size: 10pt;
+  text-align: center;
+  padding-top: 0.2em;
+}
+
+.hidden {
+  display: none;
+}

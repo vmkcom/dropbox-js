@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- vim: set tabstop=2 shiftwidth=2 softtabstop=2 expandtab : -->
+<html>
+  <head>
+    <title>To Do - Powered by Dropbox</title>
+    <link rel="icon" type="image/png" href="images/icon16.png" />
+    <link rel="stylesheet/less" type="text/css" href="./todo.less" />
+    <script type="text/javascript" src="lib/less.js"></script>
+    <script type="text/javascript" src="lib/coffee-script.js"></script>
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/dropbox.js"></script>
+    <script type="text/coffeescript" src="./todo.coffee"></script>
+  </head>
+  <body>
+    <header>
+      <aside id="error-notice" class="hidden">
+        <form action="" method="GET">
+          Something went wrong. Please
+          <button type="submit" id="error-refresh-button">
+            reload the app
+          </button>
+        </form>
+      </aside>
+    </header>
+    <article id="app-ui" class="hidden">
+      <header>
+        <h1>"To Do" Sample App</h1>
+      </header>
+      <section id="new-task-form">
+        <form action="" method="GET" id="new-task-form" class="task">
+          <input type="text" id="new-task-name" class="task-name"
+                 required="required" placeholder="Buy milk" />
+           <button type="submit" id="new-task-button">
+             <img src="images/add.png" /> Add
+           </button>
+        </form>
+      </section>
+      <h2>Active</h2>
+      <ol class="task-list" id="active-task-list"></ol>
+      <h2>Done</h2>
+      <ol class="task-list" id="done-task-list"></ol>
+    </article>
+    <footer>
+      <p>Powered by your Dropbox</p>
+    </footer>
+
+    <script type="text/html" id="task-template">
+      <li class="task">
+        <span class="task-name" />
+        <span class="task-actions">
+          <button type="button" class="task-done-button">
+            <img src="images/done.png" /> Done
+          </button>
+          <button type="button" class="task-active-button">
+            <img src="images/not_done.png" /> Not Done
+          </button>
+          <button type="button" class="task-remove-button">
+            <img src="images/remove.png" /> Delete
+          </button>
+        </span>
+      </li>
+    </script>
+  </body>
+</html>
