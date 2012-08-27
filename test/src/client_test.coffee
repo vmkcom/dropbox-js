@@ -176,6 +176,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'writeFile', ->
     afterEach (done) ->
+      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
@@ -498,6 +499,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'pullChanges', ->
     afterEach (done) ->
+      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 

@@ -36,6 +36,7 @@ The build output is in the `lib/` directory. `dropbox.js` is the compiled
 library that ships in the npm package, and `dropbox.min.js` is a minified
 version, optimized for browser apps.
 
+
 ## Test
 
 First, you will need to obtain a couple of Dropbox tokens that will be used by
@@ -63,3 +64,23 @@ The tests store all their data in folders named along the lines of
 `js tests.0.ac1n6lgs0e3lerk9`. If tests fail, you might have to clean up these
 folders yourself.
 
+
+## Testing Chrome Extension
+
+The test suite opens up a couple of Dropbox authorization pages, and a page
+that cannot close itself. dropbox.js ships with a Google Chrome extension that
+can fully automate the testing process on Chrome.
+
+The extension is written in CoffeeScript, so you will have to compile it.
+
+```bash
+cake extension
+```
+
+After compilation, have Chrome load the unpacked extension at
+`test/chrome_extension` and click on the scary-looking toolbar icon to activate
+the extension. The icon's color should turn red, to indicate that it is active.
+
+The extension performs some checks to prevent against attacks. However, for
+best results, you should disable the automation (by clicking on the extension
+icon) when you're not testing dropbox.js.

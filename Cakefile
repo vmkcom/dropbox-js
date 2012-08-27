@@ -32,6 +32,9 @@ task 'tokens', ->
     tokens ->
       process.exit 0
 
+task 'extension', ->
+  run 'coffee --compile test/chrome_extension/*.coffee'
+
 build = (callback) ->
   # Compile without --join for decent error messages.
   run 'coffee --output tmp --compile src/*.coffee', ->

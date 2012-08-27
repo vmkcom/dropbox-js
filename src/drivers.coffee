@@ -70,7 +70,10 @@ class DropboxRedirectDriver
 
   # Gets the old request token from localStorage, if it's available.
   presetToken: ->
-    @getStoredToken()
+    if @locationToken()
+      @getStoredToken()
+    else
+      [null, null]
 
   # Pre-computes the return value of url.
   computeUrl: ->

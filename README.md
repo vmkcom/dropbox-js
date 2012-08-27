@@ -33,18 +33,19 @@ npm install dropbox
 ```
 
 If you want to build dropbox.js on your own, read the
-[development guide in `doc`](doc/development.md).
+[development guide](https://github.com/dropbox/dropbox-js/tree/master/doc/development.md).
 
 ## Usage
 
-Read the source code of the [sample apps](samples/), and borrow as much as you
-need.
-
+Read the source code of the
+[sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples),
+and borrow as much as you need.
 
 ## Development
 
-The [development guide in `doc`](doc/development.md) will make your life easier
-if you need to change the source code.
+The
+[development guide](https://github.com/dropbox/dropbox-js/tree/master/doc/development.md)
+will make your life easier if you need to change the source code.
 
 
 ## Copyright and License

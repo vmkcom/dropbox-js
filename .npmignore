@@ -1,5 +1,6 @@
 # Vim.
 *.swp
+.vimrc
 
 # OSX
 .DS_Store
@@ -17,12 +18,17 @@ test/vendor
 lib/.gitkeep
 lib/dropbox.min.js
 
+# Sample apps.
+samples
+
 # Test build output.
 test/js
 tmp/*.js
 
 # Test app logos.
 test/app_icon
+# Test automating Chrome extension.
+test/chrome_extension
 
 # Login credentials used for testing.
 test/.token
