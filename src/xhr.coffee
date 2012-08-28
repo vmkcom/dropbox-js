@@ -1,5 +1,5 @@
 if window?
-  DropboxXhrRequest = window.XMLHttpRequest  
+  DropboxXhrRequest = window.XMLHttpRequest
   # TODO: XDomain for CORS on IE <= 9
 else
   # Node.js needs an adapter for the XHR API.
@@ -10,7 +10,7 @@ class DropboxXhr
   # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
 
-  # Sends off a AJAX request (XMLHttpRequest). 
+  # Sends off a AJAX request (XMLHttpRequest).
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #     'POST', etc)
@@ -66,7 +66,7 @@ class DropboxXhr
     DropboxXhr.xhrRequest method, url, headers, body, responseType, callback
 
   # Upload a file via a mulitpart/form-data method.
-  # 
+  #
   # This is a one-off method for the abomination that is POST /files. We can't
   # use PUT because in browser environments, using it requires a pre-flight
   # request (using the OPTIONS verb) that the API server implement.
@@ -96,7 +96,7 @@ class DropboxXhr
     if useFormData
       headers = {}
       body = new FormData()
-      body.append fileField.name, fileData, fileField.fileName 
+      body.append fileField.name, fileData, fileField.fileName
     else
       fileType = fileField.contentType or 'application/octet-stream'
       boundary = @multipartBoundary()
@@ -144,7 +144,7 @@ class DropboxXhr
 
   # Encodes an associative array (hash) into a x-www-form-urlencoded String.
   #
-  # For consistency, the keys are encoded using 
+  # For consistency, the keys are encoded using
   #
   # @param {Object} object the JavaScript object whose keys will be encoded
   # @return {String} the object's keys and values, encoded using
@@ -156,7 +156,7 @@ class DropboxXhr
     chunks.sort().join '&'
 
   # Encodes an object into a x-www-form-urlencoded key or value.
-  # 
+  #
   # @param {Object} object the object to be encoded; the encoding calls
   #     toString() on the object to obtain its string representation
   # @return {String} encoded string, suitable for use as a key or value in an
@@ -172,9 +172,9 @@ class DropboxXhr
   # @return {Object} an associative array whose keys and values are all strings
   @urlDecode: (string) ->
     result = {}
-    for token in string.split '&' 
+    for token in string.split '&'
       kvp = token.split '='
-      result[decodeURIComponent(kvp[0])] = decodeURIComponent kvp[1] 
+      result[decodeURIComponent(kvp[0])] = decodeURIComponent kvp[1]
     result
 
   # Handles the XHR readystate event.
@@ -219,7 +219,7 @@ class DropboxXhr
       else
         callback null, xhr.response, metadata
       return true
-    
+
     text = xhr.responseText or xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'

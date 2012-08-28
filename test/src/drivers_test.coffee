@@ -7,61 +7,62 @@ describe 'DropboxRedirectDriver', ->
 
     it 'adds a query string to a static URL', ->
       @stub.returns 'http://test/file'
-      driver = new Dropbox.Drivers.Redirect
+      driver = new Dropbox.Drivers.Redirect useQuery: true
       expect(driver.url()).to.
           equal 'http://test/file?_dropboxjs_scope=default'
 
     it 'adds a fragment to a static URL', ->
       @stub.returns 'http://test/file'
-      driver = new Dropbox.Drivers.Redirect useHash: true
+      driver = new Dropbox.Drivers.Redirect
       expect(driver.url()).to.
           equal 'http://test/file#?_dropboxjs_scope=default'
 
     it 'adds a query param to a URL with a query string', ->
       @stub.returns 'http://test/file?a=true'
-      driver = new Dropbox.Drivers.Redirect
+      driver = new Dropbox.Drivers.Redirect useQuery: true
       expect(driver.url()).to.
           equal 'http://test/file?a=true&_dropboxjs_scope=default'
 
     it 'adds a fragment to a URL with a query string', ->
       @stub.returns 'http://test/file?a=true'
-      driver = new Dropbox.Drivers.Redirect useHash: true
+      driver = new Dropbox.Drivers.Redirect
       expect(driver.url()).to.
           equal 'http://test/file?a=true#?_dropboxjs_scope=default'
 
     it 'adds a query string to a static URL with a fragment', ->
       @stub.returns 'http://test/file#frag'
-      driver = new Dropbox.Drivers.Redirect
+      driver = new Dropbox.Drivers.Redirect useQuery: true
       expect(driver.url()).to.
           equal 'http://test/file?_dropboxjs_scope=default#frag'
 
     it 'replaces the fragment in a static URL with a fragment', ->
       @stub.returns 'http://test/file#frag'
-      driver = new Dropbox.Drivers.Redirect useHash: true
+      driver = new Dropbox.Drivers.Redirect
       expect(driver.url()).to.
           equal 'http://test/file#?_dropboxjs_scope=default'
 
     it 'adds a query param to a URL with a query string and fragment', ->
       @stub.returns 'http://test/file?a=true#frag'
-      driver = new Dropbox.Drivers.Redirect
+      driver = new Dropbox.Drivers.Redirect useQuery: true
       expect(driver.url()).to.
           equal 'http://test/file?a=true&_dropboxjs_scope=default#frag'
 
     it 'replaces the fragment in a URL with a query string and fragment', ->
       @stub.returns 'http://test/file?a=true#frag'
-      driver = new Dropbox.Drivers.Redirect useHash: true
+      driver = new Dropbox.Drivers.Redirect
       expect(driver.url()).to.
           equal 'http://test/file?a=true#?_dropboxjs_scope=default'
 
     it 'obeys the scope option', ->
       @stub.returns 'http://test/file'
-      driver = new Dropbox.Drivers.Redirect scope: 'not default'
+      driver = new Dropbox.Drivers.Redirect(
+          scope: 'not default', useQuery: true)
       expect(driver.url()).to.
           equal 'http://test/file?_dropboxjs_scope=not%20default'
 
     it 'obeys the scope option when adding a fragment', ->
       @stub.returns 'http://test/file'
-      driver = new Dropbox.Drivers.Redirect scope: 'not default', useHash: true
+      driver = new Dropbox.Drivers.Redirect scope: 'not default'
       expect(driver.url()).to.
           equal 'http://test/file#?_dropboxjs_scope=not%20default'
 
@@ -131,7 +132,7 @@ describe 'DropboxRedirectDriver', ->
         expect(credentials).to.have.property 'uid'
         expect(credentials.uid).to.be.a 'string'
         window.removeEventListener 'message', listener
-        done()      
+        done()
 
       window.addEventListener 'message', listener
       (new Dropbox.Drivers.Popup()).openWindow(

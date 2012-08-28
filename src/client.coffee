@@ -179,7 +179,6 @@ class DropboxClient
       if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
     @oauth.addAuthParams 'GET', url, params
-    # TODO: read the metadata from the x-dropbox-metadata header
     DropboxXhr.request2('GET', url, params, null, responseType,
         (error, data, metadata) ->
           callback error, data, DropboxStat.parse(metadata))

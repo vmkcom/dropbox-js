@@ -7,14 +7,14 @@
   "author": "Victor Costan <victor@costan.us> (http://www.costan.us)",
   "license": "MIT",
   "contributors": [
-    "Aakanksha Sarda"
+    "Aakanksha Sarda <aaki@mit.edu>"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/dropbox/dropbox-sdk.git"
   },
   "engines": {
-    "node": ">= 0.8.6"
+    "node": ">= 0.8.8"
   },
   "dependencies": {
     "open": ">= 0.0.2",
@@ -24,7 +24,7 @@
     "chai": ">= 1.2.0",
     "coffee-script": ">= 1.3.3",
     "express": ">= 3.0.0rc3",
-    "mocha": ">= 1.3.2",
+    "mocha": ">= 1.4.0",
     "remove": ">= 0.1.5",
     "sinon": ">= 1.4.2",
     "sinon-chai": ">= 2.1.2",

@@ -25,7 +25,7 @@ base64Sha1 = (string) ->
 # @return {Array} the HMAC output, as an array of 32-bit numbers
 hmacSha1 = (string, key, length, keyLength) ->
   if key.length > 16
-    key = sha1 key, keyLength 
+    key = sha1 key, keyLength
 
   ipad = (key[i] ^ 0x36363636 for i in [0...16])
   opad = (key[i] ^ 0x5C5C5C5C for i in [0...16])
@@ -37,7 +37,7 @@ hmacSha1 = (string, key, length, keyLength) ->
 #
 # @param {Array} string the SHA1 input, as an array of 32-bit numbers; the
 #     computation trashes the array
-# @param {Number} length the number of bytes in the SHA1 input; used in the 
+# @param {Number} length the number of bytes in the SHA1 input; used in the
 #     SHA1 padding algorithm
 # @return {Number} the SHA1 output, as an array of 32-bit numbers
 sha1 = (string, length) ->
@@ -138,7 +138,7 @@ arrayToBase64 = (array) ->
     trit |= ((array[i2 >> 2] >> ((3 - (i2 & 3)) << 3)) & 0xFF) << 8
     i2 += 1
     trit |= (array[i2 >> 2] >> ((3 - (i2 & 3)) << 3)) & 0xFF
-    
+
     string += _base64Digits[(trit >> 18) & 0x3F]
     string += _base64Digits[(trit >> 12) & 0x3F]
     i += 1

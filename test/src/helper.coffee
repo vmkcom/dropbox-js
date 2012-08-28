@@ -6,7 +6,7 @@ if global? and require? and module?
   exports.chai = require 'chai'
   exports.sinon = require 'sinon'
   exports.sinonChai = require 'sinon-chai'
-  
+
   exports.authDriver = new Dropbox.Drivers.NodeServer 8912
 
   TokenStash = require './token_stash.js'
@@ -32,8 +32,6 @@ if global? and require? and module?
 else
   # Browser
   exports = window
-  
-  # TODO: figure out authentication without popups
   exports.authDriver =
       new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 

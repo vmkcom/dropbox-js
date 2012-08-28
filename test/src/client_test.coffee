@@ -348,6 +348,7 @@ buildClientTests = (clientKeys) ->
         done()
 
     afterEach (done) ->
+      @timeout 5 * 1000  # This sequence is slow on the current API server.
       @client.remove @moveFrom, (error, stat) =>
         return done() unless @moveTo
         @client.remove @moveTo, (error, stat) -> done()
