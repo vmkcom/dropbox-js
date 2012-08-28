@@ -179,7 +179,7 @@ class DropboxClient
       if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request2('GET', url, params, null, responseType,
+    DropboxXhr.request2('GET', url, params, null, null, responseType,
         (error, data, metadata) ->
           callback error, data, DropboxStat.parse(metadata))
 
@@ -210,6 +210,17 @@ class DropboxClient
       callback = options
       options = null
 
+    useForm = DropboxXhr.canSendForms and typeof data is 'object'
+    if useForm
+      @writeFileUsingForm path, data, options, callback
+    else
+      @writeFileUsingPut path, data, options, callback
+
+  # writeFile implementation that uses the POST /files API.
+  #
+  # This method is more demanding in terms of CPU and browser support, but does
+  # not require CORS preflight, so it always completes in 1 HTTP request.
+  writeFileUsingForm: (path, data, options, callback) ->
     # Break down the path into a file/folder name and the containing folder.
     slashIndex = path.lastIndexOf '/'
     if slashIndex is -1
@@ -240,6 +251,26 @@ class DropboxClient
       fileName: fileName
       contentType: 'application/octet-stream'
     DropboxXhr.multipartRequest(url, fileField, params, null,
+        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+
+  # writeFile implementation that uses the /files_put API.
+  #
+  # This method is less demanding on CPU, and makes fewer assumptions about
+  # browser support, but it takes 2 HTTP requests for binary files, because it
+  # needs CORS preflight.
+  writeFileUsingPut: (path, data, options, callback) ->
+    url = "#{@urls.putFile}/#{@urlEncodePath(path)}"
+    params = {}
+    if options
+      if options.noOverwrite
+        params.overwrite = 'false'
+      if options.lastVersionTag
+        params.parent_rev = options.lastVersionTag
+      else if options.parentRev or options.parent_rev
+        params.parent_rev = options.parentRev or options.parent_rev
+    # TODO: locale support would edit the params here
+    @oauth.addAuthParams 'POST', url, params
+    DropboxXhr.request2('POST', url, params, null, data, null,
         (error, metadata) -> callback error, DropboxStat.parse(metadata))
 
   # Reads the metadata of a file or folder in a user's Dropbox.
@@ -511,7 +542,7 @@ class DropboxClient
     responseType = 'b'
     if options
       responseType = 'blob' if options.blob
-    DropboxXhr.request2('GET', url, {}, null, responseType,
+    DropboxXhr.request2('GET', url, {}, null, null, responseType,
         (error, data, metadata) ->
           callback error, data, DropboxStat.parse(metadata))
 

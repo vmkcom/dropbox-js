@@ -26,7 +26,7 @@ buildClientTests = (clientKeys) ->
     if Blob? and (test.node_js or
                   window.navigator.userAgent.indexOf('Gecko') isnt -1)
       testImageServerOn()
-      Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
+      Dropbox.Xhr.request2('GET', testImageUrl, {}, null, null, 'blob',
           (error, blob) =>
             testImageServerOff()
             expect(error).to.equal null
@@ -143,8 +143,7 @@ buildClientTests = (clientKeys) ->
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData
-        if @node_js
-          # Stat is not available in the browser due to CORS restrictions.
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @textFile
           expect(stat.isFile).to.equal true
@@ -154,8 +153,7 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, { binary: true }, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @imageFileData
-        if @node_js
-          # Stat is not available in the browser due to CORS restrictions.
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
@@ -166,8 +164,7 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, { blob: true }, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        if @node_js
-          # Stat is not available in the browser due to CORS restrictions.
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
@@ -196,8 +193,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          if @node_js
-            # Stat is not available in the browser due to CORS restrictions.
+          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
@@ -208,6 +204,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'stat', ->
     it 'retrieves a Stat for a file', (done) ->
+      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       @client.stat @textFile, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -253,8 +250,9 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.equal undefined
         expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
-        expect(error).to.have.property 'status'
-        expect(error.status).to.equal 404
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal 404
         done()
 
   describe 'readdir', ->
@@ -303,15 +301,13 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          if @node_js
-            # Stat is not available in the browser due to CORS restrictions.
+          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
           @client.readFile @textFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            if @node_js
-              # Stat is not available in the browser due to CORS restrictions.
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @textFile
               expect(stat.versionTag).to.equal @textFileTag
@@ -337,8 +333,7 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            if @node_js
-              # Stat is not available in the browser due to CORS restrictions.
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @newFile
             done()
@@ -368,16 +363,17 @@ buildClientTests = (clientKeys) ->
         @client.readFile @moveTo, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          if @node_js
-            # Stat is not available in the browser due to CORS restrictions.
+          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @moveTo
           @client.readFile @moveFrom, (error, data, stat) ->
             expect(error).to.be.ok
-            expect(error).to.have.property 'status'
-            expect(error.status).to.equal 404
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+              expect(error).to.have.property 'status'
+              expect(error.status).to.equal 404
             expect(data).to.equal undefined
-            expect(stat).to.equal undefined
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+              expect(stat).to.equal undefined
             done()
 
   describe 'remove', ->
@@ -445,8 +441,7 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            if @node_js
-              # Stat is not available in the browser due to CORS restrictions.
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isRemoved).to.equal false
@@ -563,8 +558,7 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(data).to.be.a 'string'
         expect(data).to.contain 'PNG'
-        if @node_js
-          # Stat is not available in the browser due to CORS restrictions.
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
@@ -577,8 +571,7 @@ buildClientTests = (clientKeys) ->
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        if @node_js
-          # Stat is not available in the browser due to CORS restrictions.
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true

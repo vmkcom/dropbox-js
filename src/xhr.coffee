@@ -1,16 +1,28 @@
 if window?
   if window.XDomainRequest and not ('withCredentials' of new XMLHttpRequest())
     DropboxXhrRequest = window.XDomainRequest
+    DropboxXhrIeMode = true
+    DropboxXhrCanSendForms = false
   else
     DropboxXhrRequest = window.XMLHttpRequest
+    DropboxXhrIeMode = false
+    # Firefox doesn't support adding named files to FormData.
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=690659
+    DropboxXhrCanSendForms =
+      window.navigator.userAgent.indexOf('Firefox') is -1
 else
   # Node.js needs an adapter for the XHR API.
   DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
+  DropboxXhrIeMode = false
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class DropboxXhr
   # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
+  # Set to true when using the XDomainRequest API.
+  @ieMode = DropboxXhrIeMode
+  # Set to true if the browser has proper support for FormData.
+  @canSendForms = DropboxXhrCanSendForms
 
   # Sends off a AJAX request (XMLHttpRequest).
   #
@@ -28,7 +40,7 @@ class DropboxXhr
   #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request: (method, url, params, authHeader, callback) ->
-    @request2 method, url, params, authHeader, null, callback
+    @request2 method, url, params, authHeader, null, null, callback
 
   # Sends off an AJAX request and requests a custom response type.
   #
@@ -44,6 +56,8 @@ class DropboxXhr
   # @param {Object} params an associative array (hash) containing the HTTP
   #     request parameters
   # @param {String} authHeader the value of the Authorization header
+  # @param {?Object} body the body to be sent in a non-GET request; should be
+  #     an ArrayBuffer, Blob, or String
   # @param {String} responseType the value that will be assigned to the XHR's
   #     responseType property
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
@@ -52,26 +66,28 @@ class DropboxXhr
   #     instance of the required response type (e.g., String, Blob), and the
   #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
-  @request2: (method, url, params, authHeader, responseType, callback) ->
-    if method is 'GET'
+  @request2: (method, url, params, authHeader, body, responseType, callback) ->
+    paramsInUrl = method is 'GET' or body or @ieMode
+    if paramsInUrl
       queryString = DropboxXhr.urlEncode params
       if queryString.length isnt 0
         url = [url, '?', DropboxXhr.urlEncode(params)].join ''
     headers = {}
     if authHeader
       headers['Authorization'] = authHeader
-    if method is 'POST'
+    if body
+      if typeof body is 'string'
+        headers['Content-Type'] = 'text/plain; charset=utf8'
+    else if !paramsInUrl
       headers['Content-Type'] = 'application/x-www-form-urlencoded'
       body = DropboxXhr.urlEncode params
-    else
-      body = null
     DropboxXhr.xhrRequest method, url, headers, body, responseType, callback
 
   # Upload a file via a mulitpart/form-data method.
   #
-  # This is a one-off method for the abomination that is POST /files. We can't
-  # use PUT because in browser environments, using it requires a pre-flight
-  # request (using the OPTIONS verb) that the API server implement.
+  # This is a one-off method for POST /files. It is rather unwieldy, but it
+  # lets us skip CORS preflight and write binary files in one HTTP request,
+  # given good browser support.
   #
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
   #     that receives the request
@@ -127,12 +143,12 @@ class DropboxXhr
   # @return {XMLHttpRequest} the XHR object created for this request
   @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
-    if 'onreadystatechange' of xhr
-      xhr.onreadystatechange = ->
-        DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
-    else
+    if @ieMode
       xhr.onload = -> DropboxXhr.onLoad xhr, method, url, callback
       xhr.onerror = -> DropboxXhr.onError xhr, method, url, callback
+    else
+      xhr.onreadystatechange = ->
+        DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
 
     xhr.open method, url, true
     if responseType
@@ -141,7 +157,7 @@ class DropboxXhr
           xhr.overrideMimeType 'text/plain; charset=x-user-defined'
       else
         xhr.responseType = responseType
-    if xhr.setRequestHeader
+    unless @ieMode
       for own header, value of headers
         xhr.setRequestHeader header, value
     if body
@@ -240,20 +256,18 @@ class DropboxXhr
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   @onLoad: (xhr, method, url, callback) ->
-    console.log ['onload', xhr]
     text = xhr.responseText
     switch xhr.contentType
      when 'application/x-www-form-urlencoded'
-       callback null, DropboxXhr.urlDecode(text), null
+       callback null, DropboxXhr.urlDecode(text), undefined
      when 'application/json', 'text/javascript'
-       callback null, JSON.parse(text), null
+       callback null, JSON.parse(text), undefined
      else
-        callback null, text, null
+        callback null, text, undefined
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   @onError: (xhr, method, url, callback) ->
-    console.log ['onerror', xhr.status]
     apiError = new DropboxApiError xhr, method, url
     callback apiError
     return true

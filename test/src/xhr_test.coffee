@@ -48,8 +48,7 @@ describe 'DropboxXhr', ->
           expect(data).to.have.property 'oauth_token_secret'
           done()
         )
-      assert.ok xhr instanceof Dropbox.Xhr.Request,
-        'Incorrect Dropbox.Xhr.request return value'
+      expect(xhr).to.be.instanceOf(Dropbox.Xhr.Request)
 
     describe 'with a binary response', ->
       beforeEach ->
@@ -59,9 +58,7 @@ describe 'DropboxXhr', ->
         testImageServerOff()
 
     it 'sends Authorize headers correctly', (done) ->
-      # This test only works in node.js due to CORS issues on Dropbox.
-      unless @node_js
-        return done()
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't set headers.
 
       key = testKeys.key
       secret = testKeys.secret
@@ -69,17 +66,14 @@ describe 'DropboxXhr', ->
       oauth_header = "OAuth oauth_consumer_key=\"#{key}\",oauth_nonce=\"_#{timestamp}\",oauth_signature=\"#{secret}%26\",oauth_signature_method=\"PLAINTEXT\",oauth_timestamp=\"#{timestamp}\",oauth_version=\"1.0\""
 
       xhr = Dropbox.Xhr.request('POST',
-        'https://api.dropbox.com/1/oauth/request_token',
-        {},
-        oauth_header,
-        (error, data) ->
-          expect(error).to.equal null
-          expect(data).to.have.property 'oauth_token'
-          expect(data).to.have.property 'oauth_token_secret'
-          done()
-        )
-      assert.ok xhr instanceof Dropbox.Xhr.Request,
-        'Incorrect request return value'
+          'https://api.dropbox.com/1/oauth/request_token', {}, oauth_header,
+          (error, data) ->
+            expect(error).to.equal null
+            expect(data).to.have.property 'oauth_token'
+            expect(data).to.have.property 'oauth_token_secret'
+            done()
+          )
+      expect(xhr).to.be.instanceOf(Dropbox.Xhr.Request)
 
   describe '#request2', ->
     beforeEach ->
@@ -89,38 +83,30 @@ describe 'DropboxXhr', ->
       testImageServerOff()
 
     it 'retrieves a string where each character is a byte', (done) ->
-      xhr = Dropbox.Xhr.request2('GET',
-        testImageUrl,
-        {},
-        null,
-        'b',
-        (error, data) ->
-          expect(error).to.not.be.ok
-          expect(data).to.be.a 'string'
-          expect(data).to.equal testImageBytes
-          done()
-        )
+      xhr = Dropbox.Xhr.request2('GET', testImageUrl, {}, null, null, 'b',
+          (error, data) ->
+            expect(error).to.not.be.ok
+            expect(data).to.be.a 'string'
+            expect(data).to.equal testImageBytes
+            done()
+          )
       assert.ok xhr instanceof Dropbox.Xhr.Request,
         'Incorrect request2 return value'
 
     it 'retrieves a well-formed Blob', (done) ->
       # Skip this test on IE < 10.
       return done() unless Blob?
-      xhr = Dropbox.Xhr.request2('GET',
-        testImageUrl,
-        {},
-        null,
-        'blob',
-        (error, blob) ->
-          expect(error).to.not.be.ok
-          expect(blob).to.be.instanceOf Blob
-          reader = new FileReader
-          reader.onloadend = ->
-            return unless reader.readyState == FileReader.DONE
-            expect(reader.result).to.equal testImageBytes
-            done()
-          reader.readAsBinaryString blob
-        )
+      xhr = Dropbox.Xhr.request2('GET', testImageUrl, {}, null, null, 'blob',
+          (error, blob) ->
+            expect(error).to.not.be.ok
+            expect(blob).to.be.instanceOf Blob
+            reader = new FileReader
+            reader.onloadend = ->
+              return unless reader.readyState == FileReader.DONE
+              expect(reader.result).to.equal testImageBytes
+              done()
+            reader.readAsBinaryString blob
+          )
       assert.ok xhr instanceof Dropbox.Xhr.Request,
         'Incorrect request2 return value'
 
