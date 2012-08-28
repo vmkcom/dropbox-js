@@ -20,5 +20,7 @@ tmp/*.js
 # Node packaging output.
 dropbox-*.tgz
 
-# Login credentials used for testing.
+# Potentially sensitive credentials and keys used during testing.
 test/.token
+test/ssl
+

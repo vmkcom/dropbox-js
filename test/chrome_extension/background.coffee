@@ -23,14 +23,14 @@ class Automator
   # @return {Boolean} true if the "Authorize" button should be auto-clicked
   shouldAutomateAuth: (url) ->
     return false unless @wired
-    !!(/(\?|&)oauth_callback=http%3A%2F%2Flocalhost%3A891(1|2)%2F/.exec(url))
+    !!(/(\?|&)oauth_callback=https?%3A%2F%2Flocalhost%3A891(1|2)%2F/.exec(url))
 
   # Checks if an OAuth receiver window should be auto-closed.
   # @param {String} url the URL of the OAuth receiver window
   # @return {Boolean} true if the "Authorize" button should be auto-clicked
   shouldAutomateClose: (url) ->
     return false unless @wired
-    !!(/^http:\/\/localhost:8912\/oauth_callback\?/.exec(url))
+    !!(/^https?:\/\/localhost:8912\/oauth_callback\?/.exec(url))
 
   # Sets up all the features that make dropbox.js testing easier.
   wire: ->

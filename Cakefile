@@ -9,18 +9,21 @@ task 'build', ->
 task 'test', ->
   vendor ->
     build ->
-      tokens ->
-        run 'mocha --colors --require test/js/helper.js test/js/*test.js'
+      ssl_cert ->
+        tokens ->
+          run 'mocha --colors --require test/js/helper.js test/js/*test.js'
 
 task 'webtest', ->
   vendor ->
     build ->
-      tokens ->
-        webFileServer = require './test/js/web_file_server.js'
-        webFileServer.openBrowser()
+      ssl_cert ->
+        tokens ->
+          webFileServer = require './test/js/web_file_server.js'
+          webFileServer.openBrowser()
 
-task 'docs', ->
-  run 'docco src/*.coffee'
+task 'cert', ->
+  remove.removeSync 'test/ssl', ignoreMissing: true
+  ssl_cert()
 
 task 'vendor', ->
   remove.removeSync './test/vendor', ignoreMissing: true
@@ -44,10 +47,19 @@ build = (callback) ->
         run 'coffee --output test/js --compile test/src/*.coffee',
             callback
 
+ssl_cert = (callback) ->
+  fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'
+  if fs.existsSync 'test/ssl/cert.pem'
+    callback() if callback?
+    return
+
+  run 'openssl req -new -x509 -days 365 -nodes -batch ' +
+      '-out test/ssl/cert.pem -keyout test/ssl/cert.pem ' +
+      '-subj /O=dropbox.js/OU=Testing/CN=localhost ', callback
+
 vendor = (callback) ->
   # All the files will be dumped here.
-  unless fs.existsSync 'test/vendor'
-    fs.mkdirSync 'test/vendor'
+  fs.mkdirSync 'test/vendor' unless fs.existsSync 'test/vendor'
 
   # Embed the binary test image into a 7-bit ASCII JavaScript.
   bytes = fs.readFileSync 'test/binary/dropbox.png'

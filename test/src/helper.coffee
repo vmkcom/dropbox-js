@@ -35,7 +35,7 @@ else
   exports.authDriver =
       new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html'
 
-  exports.testImageUrl = 'http://localhost:8911/test/binary/dropbox.png'
+  exports.testImageUrl = '/test/binary/dropbox.png'
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
 

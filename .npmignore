@@ -30,6 +30,7 @@ test/app_icon
 # Test automating Chrome extension.
 test/chrome_extension
 
-# Login credentials used for testing.
+# Potentially sensitive credentials and keys used during testing.
 test/.token
+test/ssl
 

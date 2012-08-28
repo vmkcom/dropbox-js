@@ -1,6 +1,8 @@
 if window?
-  DropboxXhrRequest = window.XMLHttpRequest
-  # TODO: XDomain for CORS on IE <= 9
+  if window.XDomainRequest and not ('withCredentials' of new XMLHttpRequest())
+    DropboxXhrRequest = window.XDomainRequest
+  else
+    DropboxXhrRequest = window.XMLHttpRequest
 else
   # Node.js needs an adapter for the XHR API.
   DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
@@ -125,8 +127,13 @@ class DropboxXhr
   # @return {XMLHttpRequest} the XHR object created for this request
   @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
-    xhr.onreadystatechange = ->
-      DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
+    if 'onreadystatechange' of xhr
+      xhr.onreadystatechange = ->
+        DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
+    else
+      xhr.onload = -> DropboxXhr.onLoad xhr, method, url, callback
+      xhr.onerror = -> DropboxXhr.onError xhr, method, url, callback
+
     xhr.open method, url, true
     if responseType
       if responseType is 'b'
@@ -134,8 +141,9 @@ class DropboxXhr
           xhr.overrideMimeType 'text/plain; charset=x-user-defined'
       else
         xhr.responseType = responseType
-    for own header, value of headers
-      xhr.setRequestHeader header, value
+    if xhr.setRequestHeader
+      for own header, value of headers
+        xhr.setRequestHeader header, value
     if body
       xhr.send body
     else
@@ -229,3 +237,23 @@ class DropboxXhr
        else
           callback null, text, metadata
     true
+
+  # Handles the XDomainRequest onload event. (IE 8, 9)
+  @onLoad: (xhr, method, url, callback) ->
+    console.log ['onload', xhr]
+    text = xhr.responseText
+    switch xhr.contentType
+     when 'application/x-www-form-urlencoded'
+       callback null, DropboxXhr.urlDecode(text), null
+     when 'application/json', 'text/javascript'
+       callback null, JSON.parse(text), null
+     else
+        callback null, text, null
+    true
+
+  # Handles the XDomainRequest onload event. (IE 8, 9)
+  @onError: (xhr, method, url, callback) ->
+    console.log ['onerror', xhr.status]
+    apiError = new DropboxApiError xhr, method, url
+    callback apiError
+    return true

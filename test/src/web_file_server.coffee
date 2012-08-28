@@ -1,5 +1,6 @@
 express = require 'express'
 fs = require 'fs'
+https = require 'https'
 open = require 'open'
 
 # Tiny express.js server for the Web files.
@@ -15,7 +16,7 @@ class WebFileServer
 
   # The URL that should be used to start the tests.
   testUrl: ->
-    "http://localhost:#{@port}/test/html/browser_test.html"
+    "https://localhost:#{@port}/test/html/browser_test.html"
 
   # The server code.
   createApp: ->
@@ -25,7 +26,9 @@ class WebFileServer
 
     @app.use express.static(fs.realpathSync(__dirname + '/../../'),
                             { hidden: true })
-    @app.listen @port
+    options = key: fs.readFileSync 'test/ssl/cert.pem'
+    options.cert = options.key
+    https.createServer(options, @app).listen @port
 
 module.exports = new WebFileServer
 

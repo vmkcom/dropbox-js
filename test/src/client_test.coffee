@@ -20,7 +20,11 @@ buildClientTests = (clientKeys) ->
   setupImageFile = (test, done) ->
     test.imageFile = "#{test.testFolder}/test-binary-image.png"
     test.imageFileData = testImageBytes
-    if Blob?
+
+    # Firefox has a bug that makes writing binary files fail.
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=649150
+    if Blob? and (test.node_js or
+                  window.navigator.userAgent.indexOf('Gecko') isnt -1)
       testImageServerOn()
       Dropbox.Xhr.request2('GET', testImageUrl, {}, null, 'blob',
           (error, blob) =>
@@ -28,7 +32,7 @@ buildClientTests = (clientKeys) ->
             expect(error).to.equal null
             test.__client.writeFile test.imageFile, blob, (error, stat) ->
               expect(error).to.equal null
-              test.imageFileTag = stat.rev
+              test.imageFileTag = stat.versionTag
               done()
           )
     else

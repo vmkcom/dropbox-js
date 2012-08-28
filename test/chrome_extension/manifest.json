@@ -9,8 +9,9 @@
     "128": "images/icon128.png"
   },
   "permissions": [
-    "https://www.dropbox.com/1/oauth/authorize*",
     "http://localhost/*",
+    "https://localhost/*",
+    "https://www.dropbox.com/1/oauth/authorize*",
     "contentSettings",
     "storage"
   ],
@@ -28,8 +29,11 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["http://localhost/*"],
-      "include_globs": ["http://localhost:8912/oauth_callback*"],
+      "matches": [
+        "http://localhost/*",
+        "https://localhost/*"
+      ],
+      "include_globs": ["http?://localhost:8912/oauth_callback*"],
       "js": ["content_close.js"],
       "run_at": "document_idle"
     }
