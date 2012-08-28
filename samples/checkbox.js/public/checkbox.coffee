@@ -1,7 +1,7 @@
 # vim: set tabstop=2 shiftwidth=2 softtabstop=2 expandtab :
 
 # Controller/View for the application.
-class ToDo
+class Checkbox
   # @param {Dropbox.Client} dbClient a non-authenticated Dropbox client
   # @param {DOMElement} root the app's main UI element
   constructor: (@dbClient, root) ->
@@ -106,7 +106,7 @@ class ToDo
 
 # Model that wraps all a user's tasks.
 class Tasks
-  # @param {ToDo} controller the application controller
+  # @param {Checkbox} controller the application controller
   constructor: (@controller) ->
     @dbClient = @controller.dbClient
     @active = []
@@ -240,6 +240,6 @@ class Task
 # Start up the code when the DOM is fully loaded.
 $ ->
   client = new Dropbox.Client(
-    key: 'otegu3coioe8mxp', secret: 'dtjryf5b5539m0g', sandbox: true)
+    key: 'ol56zaikdq4kxjx', secret: 'h67t4idg69tuuu5', sandbox: true)
   client.authDriver new Dropbox.Drivers.Redirect(useHash: true)
-  new ToDo client, '#app-ui'
+  new Checkbox client, '#app-ui'

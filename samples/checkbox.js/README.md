@@ -1,11 +1,11 @@
-# dropbox.js Sample Application: To Do List
+# Checkbox, a dropbox.js Sample Application
 
 This application demonstrates the use of the JavaScript client library for the
 Dropbox API to implement a Dropbox-backed To Do list application.
 
-In 70 lines of HTML, and 250 lines of commented CoffeeScript, this application
-lets you store your To Do list in your Dropbox! Just don't expect award winning
-design or usability from a sample application.
+In 70 lines of HTML, and 250 lines of commented CoffeeScript, Checkbox lets you
+store your To Do list in your Dropbox! Just don't expect award winning design
+or usability from a sample application.
 
 
 ## Dropbox Integration
