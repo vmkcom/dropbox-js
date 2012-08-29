@@ -24,25 +24,25 @@
     </header>
     <article id="app-ui" class="hidden">
       <header>
-        <h1>Checkbox</h1>
+        <h1>
+          checkbox
+          <small>powered by <em>dropbox</em></small>
+        </h1>
       </header>
-      <section id="new-task-form">
-        <form action="" method="GET" id="new-task-form" class="task">
+      <div id="notebook-page">
+        <form action="" method="GET" id="new-task-form">
           <input type="text" id="new-task-name" class="task-name"
                  required="required" placeholder="Buy milk" />
            <button type="submit" id="new-task-button">
              <img src="images/add.png" /> Add
            </button>
         </form>
-      </section>
-      <h2>Active</h2>
-      <ol class="task-list" id="active-task-list"></ol>
-      <h2>Done</h2>
-      <ol class="task-list" id="done-task-list"></ol>
+        <h2>Active</h2>
+        <ol class="task-list" id="active-task-list"></ol>
+        <h2>Done</h2>
+        <ol class="task-list" id="done-task-list"></ol>
+      </div>
     </article>
-    <footer>
-      <p>Powered by your Dropbox</p>
-    </footer>
 
     <script type="text/html" id="task-template">
       <li class="task">
@@ -52,7 +52,7 @@
             <img src="images/done.png" /> Done
           </button>
           <button type="button" class="task-active-button">
-            <img src="images/not_done.png" /> Not Done
+            <img src="images/not_done.png" /> Undo
           </button>
           <button type="button" class="task-remove-button">
             <img src="images/remove.png" /> Delete

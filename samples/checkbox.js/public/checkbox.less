@@ -1,8 +1,25 @@
 // vim: set tabstop=2 shiftwidth=2 softtabstop=2 expandtab :
 
+.linear-gradient (@top: #ffffff, @bottom: #000000) {
+  background: @top;
+  background: -moz-linear-gradient(top, @top 0%, @bottom 100%);
+  background: -webkit-linear-gradient(top, @top 0%, @bottom 100%);
+  background: -ms-linear-gradient(top, @top 0%, @bottom 100%);
+  background: linear-gradient(to bottom, @top 0%, @bottom 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='@top',
+      endColorstr='@{bottom}', GradientType=0);
+}
+.border-radius (@radius) {
+  -webkit-border-radius: @radius;
+  -moz-border-radius: @radius;
+  border-radius: @radius;
+}
+
 html, body {
-  width: 600px;
-  margin: 0 auto;
+  .linear-gradient (#ffffff, #f2f7fc);
+
+  min-height: 100%;
+  margin: 0;
   padding: 0;
 }
 
@@ -37,80 +54,186 @@ html, body {
   }
 }
 
-h1 {
-  font-family: "Arial Black", "Arial Bold", Gadget, sans-serif;
-  font-size: 18pt;
-  font-weight: bold;
-  line-height: 1.5;
-  text-align: center;
-
-  margin: 0;
-  padding: 0.5em 0 0 0;
-}
-
 #app-ui {
-  border: 1px solid hsl(0, 0%, 33%);
-  border-top: none;
+  width: 700px;
+  margin: 0 auto;
 
-  h2 {
-    font-family: "Arial Black", "Arial Bold", Gadget, sans-serif;
-    font-size: 14pt;
-    font-weight: bold;
-    line-height: 1.4;
+  h1 {
+    font-family: "Verdana", sans-serif;
+    font-size: 24px;
+    font-weight: 300;
+    line-height: 2;
+    text-transform: lowercase;
+    color: #bfbfbf;
     margin: 0;
-    padding: 0.4em 0.5em 0 1em;
+    padding: 2em 0 0.25em 0;
+
+    small {
+      font-family: "Verdana", sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      text-transform: uppercase;
+      color: #888888;
+
+      em {
+        font-style: normal;
+        color: #649cd1;
+      }
+    }
   }
+
+  #notebook-page {
+    border: 1px solid #aaaaaa;
+    -webkit-border-top-left-radius: 8px;
+    -webkit-border-top-right-radius: 8px;
+    -moz-border-radius-topleft: 8px;
+    -moz-border-radius-topright: 8px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+
+    -webkit-box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
+    -moz-box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
+
+    background-color: #fffddb;
+    margin: 0;
+    padding: 0;
+  }
+  #notebook-page, .task {
+    background-image: -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
+                      -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
+    background-image: -webkit-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
+                      -webkit-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
+    background-position: 70px 0px, 76px 0px;
+    background-size: 1px 100%, 1px 100%;
+    background-repeat: no-repeat, no-repeat;
+  }
+
+  #new-task-form, h2, .task {
+    border-bottom: 1px solid #c9e4f2;
+    font-family: "Helvetica", sans-serif;
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 36px;
+    color: #555555;
+
+    margin: 0;
+    padding: 6px 10px 6px 88px;
+  }
+
   #new-task-form {
+    margin: 0;
+    padding-top: 3em;
+
     #new-task-name {
       font-family: inherit;
       font-size: inherit;
-      line-height: 1.2;
-      border: 1px solid hsl(0, 0%, 90%);
+      line-height: 1.5;
+
+      background: rgb(255, 254, 236);
     }
+    .task-actions {
+      visibility: visible;
+    }
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 400;
+    color: #000000;
   }
   .task-list {
     list-style: none;
     margin: 0;
-    padding: 0;  
+    padding: 0;
   }
   .task {
-    font-size: 13pt;
-    line-height: 1.6;
-    border-bottom: 1px solid hsl(0, 0%, 85%);
-    padding: 0 15px 0 10px;
-    vertical-align: middle;
-
     span.task-name {
       display: inline-block;
     }
-    .task-name {
-      width: 390px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      overflow: hidden;
-      vertical-align: middle;
-    }
-    .task-actions {
-      width: 178px;
-      display: inline-block;
-      text-align: right;
-      vertical-align: middle;
-      line-height: 1;
-    }
     &:hover {
-      background-color: hsl(0, 0%, 97%);
+      background-color: #fffcaf;
+      .task-actions {
+        visibility: visible;
+      }
     }
   }
-  .task:first-child {
-    border-top: 1px solid hsl(0, 0%, 85%);
+  .task-name {
+    width: 383px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    vertical-align: middle;
+  }
+  .task-actions {
+    width: 210px;
+    display: inline-block;
+    text-align: right;
+    vertical-align: middle;
+    line-height: 1;
+    visibility: hidden;
   }
 }
 
-footer {
-  font-size: 10pt;
-  text-align: center;
-  padding-top: 0.2em;
+input[type=text] {
+  display: inline-block;
+  padding: 0.2em 0.25em 0 0.25em;
+
+  border: 1px solid #d2cd70;
+  .border-radius(4px);
+  -webkit-box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  -moz-box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 }
+
+button {
+  display: inline-block;
+  vertical-align: middle;
+  height: 32px;
+  padding: 0 1em;
+
+  border: 1px solid;
+  .border-radius(4px);
+  -webkit-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+  -moz-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
+      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+
+  font-family: "Verdana", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+
+  color: #ffffff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  filter: dropshadow(color=rgba(0, 0, 0, 0.5), offx=1, offy=1);
+
+  img {
+    display: inline-block;
+    vertical-align: -4px;
+  }
+
+  &.task-done-button, &#new-task-button {
+    border-color: #448c42;
+    .linear-gradient(#8ed66b, #58ba6d);
+  }
+
+  &.task-active-button {
+    border-color: #448c42;
+    .linear-gradient(#8ed66b, #58ba6d);
+  }
+
+  &.task-remove-button, &#error-refresh-button {
+    border-color: #a73030;
+    .linear-gradient(#f67f73, #bb5757);
+  }
+}
+
+
 
 .hidden {
   display: none;
