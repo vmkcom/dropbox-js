@@ -1,6 +1,6 @@
 # Getting Started
 
-This is a guide to writing your first `dropbox.js` application.
+This is a guide to writing your first dropbox.js application.
 
 
 ## Library Setup
@@ -10,8 +10,8 @@ This section describes how to get the library hooked up into your application.
 ### Browser Applications
 
 Follow the steps in the
-[development guide](https://github.com/dropbox/dropbox-js/tree/master/doc/development.md).
-to build `dropbox.js` from the most recent sources.
+[development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md).
+to build dropbox.js from the most recent sources.
 
 Place `dropbox.js` and `dropbox.min.js` in the same directory as your
 application's main HTML file, and load it via a `<script>` tag.
@@ -72,7 +72,7 @@ has its requirements, so `dropbox.js` lets you customize the authentication
 process by implementing an
 [OAuth driver](https://github.com/dropbox/dropbox-js/blob/master/src/drivers.coffee).
 
-At the same time, `dropbox.js` ships with a couple of OAuth drivers, and you
+At the same time, dropbox.js ships with a couple of OAuth drivers, and you
 should take advantage of them as you prototype your application.
 
 ### Browser Setup
