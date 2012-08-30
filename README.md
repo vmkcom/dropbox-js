@@ -53,14 +53,12 @@ will make your life easier if you need to change the source code.
 
 Reading and writing binary files is currently broken.
 
-### Firefox
+### Internet Explorer 9
 
-Writing binary files is currently broken due to
-[this bug](https://bugzilla.mozilla.org/show_bug.cgi?id=649150).
+The library only works when used from `https://` pages, due to
+[these issues](http://blogs.msdn.com/b/ieinternals/archive/2010/05/13/xdomainrequest-restrictions-limitations-and-workarounds.aspx).
 
-### Internet Explorer
-
-The library is currently non-functional.
+Reading and writing binary files is unsupported.
 
 
 ## Copyright and License

@@ -18,6 +18,12 @@
   -moz-box-sizing: @sizing;
   box-sizing: @sizing;
 }
+.box-shadow (@offset-x, @offset-y, @blur, @spread, @color) {
+  -webkit-box-shadow: @offset-x @offset-y @blur @spread @color;
+  -moz-box-shadow: @offset-x @offset-y @blur @spread @color;
+  box-shadow: @offset-x @offset-y @blur @spread @color;
+}
+
 .font-verdana () {
   font-family: Verdana, Geneva, sans-serif;
 }
@@ -96,9 +102,7 @@ html, body {
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
 
-    -webkit-box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
-    -moz-box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
-    box-shadow: 0px 0px 10px 5px rgba(0, 0, 0, 0.05);
+    .box-shadow(0, 0, 10px, 5px, rgba(0, 0, 0, 0.05));
 
     background-color: #fffddb;
     margin: 0;
@@ -209,9 +213,7 @@ button {
 
   border: 1px solid;
   .border-radius(4px);
-  -webkit-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
-  -moz-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
+  .box-shadow(0, 2px, -1px, 0, rgba(0, 0, 0, 0.1));
 
   .font-verdana();
   font-size: 13px;
@@ -232,9 +234,7 @@ button {
         inset 0 0 4px rgba(255, 255, 255, 0.6);
   }
   &:focus {
-    -webkit-box-shadow: 0 0 3px 1px #33a0e8;
-    -moz-box-shadow: 0 0 3px 1px #33a0e8;
-    box-shadow: 0 0 3px 1px #33a0e8;
+    .box-shadow(0, 0, 3px, 1px, #33a0e8);
   }
   &:active {
     -webkit-box-shadow: none;
@@ -251,8 +251,6 @@ button {
     border-color: #448c42;
     .linear-gradient(#8ed66b, #58ba6d);
 
-    &:hover {
-    }
     &:active {
       .linear-gradient(#58ba6d, #8ed66b);
     }

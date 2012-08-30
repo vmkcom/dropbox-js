@@ -61,9 +61,8 @@ class Checkbox
       task = new Task()
       task.name = name
       @tasks.addTask task, =>
-        $('#new-task-name').val ''
+        $('#new-task-name').removeAttr('disabled').val ''
         $('#new-task-button').removeAttr 'disabled'
-        $('#new-task-name').removeAttr 'disabled'
         @renderTask task
 
   # Called when the user wants to mark a task as done.
