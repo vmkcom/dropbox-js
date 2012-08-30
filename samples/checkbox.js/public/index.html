@@ -5,38 +5,41 @@
     <title>Checkbox - dropbox.js Sample Application</title>
     <link rel="icon" type="image/png" href="images/icon16.png" />
     <link rel="stylesheet/less" type="text/css" href="./checkbox.less" />
-    <script type="text/javascript" src="lib/less.js"></script>
     <script type="text/javascript" src="lib/coffee-script.js"></script>
-    <script type="text/javascript" src="lib/jquery.js"></script>
     <script type="text/javascript" src="lib/dropbox.js"></script>
+    <script type="text/javascript" src="lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/less.js"></script>
     <script type="text/coffeescript" src="./checkbox.coffee"></script>
   </head>
   <body>
     <aside id="error-notice" class="hidden">
-      <form action="" method="GET">
+      <form action="#" method="GET">
         Something went wrong :(
         <button type="submit" id="error-refresh-button">
-          reload the app
+          <img src="images/not_done.png" /> reload the app
         </button>
       </form>
     </aside>
     <article id="app-ui" class="hidden">
-      <header>
-        <h1>
-          checkbox
-          <small>powered by <em>dropbox</em></small>
-        </h1>
-      </header>
+      <h1>
+        checkbox
+        <small>powered by
+          <a href="https://www.dropbox.com/developers">dropbox</a>
+        </small>
+      </h1>
       <div id="notebook-page">
         <h2 id="active-task-heading">Active</h2>
         <ol class="task-list" id="active-task-list"></ol>
         <form action="" method="GET" id="new-task-form">
           <input type="text" id="new-task-name" class="task-name"
                  required="required" placeholder="e.g., buy milk" />
-           <button type="submit" id="new-task-button">
-             <img src="images/add.png" /> Add
-           </button>
+          <button type="submit" id="new-task-button">
+            <img src="images/add.png" /> Add
+          </button>
         </form>
+        <div class="empty-task">
+          &nbsp;
+        </div>
         <h2 id="done-task-heading">Done</h2>
         <ol class="task-list" id="done-task-list"></ol>
       </div>

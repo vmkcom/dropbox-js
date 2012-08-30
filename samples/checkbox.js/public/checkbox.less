@@ -2,23 +2,34 @@
 
 .linear-gradient (@top: #ffffff, @bottom: #000000) {
   background: @top;
-  background: -moz-linear-gradient(top, @top 0%, @bottom 100%);
+  filter: ~"progid:DXImageTransform.Microsoft.gradient(startColorstr='@{top}', endColorstr='@{bottom}')";
   background: -webkit-linear-gradient(top, @top 0%, @bottom 100%);
+  background: -moz-linear-gradient(top, @top 0%, @bottom 100%);
   background: -ms-linear-gradient(top, @top 0%, @bottom 100%);
   background: linear-gradient(to bottom, @top 0%, @bottom 100%);
-  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='@top',
-      endColorstr='@{bottom}', GradientType=0);
 }
 .border-radius (@radius) {
   -webkit-border-radius: @radius;
   -moz-border-radius: @radius;
   border-radius: @radius;
 }
+.box-sizing (@sizing) {
+  -webkit-box-sizing: @sizing;
+  -moz-box-sizing: @sizing;
+  box-sizing: @sizing;
+}
+.font-verdana () {
+  font-family: Verdana, Geneva, sans-serif;
+}
+.font-helvetica () {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
 
 html, body {
   .linear-gradient (#ffffff, #f2f7fc);
+  background-attachment: fixed;
 
-  min-height: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
 }
@@ -27,15 +38,20 @@ html, body {
   display: block;
   position: absolute;
   width: 100%;
-  box-sizing: border-box;
+  .box-sizing(border-box);
 
   color: hsl(0, 75%, 33%);
   font-size: 12pt;
-  font-family: "Verdana", sans-serif;
+  .font-verdana();
   line-height: 1.5;
   text-align: center;
   margin: 0;
   padding: 0.2em 0 0.1em 0;
+
+  #error-refresh-button {
+    margin: 0 1em;
+    padding: 0 1em;
+  }
 
   &.hidden {
     display: none;
@@ -47,7 +63,7 @@ html, body {
   margin: 0 auto;
 
   h1 {
-    font-family: "Verdana", sans-serif;
+    .font-verdana();
     font-size: 24px;
     font-weight: 300;
     line-height: 2;
@@ -57,15 +73,16 @@ html, body {
     padding: 2em 0 0.25em 0;
 
     small {
-      font-family: "Verdana", sans-serif;
+      .font-verdana();
       font-size: 10px;
       font-weight: 400;
       text-transform: uppercase;
       color: #888888;
 
-      em {
+      a {
         font-style: normal;
         color: #649cd1;
+        text-decoration: none;
       }
     }
   }
@@ -85,21 +102,25 @@ html, body {
 
     background-color: #fffddb;
     margin: 0;
-    padding: 96px 0 60px 0;
+    padding: 48px 0 60px 0;
   }
   #notebook-page, .task {
-    background-image: -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
-                      -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
     background-image: -webkit-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
                       -webkit-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
+    background-image: -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
+                      -moz-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
+    background-image: -ms-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
+                      -ms-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%);
+    background-image: linear-gradient(to bottom, #f3aaaa 0%, #f3aaaa 100%),
+                      linear-gradient(to bottom, #f3aaaa 0%, #f3aaaa 100%);
     background-position: 70px 0px, 76px 0px;
     background-size: 1px 100%, 1px 100%;
     background-repeat: no-repeat, no-repeat;
   }
 
-  #new-task-form, h2, .task {
+  #new-task-form, h2, .task, .empty-task {
     border-bottom: 1px solid #c9e4f2;
-    font-family: "Helvetica", sans-serif;
+    .font-helvetica();
     font-size: 18px;
     font-weight: 300;
     line-height: 36px;
@@ -108,9 +129,6 @@ html, body {
     margin: 0;
     padding: 6px 10px 6px 88px;
   }
-  h2#active-task-heading {
-    border-top: 1px solid #c9e4f2;
-  }
 
   #new-task-form {
     margin: 0;
@@ -118,7 +136,6 @@ html, body {
     #new-task-name {
       font-family: inherit;
       font-size: inherit;
-      line-height: 1.5;
 
       background: rgb(255, 254, 236);
     }
@@ -148,16 +165,15 @@ html, body {
     }
   }
   .task-name {
-    width: 383px;
+    width: 373px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
     vertical-align: middle;
   }
   .task-actions {
-    width: 210px;
+    width: 220px;
     display: inline-block;
-    text-align: right;
     vertical-align: middle;
     line-height: 1;
     visibility: hidden;
@@ -166,7 +182,14 @@ html, body {
 
 input[type=text] {
   display: inline-block;
-  padding: 0.2em 0.25em 0 0.25em;
+  margin: 0;
+  padding: 0 0.25em 0 0.25em;
+  line-height: 30px;
+
+  .box-sizing(border-box);
+  position: relative;
+  left: -4px;
+  height: 32px;
 
   border: 1px solid #d2cd70;
   .border-radius(4px);
@@ -179,51 +202,70 @@ button {
   display: inline-block;
   vertical-align: middle;
   height: 32px;
-  padding: 0 1em;
+  margin: 0;
+  padding: 0;
+  min-width: 104px;
+  cursor: pointer;
 
   border: 1px solid;
   .border-radius(4px);
-  -webkit-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
-  -moz-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
-  box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1),
-      inset 0 -1px 1px 0 rgba(0, 0, 0, 0.2),
-      inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
+  -webkit-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
+  -moz-box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px -1px 0 rgba(0, 0, 0, 0.1);
 
-  font-family: "Verdana", sans-serif;
+  .font-verdana();
   font-size: 13px;
   font-weight: 400;
+  text-align: center;
   text-transform: uppercase;
 
   color: #ffffff;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   filter: dropshadow(color=rgba(0, 0, 0, 0.5), offx=1, offy=1);
 
+  &:hover {
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3),
+        inset 0 0 4px rgba(255, 255, 255, 0.6);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3),
+        inset 0 0 4px rgba(255, 255, 255, 0.6);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3),
+        inset 0 0 4px rgba(255, 255, 255, 0.6);
+  }
+  &:focus {
+    -webkit-box-shadow: 0 0 3px 1px #33a0e8;
+    -moz-box-shadow: 0 0 3px 1px #33a0e8;
+    box-shadow: 0 0 3px 1px #33a0e8;
+  }
+  &:active {
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+  }
+
   img {
     display: inline-block;
     vertical-align: -4px;
   }
 
-  &.task-done-button, &#new-task-button {
+  &.task-done-button, &#new-task-button, &.task-active-button {
     border-color: #448c42;
     .linear-gradient(#8ed66b, #58ba6d);
-  }
 
-  &.task-active-button {
-    border-color: #448c42;
-    .linear-gradient(#8ed66b, #58ba6d);
+    &:hover {
+    }
+    &:active {
+      .linear-gradient(#58ba6d, #8ed66b);
+    }
   }
 
   &.task-remove-button, &#error-refresh-button {
     border-color: #a73030;
     .linear-gradient(#f67f73, #bb5757);
+    &:active {
+      .linear-gradient(#bb5757, #f67f73);
+    }
   }
 }
-
-
 
 .hidden {
   display: none;
