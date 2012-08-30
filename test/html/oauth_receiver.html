@@ -9,7 +9,11 @@
         }
         if (opener) {
           var query = window.location.hash.substring(1);
-          opener.postMessage(query, '*');
+          try {
+            opener.postMessage(query, '*');
+          } catch(e) {
+            // IE doesn't support opener.postMessage for popups.
+          }
           window.close();
         }
       })();

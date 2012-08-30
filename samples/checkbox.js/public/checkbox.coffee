@@ -101,7 +101,7 @@ class Checkbox
 
   # Updates the UI to show that an error has occurred.
   showError: (error) ->
-    $('#error-notice').removeClass 'hiddden'
+    $('#error-notice').removeClass 'hidden'
     console.log error if window.console
 
 # Model that wraps all a user's tasks.

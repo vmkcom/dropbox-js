@@ -15,7 +15,12 @@
           client.authDriver(new Dropbox.Drivers.Redirect());
           client.authenticate(function(error, _client) {
             var message = [error || null, _client && _client.credentials()];
-            opener.postMessage(JSON.stringify(message), '*');
+            var json = JSON.stringify(message);
+            try {
+              opener.postMessage(json, '*');
+            } catch(e) {
+              // IE doesn't support opener.postMessage for popups.
+            }
             window.close();
           });
         }

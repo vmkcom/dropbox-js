@@ -2,6 +2,8 @@ if window?
   if window.XDomainRequest and not ('withCredentials' of new XMLHttpRequest())
     DropboxXhrRequest = window.XDomainRequest
     DropboxXhrIeMode = true
+    # IE's XDR doesn't allow setting requests' Content-Type to anything other
+    # than text/plain, so it can't send _any_ forms.
     DropboxXhrCanSendForms = false
   else
     DropboxXhrRequest = window.XMLHttpRequest
@@ -14,6 +16,9 @@ else
   # Node.js needs an adapter for the XHR API.
   DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
   DropboxXhrIeMode = false
+  # Node.js can definitely send forms, but we don't want it to, because it
+  # isn't subject to CORS and the same origin policy
+  DropboxXhrCanSendForms = false
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class DropboxXhr
@@ -67,7 +72,7 @@ class DropboxXhr
   #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request2: (method, url, params, authHeader, body, responseType, callback) ->
-    paramsInUrl = method is 'GET' or body or @ieMode
+    paramsInUrl = method is 'GET' or body? or @ieMode
     if paramsInUrl
       queryString = DropboxXhr.urlEncode params
       if queryString.length isnt 0
@@ -75,7 +80,7 @@ class DropboxXhr
     headers = {}
     if authHeader
       headers['Authorization'] = authHeader
-    if body
+    if body?
       if typeof body is 'string'
         headers['Content-Type'] = 'text/plain; charset=utf8'
     else if !paramsInUrl
@@ -160,7 +165,7 @@ class DropboxXhr
     unless @ieMode
       for own header, value of headers
         xhr.setRequestHeader header, value
-    if body
+    if body?
       xhr.send body
     else
       xhr.send()
@@ -222,7 +227,10 @@ class DropboxXhr
 
     if responseType
       if responseType is 'b'
-        dirtyText = xhr.responseText or xhr.response
+        dirtyText = if xhr.responseText?
+          xhr.responseText
+        else
+          xhr.response
         ###
         jsString = ['["']
         for i in [0...dirtyText.length]
@@ -244,7 +252,7 @@ class DropboxXhr
         callback null, xhr.response, metadata
       return true
 
-    text = xhr.responseText or xhr.response
+    text = if xhr.responseText? then xhr.responseText else xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
          callback null, DropboxXhr.urlDecode(text), metadata

@@ -199,6 +199,24 @@ buildClientTests = (clientKeys) ->
             expect(stat.isFile).to.equal true
           done()
 
+    it 'writes a new empty file', (done) ->
+      @timeout 5 * 1000  # The current API server is slow on this sometimes.
+      @newFile = "#{@testFolder}/another text file.txt"
+      @newFileData = ''
+      @client.writeFile @newFile, @newFileData, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
+        @client.readFile @newFile, (error, data, stat) =>
+          expect(error).to.equal null
+          expect(data).to.equal @newFileData
+          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+          done()
+
     # TODO(pwnall): tests for writing binary files
 
 
@@ -378,6 +396,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'remove', ->
     beforeEach (done) ->
+      @timeout 5 * 1000  # This sequence is slow on the current API server.
       @newFolder = "#{@testFolder}/folder delete test"
       @client.mkdir @newFolder, (error, stat) =>
         expect(error).to.equal null
