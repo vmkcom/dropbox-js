@@ -57,11 +57,13 @@ class Checkbox
       alert "You already have this task on your list!"
     else
       $('#new-task-button').attr 'disabled', 'disabled'
+      $('#new-task-name').attr 'disabled', 'disabled'
       task = new Task()
       task.name = name
       @tasks.addTask task, =>
         $('#new-task-name').val ''
         $('#new-task-button').removeAttr 'disabled'
+        $('#new-task-name').removeAttr 'disabled'
         @renderTask task
 
   # Called when the user wants to mark a task as done.

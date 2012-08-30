@@ -28,16 +28,16 @@
         </h1>
       </header>
       <div id="notebook-page">
+        <h2 id="active-task-heading">Active</h2>
+        <ol class="task-list" id="active-task-list"></ol>
         <form action="" method="GET" id="new-task-form">
           <input type="text" id="new-task-name" class="task-name"
-                 required="required" placeholder="Buy milk" />
+                 required="required" placeholder="e.g., buy milk" />
            <button type="submit" id="new-task-button">
              <img src="images/add.png" /> Add
            </button>
         </form>
-        <h2>Active</h2>
-        <ol class="task-list" id="active-task-list"></ol>
-        <h2>Done</h2>
+        <h2 id="done-task-heading">Done</h2>
         <ol class="task-list" id="done-task-list"></ol>
       </div>
     </article>
