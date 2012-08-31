@@ -9,22 +9,16 @@ This section describes how to get the library hooked up into your application.
 
 ### Browser Applications
 
-Follow the steps in the
+To get started right away, place this snippet in your page's `<head>`.
+
+```html
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.5.0/dropbox.min.js">
+</script>
+```
+
+To get the latest development build of dropbox.js, follow the steps in the
 [development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md).
-to build dropbox.js from the most recent sources.
 
-Place `dropbox.js` and `dropbox.min.js` in the same directory as your
-application's main HTML file, and load it via a `<script>` tag.
-
-```html
-<script type="text/javascript" src="dropbox.min.js"></script>
-```
-
-The development version of the library might help debug Dropbox-related issues.
-
-```html
-<script type="text/javascript" src="dropbox.js"></script>
-```
 
 ### node.js Applications
 
