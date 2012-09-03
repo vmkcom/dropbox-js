@@ -20,6 +20,14 @@ To get the latest development build of dropbox.js, follow the steps in the
 [development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md).
 
 
+#### "Powered by Dropbox" Static Web Apps
+
+Before writing any source code, use the
+[console app](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/powered_by.js/public/index.html)
+to set up your Dropbox. After adding an application, place the source code at
+`/Apps/Static Web Apps/my_awesome_app/public`. You should find a pre-generated
+`index.html` file in there.
+
 ### node.js Applications
 
 First, install the `dropbox` [npm](https://npmjs.org/) package.
@@ -74,7 +82,7 @@ should take advantage of them as you prototype your application.
 The following snippet will set up the recommended driver.
 
 ```javascript
-client.authDriver(new Dropbox.Driver.Redirect());
+client.authDriver(new Dropbox.Drivers.Redirect());
 ```
 
 ### node.js Setup
@@ -83,7 +91,7 @@ Single-process node.js applications should create one driver to authenticate
 all the clients.
 
 ```javascript
-var driver = new Dropbox.Driver.NodeServer(8191);  // 8191 is a TCP port
+var driver = new Dropbox.Drivers.NodeServer(8191);  // 8191 is a TCP port
 client.authDriver(driver);
 ```
 
@@ -164,4 +172,10 @@ client.readdir("/", function(error, entries) {
   alert("Your Dropbox contains " + entries.join(", ");
 });
 ```
+
+### Sample Applications
+
+The
+[sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples)
+have more source code that you might find useful.
 
