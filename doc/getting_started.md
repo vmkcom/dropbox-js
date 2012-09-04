@@ -103,17 +103,78 @@ away.
 ```javascript
 client.authenticate(function(error, client) {
   if (error) {
-    return showError(error);  // Something went wrong.
+    // Replace with a call to your own error-handling code.
+    //
+    // Don't forget to return from the callback, so you don't execute the code
+    // that assumes everything went well.
+    return showError(error);
   }
 
-  doSomethingCool(client);  // client is a Dropbox.Client instance
+  // Replace with a call to your own application code.
+  //
+  // The user authorized your app, and everything went well.
+  // client is a Dropbox.Client instance that you can use to make API calls.
+  doSomethingCool(client);
 });
+```
+
+## Error Handlng
+
+When Dropbox API calls fail, dropbox.js methods pass a `Dropbox.Error` instance
+as the first parameter in their callbacks. This parameter is named `error` in
+all the code snippets on this page.
+
+If `error` is a truthy value, you should either recover from the error, or
+notify the user that an error occurred. The `status` field in the
+`Dropbox.Error` instance contains the HTTP error code, which should be one of
+the
+[error codes in the REST API](https://www.dropbox.com/developers/reference/api#error-handling).
+
+The snippet below is a template for an extensive error handler.
+
+```javascript
+var showError = function(error) {
+  if (window.console) {  // Skip the "if" in node.js code.
+    console.error(error);
+  }
+
+  switch (error.status) {
+  case 401:
+    // If you're using dropbox.js, the only cause behind this error is that
+    // the user token expired.
+    // Get the user through the authentication flow again.
+    break;
+
+  case 404:
+    // The file or folder you tried to access is not in the user's Dropbox.
+    // Handling this error is specific to your application.
+    break;
+
+  case 507:
+    // The user is over their Dropbox quota.
+    // Tell them their Dropbox is full. Refreshing the page won't help.
+    break;
+
+  case 503:
+    // Too many API requests. Tell the user to try again later.
+    // Long-term, optimize your code to use fewer API calls.
+    break;
+
+  case 400:  // Bad input parameter
+  case 403:  // Bad OAuth request.
+  case 405:  // Request method not expected
+  default:
+    // Caused by a bug in dropbox.js, in your application, or in Dropbox.
+    // Tell the user an error occurred, ask them to refresh the page.
+  }
+};
 ```
 
 
 ## The Fun Part
 
-Authentication was the hard part. Now that it's behind us, you can interact
+Authentication was the hard part of the API integration, and error handling was
+the most boring part. Now that these are both behind us, you can interact
 with the user's Dropbox and focus on coding up your application!
 
 The following sections have some commonly used code snippets. To understand the
@@ -175,7 +236,7 @@ client.readdir("/", function(error, entries) {
 
 ### Sample Applications
 
-The
+Check out the
 [sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples)
-have more source code that you might find useful.
+to see how all these concepts play out together.
 
