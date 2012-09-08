@@ -62,10 +62,14 @@ class DropboxRedirectDriver
   #     the fragment part of the URL (the string following the #,
   #     available as document.location.hash), to avoid confusing the server
   #     generating the page
+  # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
+  #     saved in localStorage; if you use this, you MUST provide a UI item that
+  #     calls forgetCredentials(), to let the user "log out" of the application
   # @option options {String} scope embedded in the localStorage key that holds
   #     the authentication data; useful for having multiple OAuth tokens in a
   #     single application
   constructor: (options) ->
+    @rememberUser = options?.rememberUser or false
     @scope = options?.scope or 'default'
     @useQuery = options?.useQuery or false
     @storageKey = "dropbox-auth:#{@scope}"
@@ -90,8 +94,14 @@ class DropboxRedirectDriver
           if credentials.token is @locationToken()
             if credentials.authState is DropboxClient.REQUEST
               # locationToken matched, so the redirect happened
+              @forgetCredentials()
               credentials.authState = DropboxClient.AUTHORIZED
             client.setCredentials credentials
+          return done()
+
+        # There is an old access token. Only use it if the app supports logout.
+        unless @rememberUser
+          @forgetCredentials()
           return done()
 
         # Verify that the old access token still works.
@@ -99,13 +109,16 @@ class DropboxRedirectDriver
         client.getUserInfo (error, userInfo) =>
           if error
             client.reset()
-            @deleteCredentials()
+            @forgetCredentials()
           return done()
-      when DropboxClient.REQUEST, DropboxClient.DONE
+      when DropboxClient.REQUEST
         @storeCredentials client.credentials()
         done()
+      when DropboxClient.DONE
+        @storeCredentials client.credentials() if @rememberUser
+        done()
       when DropboxClient.ERROR
-        @deleteCredentials()
+        @forgetCredentials()
         done()
       else
         done()
@@ -174,7 +187,7 @@ class DropboxRedirectDriver
       return null
 
   # Deletes information previously stored by a call to storeToken.
-  deleteCredentials: ->
+  forgetCredentials: ->
     localStorage.removeItem @storageKey
 
 # OAuth driver that uses a popup window and postMessage to complete the flow.
