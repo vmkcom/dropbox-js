@@ -11,6 +11,9 @@ class DropboxAuthDriver
 
   # Redirects users to /authorize and waits for them to complete the flow.
   #
+  # This method is called when the OAuth process reaches the REQUEST state,
+  # meaning the client has a request token that must be authorized by the user.
+  #
   # @param {String} authUrl the URL that users should be sent to in order to
   #     authorize the application's token; this points to a Web page on
   #     Dropbox' servers
@@ -26,13 +29,27 @@ class DropboxAuthDriver
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
     callback 'oauth-token'
 
-  # Supplies a token to be used instead of calling /oauth/request_token.
+  # Called when there is some progress in the OAuth process.
   #
-  # @return {Array<?String>} 2-element array containing an OAuth request token
-  #     and secret, or two nulls if the Dropbox server should be asked to
-  #     generate a new request token
-  presetToken: ->
-    [null, null]
+  # The OAuth process goes through the following states:
+  # * RESET - the client has no OAuth token, and is about to ask for a request
+  #           token
+  # * REQUEST - the client has a request OAuth token, and the user must go to
+  #             an URL on the Dropbox servers to authorize the token
+  # * AUTHORIZED - the client has a request OAuth token that was authorized by
+  #                the user, and is about to exchange it for an access token
+  # * DONE - the client has an access OAuth token that can be used for all API
+  #          calls; the OAuth process is complete, and the callback passed to
+  #          authorize is about to be called
+  # * ERROR - the client encounered an error during the OAuth process; the
+  #           callback passed to authorize is about to be called with the error
+  #           information
+  #
+  # @param {Dropbox.Client} client the client performing the OAuth process
+  # @param {function()} done called when onAuthStateChange acknowledges the
+  #     state change
+  onAuthStateChange: (client, done) ->
+    done()
 
 
 # OAuth driver that uses a redirect and localStorage to complete the flow.
@@ -59,22 +76,39 @@ class DropboxRedirectDriver
   url: ->
     @receiverUrl
 
-  # Redirects to the authorize page, and waits for the user to come back.
+  # Redirects to the authorize page.
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
-    [_token, _secret] = @getStoredToken()
-    if _token is token
-      @deleteStoredToken()
-      callback()
-    else
-      @storeToken token, tokenSecret
-      window.location.assign authUrl
+    window.location.assign authUrl
 
-  # Gets the old request token from localStorage, if it's available.
-  presetToken: ->
-    if @locationToken()
-      @getStoredToken()
-    else
-      [null, null]
+  # All the magic happens here.
+  onAuthStateChange: (client, done) ->
+    switch client.authState
+      when Dropbox.Client.RESET
+        return done() unless credentials = @loadCredentials()
+
+        if credentials.authState  # Incomplete authentication.
+          if credentials.token is @locationToken()
+            if credentials.authState is DropboxClient.REQUEST
+              # locationToken matched, so the redirect happened
+              credentials.authState = DropboxClient.AUTHORIZED
+            client.setCredentials credentials
+          return done()
+
+        # Verify that the old access token still works.
+        client.setCredentials credentials
+        client.getUserInfo (error, userInfo) =>
+          if error
+            client.reset()
+            @deleteCredentials()
+          return done()
+      when DropboxClient.REQUEST, DropboxClient.DONE
+        @storeCredentials client.credentials()
+        done()
+      when DropboxClient.ERROR
+        @deleteCredentials()
+        done()
+      else
+        done()
 
   # Pre-computes the return value of url.
   computeUrl: ->
@@ -120,29 +154,27 @@ class DropboxRedirectDriver
   @currentLocation: ->
     window.location.href
 
-  # Stores a token and secret to localStorage.
-  storeToken: (token, tokenSecret) ->
-    json = token: token, secret: tokenSecret
-    localStorage.setItem @storageKey, JSON.stringify json
+  # Stores a Dropbox.Client's credentials to localStorage.
+  storeCredentials: (credentials) ->
+    localStorage.setItem @storageKey, JSON.stringify(credentials)
 
   # Retrieves a token and secret from localStorage.
   #
   # @return {Array<?String>} 2-element array with the OAuth token and secret
   #     stored by a previous call to storeToken, or two null elements if no
   #     such token and secret were stored
-  getStoredToken: ->
+  loadCredentials: ->
     jsonString = localStorage.getItem @storageKey
-    return [null, null] unless jsonString
+    return null unless jsonString
 
     try
-      json = JSON.parse jsonString
-      return [json.token, json.secret]
+      return JSON.parse(jsonString)
     catch e
       # Parse errors
-      return [null, null]
+      return null
 
   # Deletes information previously stored by a call to storeToken.
-  deleteStoredToken: ->
+  deleteCredentials: ->
     localStorage.removeItem @storageKey
 
 # OAuth driver that uses a popup window and postMessage to complete the flow.

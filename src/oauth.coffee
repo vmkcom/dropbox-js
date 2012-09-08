@@ -7,6 +7,12 @@ class DropboxOauth
   #     secret is the Dropbox application's secret (OAuth calls it the
   #     consumer secret)
   constructor: (options) ->
+    @reset options
+
+  # Creates an Oauth instance that manages an application's keys and token.
+  #
+  # @see Dropbox.OAuth#constructor for options
+  reset: (options) ->
     @key = options.key
     @secret = options.secret
     unless @key and @secret
@@ -63,7 +69,7 @@ class DropboxOauth
     # NOTE: the space after the comma is optional in the OAuth spec, so we'll
     #       skip it to save some bandwidth
     'OAuth ' + header.join(',')
-  
+
   # Generates OAuth-required HTTP parameters.
   #
   # This method mutates the params object, and adds the OAuth-related
@@ -84,7 +90,7 @@ class DropboxOauth
     params
 
   # Adds boilerplate OAuth parameters to a request's parameter list.
-  # 
+  #
   # This should be called right before signing a request, to maximize the
   # chances that the OAuth timestamp will be fresh.
   #

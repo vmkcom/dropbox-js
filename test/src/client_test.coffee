@@ -494,7 +494,7 @@ buildClientTests = (clientKeys) ->
         expect(publicUrl.isDirect).to.equal false
         expect(publicUrl.url).not.to.contain '//db.tt/'
 
-        # The contents server does not return CORS headers.
+        # The cont/ents server does not return CORS headers.
         return done() unless @nodejs
         Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
           expect(error).to.equal null
@@ -600,6 +600,75 @@ buildClientTests = (clientKeys) ->
           expect(reader.result).to.contain 'PNG'
           done()
         reader.readAsBinaryString blob
+
+  describe 'reset', ->
+    beforeEach ->
+      @client.reset()
+
+    it 'gets the client into the RESET state', ->
+      expect(@client.authState).to.equal Dropbox.Client.RESET
+
+    it 'removes token and uid information', ->
+      credentials = @client.credentials()
+      expect(credentials).not.to.have.property 'token'
+      expect(credentials).not.to.have.property 'tokenSecret'
+      expect(credentials).not.to.have.property 'uid'
+
+  describe 'credentials', ->
+    it 'contains all the expected keys when DONE', ->
+      credentials = @client.credentials()
+      expect(credentials).to.have.property 'key'
+      expect(credentials).to.have.property 'secret'
+      expect(credentials).to.have.property 'token'
+      expect(credentials).to.have.property 'tokenSecret'
+      expect(credentials).to.have.property 'uid'
+
+    it 'does not return an authState when DONE', ->
+      credentials = @client.credentials()
+      expect(credentials).not.to.have.property 'authState'
+
+    it 'contains all the expected keys when RESET', ->
+      @client.reset()
+      credentials = @client.credentials()
+      expect(credentials).to.have.property 'key'
+      expect(credentials).to.have.property 'secret'
+
+    it 'does not return an authState when RESET', ->
+      @client.reset()
+      credentials = @client.credentials()
+      expect(credentials).not.to.have.property 'authState'
+
+
+  describe 'setCredentials', ->
+    it 'gets the client into the RESET state', ->
+      @client.setCredentials key: 'app-key', secret: 'app-secret'
+      expect(@client.authState).to.equal Dropbox.Client.RESET
+      credentials = @client.credentials()
+      expect(credentials.key).to.equal 'app-key'
+      expect(credentials.secret).to.equal 'app-secret'
+
+    it 'gets the client into the REQUEST state', ->
+      @client.setCredentials(
+          key: 'app-key', secret: 'app-secret', token: 'user-token',
+          tokenSecret: 'user-secret', authState: Dropbox.Client.REQUEST)
+      expect(@client.authState).to.equal Dropbox.Client.REQUEST
+      credentials = @client.credentials()
+      expect(credentials.key).to.equal 'app-key'
+      expect(credentials.secret).to.equal 'app-secret'
+      expect(credentials.token).to.equal 'user-token'
+      expect(credentials.tokenSecret).to.equal 'user-secret'
+
+    it 'gets the client into the DONE state', ->
+      @client.setCredentials(
+          key: 'app-key', secret: 'app-secret', token: 'user-token',
+          tokenSecret: 'user-secret', uid: '3141592')
+      expect(@client.authState).to.equal Dropbox.Client.DONE
+      credentials = @client.credentials()
+      expect(credentials.key).to.equal 'app-key'
+      expect(credentials.secret).to.equal 'app-secret'
+      expect(credentials.token).to.equal 'user-token'
+      expect(credentials.tokenSecret).to.equal 'user-secret'
+      expect(credentials.uid).to.equal '3141592'
 
 describe 'DropboxClient with full Dropbox access', ->
   buildClientTests testFullDropboxKeys

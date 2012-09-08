@@ -24,16 +24,11 @@ class DropboxClient
     @fileServer = options.fileServer or @defaultFileServer()
 
     @oauth = new DropboxOauth options
-    @uid = options.uid or null
-    if options.authState and options.authState isnt DropboxClient.ERROR
-      @authState = options.authState
-    else
-      if options.token
-        @authState = DropboxClient.DONE
-      else
-        @authState = DropboxClient.RESET
+    @uid = null
+    @authState = null
     @authError = null
-    @computeCredentials()
+    @_credentials = null
+    @setCredentials options
 
     @setupUrls()
 
@@ -58,11 +53,12 @@ class DropboxClient
   dropboxUid: ->
     @uid
 
-  # OAuth credentials.
+  # Get the client's OAuth credentials.
   #
+  # @param {?Object} the result of a prior call to credentials()
   # @return {Object} a plain object whose properties can be passed to the
   #     Dropbox.Client constructor to reuse this client's login credentials
-  credentials: ->
+  credentials: (newCredentials) ->
     @computeCredentials() unless @_credentials
     @_credentials
 
@@ -73,17 +69,17 @@ class DropboxClient
   #     this client and the first parameter is null
   # @return {Dropbox.Client} this, for easy call chaining
   authenticate: (callback) ->
+    oldAuthState = null
+
     # Advances the authentication FSM by one step.
     _fsmStep = =>
+      if oldAuthState isnt @authState
+        oldAuthState = @authState
+        if @authDriver.onAuthStateChange
+          return @authDriver.onAuthStateChange(@, _fsmStep)
+
       switch @authState
         when DropboxClient.RESET  # No user credentials -> request token.
-          if @authDriver.presetToken
-            [token, tokenSecret] = @authDriver.presetToken()
-            if token
-              @oauth.setToken token, tokenSecret
-              @authState = DropboxClient.REQUEST
-              @_credentials = null
-              return _fsmStep()
           @requestToken (error, data) =>
             if error
               @authError = error
@@ -99,11 +95,12 @@ class DropboxClient
         when DropboxClient.REQUEST  # Have request token, get it authorized.
           authUrl = @authorizeUrl @oauth.token
           @authDriver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
-            @authState = DropboxClient.AUTH
+            @authState = DropboxClient.AUTHORIZED
             @_credentials = null
             _fsmStep()
 
-        when DropboxClient.AUTH  # Authorized request token -> access token.
+        when DropboxClient.AUTHORIZED
+          # Request token authorized, switch it for an access token.
           @getAccessToken (error, data) =>
             if error
               @authError = error
@@ -797,6 +794,25 @@ class DropboxClient
     @oauth.setToken null, ''
     @authState = DropboxClient.RESET
     @authError = null
+    @_credentials = null
+    @
+
+  # Change the client's OAuth credentials.
+  #
+  # @param {?Object} the result of a prior call to credentials()
+  # @return {Dropbox.Client} this, for easy call chaining
+  setCredentials: (credentials) ->
+    @oauth.reset credentials
+    @uid = credentials.uid or null
+    if credentials.authState
+      @authState = credentials.authState
+    else
+      if credentials.token
+        @authState = DropboxClient.DONE
+      else
+        @authState = DropboxClient.RESET
+    @authError = null
+    @_credentials = null
     @
 
   # Computes the URLs of all the Dropbox API calls.
@@ -846,9 +862,9 @@ class DropboxClient
   @REQUEST: 2
 
   # authState value for a client whose request token was authorized.
-  @AUTH: 3
+  @AUTHORIZED: 3
 
-  # authState value for a client that has a proper API token.
+  # authState value for a client that has an access token.
   @DONE: 4
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
@@ -927,7 +943,7 @@ class DropboxClient
     if @oauth.token
       value.token = @oauth.token
       value.tokenSecret = @oauth.tokenSecret
-      value.uid = @uid
+    value.uid = @uid if @uid
     if @authState isnt DropboxClient.ERROR and
        @authState isnt DropboxClient.RESET and
        @authState isnt DropboxClient.DONE
