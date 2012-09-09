@@ -286,10 +286,14 @@ class DropboxPopupDriver
 class DropboxNodeServerDriver
   # Starts up the node app that intercepts the browser redirect.
   #
-  # @param {Number} port the port number to listen to for requests
+  # @param {?Object} options one or more of the options below
+  # @option options {Number} port the number of the TCP port that will receive
+  #     HTTP requests
   # @param {String} faviconFile the path to a file that will be served at
   #     /favicon.ico
-  constructor: (@port = 8912, @faviconFile = null) ->
+  constructor: (options) ->
+    @port = options?.port or 8912
+    @faviconFile = options?.favicon or null
     # Calling require in the constructor because this doesn't work in browsers.
     @fs = require 'fs'
     @http = require 'http'

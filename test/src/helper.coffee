@@ -7,7 +7,7 @@ if global? and require? and module?
   exports.sinon = require 'sinon'
   exports.sinonChai = require 'sinon-chai'
 
-  exports.authDriver = new Dropbox.Drivers.NodeServer 8912
+  exports.authDriver = new Dropbox.Drivers.NodeServer port: 8912
 
   TokenStash = require './token_stash.js'
   (new TokenStash()).get (credentials) ->
@@ -25,7 +25,8 @@ if global? and require? and module?
   exports.testImageUrl = 'http://localhost:8913/favicon.ico'
   imageServer = null
   exports.testImageServerOn = ->
-    imageServer = new Dropbox.Drivers.NodeServer 8913, testIconPath
+    imageServer =
+        new Dropbox.Drivers.NodeServer port: 8913, favicon: testIconPath
   exports.testImageServerOff = ->
     imageServer.closeServer()
     imageServer = null

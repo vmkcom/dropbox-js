@@ -77,6 +77,11 @@ process by implementing an
 At the same time, dropbox.js ships with a couple of OAuth drivers, and you
 should take advantage of them as you prototype your application.
 
+Read the
+[authentication doc](https://github.com/dropbox/dropbox-js/blob/master/doc/auth_drivers.md)
+for further information about writing an OAuth driver, and to learn about all
+the drivers that ship with `dropbox.js`.
+
 ### Browser Setup
 
 The following snippet will set up the recommended driver.
@@ -85,15 +90,23 @@ The following snippet will set up the recommended driver.
 client.authDriver(new Dropbox.Drivers.Redirect());
 ```
 
+The
+[authentication doc](https://github.com/dropbox/dropbox-js/blob/master/doc/auth_drivers.md)
+describe some useful options that you can pass to the
+`Dropbox.Drivers.Redirect` constructor.
+
 ### node.js Setup
 
 Single-process node.js applications should create one driver to authenticate
 all the clients.
 
 ```javascript
-var driver = new Dropbox.Drivers.NodeServer(8191);  // 8191 is a TCP port
-client.authDriver(driver);
+client.authDriver(new Dropbox.Drivers.NodeServer(8191));
 ```
+
+The
+[authentication doc](https://github.com/dropbox/dropbox-js/blob/master/doc/auth_drivers.md)
+has useful tips on using the `NodeServer` driver.
 
 ### Shared Code
 
