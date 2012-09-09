@@ -26,6 +26,17 @@ The lists of tasks are obtained by listing the contents of the active and done
 folders. The data model can be easily extended, by storing JSON-encoded
 information, such as deadlines, in the task files.
 
+This sample uses the following `Dropbox.Client` methods:
+
+* authenticate
+* signOff
+* getUserInfo
+* mkdir
+* readdir
+* writeFile
+* move
+* remove
+
 
 ## Dependencies
 

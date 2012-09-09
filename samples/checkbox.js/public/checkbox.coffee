@@ -9,9 +9,13 @@ class Checkbox
     @taskTemplate = $('#task-template').text()
     @$activeList = $('#active-task-list')
     @$doneList = $('#done-task-list')
+    $('#signoff-button').click (event) => @onSignoff event
 
     @dbClient.authenticate (error, data) =>
       return @showError(error) if error
+      @dbClient.getUserInfo (error, userInfo) =>
+        return @showError(error) if error
+        $('#user-name').text userInfo.name
       @tasks = new Tasks @, @dbClient
       @tasks.load =>
         @wire()
@@ -48,8 +52,6 @@ class Checkbox
     $task
 
   # Called when the user wants to create a new task.
-  #
-  # @param {jQuery<Event>} event jQuery event wrapper for a form submit event
   onNewTask: (event) ->
     event.preventDefault()
     name = $('#new-task-name').val()
@@ -88,6 +90,12 @@ class Checkbox
     @tasks.removeTask task, ->
       $task.remove()
 
+  # Called when the user wants to sign off.
+  onSignoff: (event, task) ->
+    @dbClient.signOff (error) =>
+      return @showError(error) if error
+      window.location.reload()
+
   # Finds the DOM element representing a task.
   #
   # @param {DOMElement} element any element inside the task element
@@ -110,8 +118,7 @@ class Tasks
   # @param {Checkbox} controller the application controller
   constructor: (@controller) ->
     @dbClient = @controller.dbClient
-    @active = []
-    @done = []
+    [@active, @done] = [[], []]
 
   # Reads all the from a user's Dropbox.
   #
@@ -176,8 +183,7 @@ class Tasks
   #
   # @param {Task} the task to be changed
   setTaskDone: (task, newDoneValue, done) ->
-    oldDoneValue = task.done
-    task.done = newDoneValue
+    [oldDoneValue, task.done] = [task.done, newDoneValue]
     newPath = task.path()
     task.done = oldDoneValue
 
@@ -233,14 +239,11 @@ class Task
   # Path to the file representing the task in the user's Dropbox.
   # @return {String} fully-qualified path
   path: ->
-    if @done
-      '/done/' + @name
-    else
-      '/active/' + @name
+    (if @done then '/done/' else '/active/') + @name
 
 # Start up the code when the DOM is fully loaded.
 $ ->
   client = new Dropbox.Client(
     key: 'ol56zaikdq4kxjx', secret: 'h67t4idg69tuuu5', sandbox: true)
-  client.authDriver new Dropbox.Drivers.Redirect(useHash: true)
+  client.authDriver new Dropbox.Drivers.Redirect(rememberUser: true)
   new Checkbox client, '#app-ui'

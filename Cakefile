@@ -11,7 +11,7 @@ task 'test', ->
     build ->
       ssl_cert ->
         tokens ->
-          run 'mocha --colors --require test/js/helper.js test/js/*test.js'
+          run 'mocha --colors --slow 200 --timeout 10000 --require test/js/helper.js test/js/*test.js'
 
 task 'webtest', ->
   vendor ->

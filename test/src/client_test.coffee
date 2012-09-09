@@ -66,13 +66,12 @@ buildClientTests = (clientKeys) ->
 
   # Teardown for global fixtures.
   after (done) ->
-    @__client.remove @testFolder, (error, stat) ->
-      expect(error).to.equal null
+    @__client.remove @testFolder, (error, stat) =>
+      @test.error(new Error(error)) if error
       done()
 
   # Per-test (cheap) fixtures.
   beforeEach ->
-    @timeout 8 * 1000
     @client = new Dropbox.Client clientKeys
 
   describe 'URLs for custom API server', ->
@@ -177,12 +176,10 @@ buildClientTests = (clientKeys) ->
 
   describe 'writeFile', ->
     afterEach (done) ->
-      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
     it 'writes a new text file', (done) ->
-      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       @newFile = "#{@testFolder}/another text file.txt"
       @newFileData = "Another plaintext file #{Math.random().toString(36)}."
       @client.writeFile @newFile, @newFileData, (error, stat) =>
@@ -200,7 +197,6 @@ buildClientTests = (clientKeys) ->
           done()
 
     it 'writes a new empty file', (done) ->
-      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       @newFile = "#{@testFolder}/another text file.txt"
       @newFileData = ''
       @client.writeFile @newFile, @newFileData, (error, stat) =>
@@ -222,7 +218,6 @@ buildClientTests = (clientKeys) ->
 
   describe 'stat', ->
     it 'retrieves a Stat for a file', (done) ->
-      @timeout 5 * 1000  # The current API server is slow on this sometimes.
       @client.stat @textFile, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -365,7 +360,6 @@ buildClientTests = (clientKeys) ->
         done()
 
     afterEach (done) ->
-      @timeout 5 * 1000  # This sequence is slow on the current API server.
       @client.remove @moveFrom, (error, stat) =>
         return done() unless @moveTo
         @client.remove @moveTo, (error, stat) -> done()
@@ -396,7 +390,6 @@ buildClientTests = (clientKeys) ->
 
   describe 'remove', ->
     beforeEach (done) ->
-      @timeout 5 * 1000  # This sequence is slow on the current API server.
       @newFolder = "#{@testFolder}/folder delete test"
       @client.mkdir @newFolder, (error, stat) =>
         expect(error).to.equal null
@@ -518,7 +511,7 @@ buildClientTests = (clientKeys) ->
 
   describe 'pullChanges', ->
     afterEach (done) ->
-      @timeout 5 * 1000  # The current API server is slow on this sometimes.
+      @timeout 10 * 1000  # The current API server is slow on this.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
@@ -676,15 +669,29 @@ describe 'DropboxClient with full Dropbox access', ->
 describe 'DropboxClient with Folder access', ->
   buildClientTests testKeys
 
-  describe 'authenticate', ->
+  describe 'authenticate + signOff', ->
     # NOTE: we're not duplicating this test in the full Dropbox acess suite,
     #       because it's annoying to the tester
-    it 'completes the flow', (done) ->
-      @timeout 30 * 1000  # Time-consuming because the user must click.
+    it 'completes the authenticate flow', (done) ->
+      @timeout 45 * 1000  # Time-consuming because the user must click.
       @client.reset()
       @client.authDriver authDriver
       @client.authenticate (error, client) =>
         expect(error).to.equal null
         expect(client).to.equal @client
-        done()
+        expect(client.authState).to.equal Dropbox.Client.DONE
+        # Verify that we can do API calls.
+        client.getUserInfo (error, userInfo) ->
+          expect(error).to.equal null
+          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+          credentials = client.credentials()
+          client.signOff (error) ->
+            expect(error).to.equal null
+            expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
+            # Verify that we can't use the old token in API calls.
+            client.setCredentials credentials
+            client.getUserInfo (error, userInfo) ->
+              expect(error).to.be.ok
+              expect(error.status).to.equal 401
+              done()
 

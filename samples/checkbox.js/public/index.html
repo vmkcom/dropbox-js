@@ -28,6 +28,12 @@
         </small>
       </h1>
       <div id="notebook-page">
+        <aside id="user-info">
+          <button type="button" id="signoff-button">
+            <img src="images/remove.png" alt="" /> Sign Off
+          </button>
+          <span id="user-name" />
+        </aside>
         <h2 id="active-task-heading">Active</h2>
         <ol class="task-list" id="active-task-list"></ol>
         <form action="" method="GET" id="new-task-form">
@@ -37,14 +43,11 @@
             <img src="images/add.png" alt="" /> Add
           </button>
         </form>
-        <div class="empty-task">
-          &nbsp;
-        </div>
+        <div class="empty-task">&nbsp;</div>
         <h2 id="done-task-heading">Done</h2>
         <ol class="task-list" id="done-task-list"></ol>
       </div>
     </article>
-
     <script type="text/html" id="task-template">
       <li class="task">
         <span class="task-name" />

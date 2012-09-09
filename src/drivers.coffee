@@ -41,6 +41,8 @@ class DropboxAuthDriver
   # * DONE - the client has an access OAuth token that can be used for all API
   #          calls; the OAuth process is complete, and the callback passed to
   #          authorize is about to be called
+  # * SIGNED_OFF - the client's Dropbox.Client#signOff() was called, and the
+  #                client's OAuth token was invalidated
   # * ERROR - the client encounered an error during the OAuth process; the
   #           callback passed to authorize is about to be called with the error
   #           information
@@ -116,6 +118,9 @@ class DropboxRedirectDriver
         done()
       when DropboxClient.DONE
         @storeCredentials client.credentials() if @rememberUser
+        done()
+      when DropboxClient.SIGNED_OFF
+        @forgetCredentials()
         done()
       when DropboxClient.ERROR
         @forgetCredentials()

@@ -115,11 +115,39 @@ class DropboxClient
         when DropboxClient.DONE  # We have an access token.
           callback null, @
 
+        when Dropbox.SIGNED_OFF  # The user signed off, restart the flow.
+          @reset()
+          _fsmStep()
+
         when DropboxClient.ERROR  # An error occurred during authentication.
           callback @authError
 
     _fsmStep()  # Start up the state machine.
     @
+
+  # Revokes the user's Dropbox credentials.
+  #
+  # This should be called when the user explictly signs off from your
+  # application, to meet the users' expectation that after they sign off, their
+  # access tokens will be persisted on the machine.
+  #
+  # @param {function(?Dropbox.ApiError)} callback called when
+  #     the authentication completes; if successful, the error parameter is
+  #     null
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  signOff: (callback) ->
+    url = @urls.signOff
+    params = @oauth.addAuthParams 'POST', url, {}
+    DropboxXhr.request 'POST', url, params, null, (error) =>
+      return callback(error) if error
+
+      @reset()
+      @authState = DropboxClient.SIGNED_OFF
+      if @authDriver.onAuthStateChange
+        @authDriver.onAuthStateChange @, ->
+          callback error
+      else
+        callback error
 
   # Retrieves information about the logged in user.
   #
@@ -828,6 +856,7 @@ class DropboxClient
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
       accessToken: "#{@apiServer}/1/oauth/access_token"
+      signOff: "#{@apiServer}/1/unlink_access_token"
 
       # Accounts.
       accountInfo: "#{@apiServer}/1/account/info"
@@ -866,6 +895,9 @@ class DropboxClient
 
   # authState value for a client that has an access token.
   @DONE: 4
+
+  # authState value for a client that voluntarily invalidated its access token.
+  @SIGNED_OFF: 5
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
   urlEncodePath: (path) ->
@@ -946,7 +978,8 @@ class DropboxClient
     value.uid = @uid if @uid
     if @authState isnt DropboxClient.ERROR and
        @authState isnt DropboxClient.RESET and
-       @authState isnt DropboxClient.DONE
+       @authState isnt DropboxClient.DONE and
+       @authState isnt DropboxClient.SIGNED_OFF
       value.authState = @authState
     if @apiServer isnt @defaultApiServer()
       value.server = @apiServer

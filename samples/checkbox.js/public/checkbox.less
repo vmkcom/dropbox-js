@@ -106,7 +106,7 @@ html, body {
 
     background-color: #fffddb;
     margin: 0;
-    padding: 48px 0 60px 0;
+    padding: 24px 0 60px 0;
   }
   #notebook-page, .task {
     background-image: -webkit-linear-gradient(top, #f3aaaa 0%, #f3aaaa 100%),
@@ -120,6 +120,34 @@ html, body {
     background-position: 70px 0px, 76px 0px;
     background-size: 1px 100%, 1px 100%;
     background-repeat: no-repeat, no-repeat;
+  }
+
+  #user-info {
+    margin: 0;
+    padding: 0 16px 8px 88px;
+
+    color: #555555;
+    .font-helvetica();
+    font-size: 16px;
+    line-height: 32px;
+    font-weight: 200;
+    text-align: right;
+
+    #user-name {
+      display: inline-block;
+      padding: 0 0 0 8px;
+    }
+
+    #signoff-button {
+      visibility: hidden;
+    }
+    &:hover {
+      color: #000000;
+
+      #signoff-button {
+        visibility: visible;
+      }
+    }
   }
 
   #new-task-form, h2, .task, .empty-task {
@@ -256,7 +284,7 @@ button {
     }
   }
 
-  &.task-remove-button, &#error-refresh-button {
+  &.task-remove-button, &#error-refresh-button, &#signoff-button {
     border-color: #a73030;
     .linear-gradient(#f67f73, #bb5757);
     &:active {
