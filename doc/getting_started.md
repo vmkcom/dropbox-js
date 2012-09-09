@@ -92,7 +92,7 @@ client.authDriver(new Dropbox.Drivers.Redirect());
 
 The
 [authentication doc](https://github.com/dropbox/dropbox-js/blob/master/doc/auth_drivers.md)
-describe some useful options that you can pass to the
+describes some useful options that you can pass to the
 `Dropbox.Drivers.Redirect` constructor.
 
 ### node.js Setup
