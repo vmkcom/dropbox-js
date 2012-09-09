@@ -669,7 +669,7 @@ describe 'DropboxClient with full Dropbox access', ->
 describe 'DropboxClient with Folder access', ->
   buildClientTests testKeys
 
-  describe 'authenticate + signOff', ->
+  describe 'authenticate + signOut', ->
     # NOTE: we're not duplicating this test in the full Dropbox acess suite,
     #       because it's annoying to the tester
     it 'completes the authenticate flow', (done) ->
@@ -685,7 +685,7 @@ describe 'DropboxClient with Folder access', ->
           expect(error).to.equal null
           expect(userInfo).to.be.instanceOf Dropbox.UserInfo
           credentials = client.credentials()
-          client.signOff (error) ->
+          client.signOut (error) ->
             expect(error).to.equal null
             expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
             # Verify that we can't use the old token in API calls.

@@ -9,7 +9,7 @@ class Checkbox
     @taskTemplate = $('#task-template').text()
     @$activeList = $('#active-task-list')
     @$doneList = $('#done-task-list')
-    $('#signoff-button').click (event) => @onSignoff event
+    $('#signout-button').click (event) => @onSignOut event
 
     @dbClient.authenticate (error, data) =>
       return @showError(error) if error
@@ -90,9 +90,9 @@ class Checkbox
     @tasks.removeTask task, ->
       $task.remove()
 
-  # Called when the user wants to sign off.
-  onSignoff: (event, task) ->
-    @dbClient.signOff (error) =>
+  # Called when the user wants to sign out of the application.
+  onSignOut: (event, task) ->
+    @dbClient.signOut (error) =>
       return @showError(error) if error
       window.location.reload()
 

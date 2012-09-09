@@ -135,8 +135,8 @@ class DropboxClient
   #     the authentication completes; if successful, the error parameter is
   #     null
   # @return {XMLHttpRequest} the XHR object used for this API call
-  signOff: (callback) ->
-    url = @urls.signOff
+  signOut: (callback) ->
+    url = @urls.signOut
     params = @oauth.addAuthParams 'POST', url, {}
     DropboxXhr.request 'POST', url, params, null, (error) =>
       return callback(error) if error
@@ -148,6 +148,10 @@ class DropboxClient
           callback error
       else
         callback error
+
+  # Alias for signOut.
+  signOff: (callback) ->
+    @signOut callback
 
   # Retrieves information about the logged in user.
   #
@@ -856,7 +860,7 @@ class DropboxClient
       requestToken: "#{@apiServer}/1/oauth/request_token"
       authorize: "#{@authServer}/1/oauth/authorize"
       accessToken: "#{@apiServer}/1/oauth/access_token"
-      signOff: "#{@apiServer}/1/unlink_access_token"
+      signOut: "#{@apiServer}/1/unlink_access_token"
 
       # Accounts.
       accountInfo: "#{@apiServer}/1/account/info"

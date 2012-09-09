@@ -41,7 +41,7 @@ class DropboxAuthDriver
   # * DONE - the client has an access OAuth token that can be used for all API
   #          calls; the OAuth process is complete, and the callback passed to
   #          authorize is about to be called
-  # * SIGNED_OFF - the client's Dropbox.Client#signOff() was called, and the
+  # * SIGNED_OFF - the client's Dropbox.Client#signOut() was called, and the
   #                client's OAuth token was invalidated
   # * ERROR - the client encounered an error during the OAuth process; the
   #           callback passed to authorize is about to be called with the error
@@ -66,7 +66,8 @@ class DropboxRedirectDriver
   #     generating the page
   # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
   #     saved in localStorage; if you use this, you MUST provide a UI item that
-  #     calls forgetCredentials(), to let the user "log out" of the application
+  #     calls signOut() on Dropbox.Client, to let the user "log out" of the
+  #     application
   # @option options {String} scope embedded in the localStorage key that holds
   #     the authentication data; useful for having multiple OAuth tokens in a
   #     single application

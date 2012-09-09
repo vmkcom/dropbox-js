@@ -66,12 +66,12 @@ request token for an OAuth access token
 client has an OAuth access token that can be used in API calls; after
 `onAuthStateChange` is triggered, `authorize` will call its callback function,
 and report success
-* `Dropbox.Client.SIGNED_OFF` is reached when the client's `signOff` method is
+* `Dropbox.Client.SIGNED_OFF` is reached when the client's `signOut` method is
 called, after the API call succeeds; after `onAuthStateChange` is triggered,
-`signOff` will call its callback function, and report success
+`signOut` will call its callback function, and report success
 * `Dropbox.Client.ERROR` is reached if any of the Dropbox API calls used by
-`authorize` or `signOff` results in an error; after `onAuthStateChange` is
-triggered, `authorize` or `signOff` will call its callback function and report
+`authorize` or `signOut` results in an error; after `onAuthStateChange` is
+triggered, `authorize` or `signOut` will call its callback function and report
 the error
 
 
@@ -98,8 +98,8 @@ Although it seems that `rememberUser` should be true by default, it brings a
 couple of drawbacks. The user's token will still be valid after signing off the
 Dropbox web site, so your application will still recognize the user and access
 their Dropbox. This behavior is unintuitive to users. A reasonable compromise
-for apps that use `rememberUser` is to provide a `Sign off` button that calls
-the `signOff` method on the app's `Dropbox.Client` instance.
+for apps that use `rememberUser` is to provide a `Sign out` button that calls
+the `signOut` method on the app's `Dropbox.Client` instance.
 
 The
 [checkbox.js](https://github.com/dropbox/dropbox-js/tree/master/samples/checkbox.js)
