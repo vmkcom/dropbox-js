@@ -298,6 +298,13 @@ buildClientTests = (clientKeys) ->
         expect(versions[0].versionTag).to.equal @textFileTag
         done()
 
+    it 'returns 40x if the limit is set to 0', (done) ->
+      @client.history @textFile, limit: 0, (error, versions) =>
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error.status).to.be.within 400, 499
+        expect(versions).not.to.be.ok
+        done()
+
   describe 'copy', ->
     afterEach (done) ->
       return done() unless @newFile
@@ -468,6 +475,18 @@ buildClientTests = (clientKeys) ->
         expect(matches[0]).to.be.instanceOf Dropbox.Stat
         expect(matches[0].path).to.equal @testFolder
         expect(matches[0].isFolder).to.equal true
+        done()
+
+    it 'lists the test folder files given the "test" pattern', (done) ->
+      @client.search @testFolder, 'test', (error, matches) =>
+        expect(error).to.equal null
+        expect(matches).to.have.length 2
+        done()
+
+    it 'only lists one match when given limit 1', (done) ->
+      @client.search @testFolder, 'test', limit: 1, (error, matches) =>
+        expect(error).to.equal null
+        expect(matches).to.have.length 1
         done()
 
   describe 'makeUrl for a short Web URL', ->

@@ -403,7 +403,7 @@ class DropboxClient
 
     statOptions = { readDir: true }
     if options
-      if options.limit
+      if options.limit?
         statOptions.readDir = options.limit
       if options.versionTag
         statOptions.versionTag = options.versionTag
@@ -483,7 +483,7 @@ class DropboxClient
     url = "#{@urls.revisions}/#{@urlEncodePath(path)}"
     params = {}
     if options and options.limit?
-      params.rev_limit = revLimit
+      params.rev_limit = options.limit
     @oauth.addAuthParams 'GET', url, params
     DropboxXhr.request('GET', url, params, null,
         (error, versions) ->
