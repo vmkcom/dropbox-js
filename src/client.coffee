@@ -633,7 +633,7 @@ class DropboxClient
     params = { query: namePattern }
     if options
       if options.limit?
-        params.file_limit = limit
+        params.file_limit = options.limit
       if options.removed or options.deleted
         params.include_deleted = true
     @oauth.addAuthParams 'GET', url, params
