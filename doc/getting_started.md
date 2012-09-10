@@ -243,7 +243,7 @@ client.readdir("/", function(error, entries) {
     return showError(error);  // Something went wrong.
   }
 
-  alert("Your Dropbox contains " + entries.join(", ");
+  alert("Your Dropbox contains " + entries.join(", "));
 });
 ```
 
