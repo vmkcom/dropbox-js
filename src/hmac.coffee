@@ -17,6 +17,18 @@ base64HmacSha1 = (string, key) ->
 base64Sha1 = (string) ->
   arrayToBase64 sha1(stringToArray(string), string.length)
 
+# SHA1 and HMAC-SHA1 versions that use the node.js builtin crypto.
+unless window?
+  crypto = require 'crypto'
+  base64HmacSha1 = (string, key) ->
+    hmac = crypto.createHmac 'sha1', key
+    hmac.update string
+    hmac.digest 'base64'
+  base64Sha1 = (string) ->
+    hash = crypto.createHash 'sha1'
+    hash.update string
+    hash.digest 'base64'
+
 # HMAC-SHA1 implementation.
 #
 # @param {Array} string the HMAC input, as an array of 32-bit numbers
@@ -39,7 +51,7 @@ hmacSha1 = (string, key, length, keyLength) ->
 #     computation trashes the array
 # @param {Number} length the number of bytes in the SHA1 input; used in the
 #     SHA1 padding algorithm
-# @return {Number} the SHA1 output, as an array of 32-bit numbers
+# @return {Array<Number>} the SHA1 output, as an array of 32-bit numbers
 sha1 = (string, length) ->
   string[length >> 2] |= 1 << (31 - ((length & 0x03) << 3))
   string[(((length + 8) >> 6) << 4) + 15] = length << 3
@@ -98,6 +110,7 @@ sha1 = (string, length) ->
   # console.log [xxx(a), xxx(b), xxx(c), xxx(d), xxx(e)]
   [a, b, c, d, e]
 
+###
 # Uncomment the definition below for debugging.
 #
 # Returns the hexadecimal representation of a 32-bit number.
@@ -105,6 +118,7 @@ xxx = (n) ->
   if n < 0
     n = (1 << 30) * 4 + n
   n.toString 16
+###
 
 # Rotates a 32-bit word.
 #

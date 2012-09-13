@@ -1,6 +1,7 @@
 describe 'DropboxXhr', ->
   beforeEach ->
     @node_js = module? and module?.exports? and require?
+    @oauth = new Dropbox.Oauth testKeys
 
   describe '#request', ->
     it 'reports errors correctly', (done) ->
@@ -30,14 +31,9 @@ describe 'DropboxXhr', ->
       key = testKeys.key
       secret = testKeys.secret
       timestamp = Math.floor(Date.now() / 1000).toString()
-      params =
-          oauth_consumer_key: testKeys.key
-          oauth_nonce: '_' + timestamp
-          oauth_signature: testKeys.secret + '&'
-          oauth_signature_method: 'PLAINTEXT'
-          oauth_timestamp: timestamp
-          oauth_version: '1.0'
-
+      params = {}
+      @oauth.addAuthParams 'POST',
+          'https://api.dropbox.com/1/oauth/request_token', params
       xhr = Dropbox.Xhr.request('POST',
         'https://api.dropbox.com/1/oauth/request_token',
         params,
@@ -60,10 +56,8 @@ describe 'DropboxXhr', ->
     it 'sends Authorize headers correctly', (done) ->
       return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't set headers.
 
-      key = testKeys.key
-      secret = testKeys.secret
-      timestamp = Math.floor(Date.now() / 1000).toString()
-      oauth_header = "OAuth oauth_consumer_key=\"#{key}\",oauth_nonce=\"_#{timestamp}\",oauth_signature=\"#{secret}%26\",oauth_signature_method=\"PLAINTEXT\",oauth_timestamp=\"#{timestamp}\",oauth_version=\"1.0\""
+      oauth_header = @oauth.authHeader 'POST',
+          'https://api.dropbox.com/1/oauth/request_token', {}
 
       xhr = Dropbox.Xhr.request('POST',
           'https://api.dropbox.com/1/oauth/request_token', {}, oauth_header,

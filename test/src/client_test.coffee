@@ -630,7 +630,7 @@ buildClientTests = (clientKeys) ->
     it 'contains all the expected keys when DONE', ->
       credentials = @client.credentials()
       expect(credentials).to.have.property 'key'
-      expect(credentials).to.have.property 'secret'
+      expect(credentials).to.have.property 'sandbox'
       expect(credentials).to.have.property 'token'
       expect(credentials).to.have.property 'tokenSecret'
       expect(credentials).to.have.property 'uid'
@@ -638,17 +638,40 @@ buildClientTests = (clientKeys) ->
     it 'does not return an authState when DONE', ->
       credentials = @client.credentials()
       expect(credentials).not.to.have.property 'authState'
+      expect(credentials).not.to.have.property 'secret'
 
     it 'contains all the expected keys when RESET', ->
       @client.reset()
       credentials = @client.credentials()
       expect(credentials).to.have.property 'key'
-      expect(credentials).to.have.property 'secret'
+      expect(credentials).to.have.property 'sandbox'
 
     it 'does not return an authState when RESET', ->
       @client.reset()
       credentials = @client.credentials()
       expect(credentials).not.to.have.property 'authState'
+      expect(credentials).not.to.have.property 'secret'
+
+    describe 'for a client with raw keys', ->
+      beforeEach ->
+        @client.setCredentials(
+          key: 'dpf43f3p2l4k3l03', secret: 'kd94hf93k423kf44',
+          token: 'user-token', tokenSecret: 'user-secret', uid: '1234567')
+
+      it 'contains all the expected keys when DONE', ->
+        credentials = @client.credentials()
+        expect(credentials).to.have.property 'key'
+        expect(credentials).to.have.property 'secret'
+        expect(credentials).to.have.property 'token'
+        expect(credentials).to.have.property 'tokenSecret'
+        expect(credentials).to.have.property 'uid'
+
+      it 'contains all the expected keys when RESET', ->
+        @client.reset()
+        credentials = @client.credentials()
+        expect(credentials).to.have.property 'key'
+        expect(credentials).to.have.property 'sandbox'
+        expect(credentials).to.have.property 'secret'
 
 
   describe 'setCredentials', ->

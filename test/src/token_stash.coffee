@@ -51,11 +51,9 @@ class TokenStash
     {
       sandbox:
         sandbox: true
-        key: 'xa6rd0x8wsuk9hc'
-        secret: 'y6nw1t64rcppd8a'
+        key: 'gWJAiHNbmDA=|MJ3xAk3nLeByuOckISnHib+h+1zTCG3TKTOEFvAAZw=='
       full:
-        key: 'c9x6i3k2zlwz21g'
-        secret: '82nxm80jz231rpn'
+        key: 'OYaTsqx6IXA=|z8mRqmTRoSdCqvkTvHTZq4ZZNxa7I5wM8X5E33IwCA=='
     }
 
   # Reads the file containing the access credentials, if it is available.

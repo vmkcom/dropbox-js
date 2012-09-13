@@ -45,12 +45,26 @@ describe 'Oauth', ->
 
       @nonceStub.restore()
 
+    it 'works with an encoded key', ->
+      @oauth = new Dropbox.Oauth
+        key: Dropbox.encodeKey(@oauth.key, @oauth.secret),
+        token: @oauth.token, tokenSecret: @oauth.tokenSecret
+
+      @nonceStub = sinon.stub @oauth, 'nonce'
+      @nonceStub.returns 'kllo9940pd9333jh'
+
+      @oauth.boilerplateParams(@request.params)
+      expect(@oauth.signature(@request.method, @request.url, @request.params)).
+        to.equal 'tR3+Ty81lMeYAr/Fid0kMTYa/WM='
+
+      @nonceStub.restore()
+
   describe '#addAuthParams', ->
     it 'matches the OAuth 1.0a example', ->
       @nonceStub = sinon.stub @oauth, 'nonce'
       @nonceStub.returns 'kllo9940pd9333jh'
 
-      goldenParams = 
+      goldenParams =
         file: 'vacation.jpg'
         oauth_consumer_key: 'dpf43f3p2l4k3l03'
         oauth_nonce: 'kllo9940pd9333jh'

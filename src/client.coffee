@@ -8,6 +8,12 @@ class DropboxClient
   # @param {Object} options the application type and API key
   # @option {Boolean} sandbox true for applications that request sandbox access
   #     (access to a single folder exclusive to the app)
+  # @option options {String} key the Dropbox application's key; browser-side
+  #     applications should use Dropbox.encodeKey to obtain an encoded
+  #     key string, and pass it as the key option
+  # @option options {String} secret the Dropbox application's secret;
+  #     browser-side applications should not use the secret option; instead,
+  #     they should pass the result of Dropbox.encodeKey as the key option
   # @option {String} key the application's API key
   # @option {String} secret the application's API secret
   # @option {String} token if set, the user's access token
@@ -974,8 +980,8 @@ class DropboxClient
   computeCredentials: ->
     value =
       key: @oauth.key
-      secret: @oauth.secret
       sandbox: @sandbox
+    value.secret = @oauth.secret if @oauth.secret
     if @oauth.token
       value.token = @oauth.token
       value.tokenSecret = @oauth.tokenSecret

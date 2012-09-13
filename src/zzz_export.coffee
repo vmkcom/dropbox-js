@@ -27,6 +27,9 @@ Dropbox.PullChange = DropboxPullChange
 Dropbox.Stat = DropboxStat
 Dropbox.UserInfo = DropboxUserInfo
 Dropbox.Xhr = DropboxXhr
+Dropbox.atob = atob
+Dropbox.btoa = btoa
 Dropbox.hmac = base64HmacSha1
 Dropbox.sha1 = base64Sha1
+Dropbox.encodeKey = dropboxEncodeKey
 
