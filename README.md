@@ -17,7 +17,7 @@ This library is tested against the following JavaScript platforms
 ## Installation and Usage
 
 The
-[getting started guide](https://github.com/dropbox/dropbox-js/blob/master/doc/getting_started.md),
+[getting started guide](https://github.com/dropbox/dropbox-js/blob/master/doc/getting_started.md)
 will help you get your first dropbox.js application up and running.
 
 Peruse the source code of the

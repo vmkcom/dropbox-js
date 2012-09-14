@@ -16,6 +16,7 @@ class DropboxOauth
     @secret = @s = null
     @token = null
     @tokenSecret = null
+    @_appHash = null
     @reset options
 
   # Creates an Oauth instance that manages an application's keys and token.
@@ -25,6 +26,7 @@ class DropboxOauth
     if options.secret
       @k = @key = options.key
       @s = @secret = options.secret
+      @_appHash = null
     else if options.key
       @key = options.key
       @secret = null
@@ -32,6 +34,7 @@ class DropboxOauth
       [k, s] = secret.split '?', 2
       @k = decodeURIComponent k
       @s = decodeURIComponent s
+      @_appHash = null
 
     if options.token
       @setToken options.token, options.tokenSecret
@@ -143,6 +146,12 @@ class DropboxOauth
     string = method.toUpperCase() + '&' + DropboxXhr.urlEncodeValue(url) +
       '&' + DropboxXhr.urlEncodeValue(DropboxXhr.urlEncode(params))
     base64HmacSha1 string, @hmacKey
+
+  # @return {String} a string that uniquely identifies the OAuth application
+  appHash: ->
+    return @_appHash if @_appHash
+    @_appHash = base64Sha1(@k).replace(/\=/g, '')
+
 
 # Polyfill for Internet Explorer 8.
 unless Date.now?

@@ -102,3 +102,18 @@ describe 'Oauth', ->
       expect(Dropbox.Xhr.urlEncode(@request.params)).to.
           equal "file=vacation.jpg&size=original"
 
+  describe '#appHash', ->
+    it 'is a non-trivial string', ->
+      expect(@oauth.appHash()).to.be.a 'string'
+      expect(@oauth.appHash().length).to.be.greaterThan 4
+
+    it 'is consistent', ->
+      oauth = new Dropbox.Oauth key: @oauth.key, secret: @oauth.secret
+      expect(oauth.appHash()).to.equal @oauth.appHash()
+
+    it 'depends on the app key', ->
+      oauth = new Dropbox.Oauth key: @oauth.key + '0', secret: @oauth.secret
+      expect(oauth.appHash()).not.to.equal @oauth.appHash()
+      expect(oauth.appHash()).to.be.a 'string'
+      expect(oauth.appHash().length).to.be.greaterThan 4
+

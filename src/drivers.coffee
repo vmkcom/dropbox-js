@@ -75,7 +75,6 @@ class DropboxRedirectDriver
     @rememberUser = options?.rememberUser or false
     @scope = options?.scope or 'default'
     @useQuery = options?.useQuery or false
-    @storageKey = "dropbox-auth:#{@scope}"
     @receiverUrl = @computeUrl options
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
 
@@ -89,6 +88,10 @@ class DropboxRedirectDriver
 
   # All the magic happens here.
   onAuthStateChange: (client, done) ->
+    # NOTE: the storage key is dependent on the app hash so that multiple apps
+    #       hosted off the same server don't step on eachother's toes
+    @storageKey = "dropbox-auth:#{@scope}:#{client.appHash()}"
+
     switch client.authState
       when Dropbox.Client.RESET
         return done() unless credentials = @loadCredentials()

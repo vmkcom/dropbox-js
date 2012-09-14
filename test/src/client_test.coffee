@@ -88,7 +88,7 @@ buildClientTests = (clientKeys) ->
       expect(client.fileServer).to.equal(
         'https://api-content.sandbox.dropbox-proxy.com')
 
-  describe 'normalizePath', ->
+  describe '#normalizePath', ->
     it "doesn't touch relative paths", ->
       expect(@client.normalizePath('aa/b/cc/dd')).to.equal 'aa/b/cc/dd'
 
@@ -98,7 +98,7 @@ buildClientTests = (clientKeys) ->
     it 'removes multiple leading /s from absolute paths', ->
       expect(@client.normalizePath('///aa/b/ccc/dd')).to.equal 'aa/b/ccc/dd'
 
-  describe 'urlEncodePath', ->
+  describe '#urlEncodePath', ->
     it 'encodes each segment separately', ->
       expect(@client.urlEncodePath('a b+c/d?e"f/g&h')).to.
           equal "a%20b%2Bc/d%3Fe%22f/g%26h"
@@ -106,11 +106,11 @@ buildClientTests = (clientKeys) ->
       expect(@client.urlEncodePath('///a b+c/g&h')).to.
           equal "a%20b%2Bc/g%26h"
 
-  describe 'dropboxUid', ->
+  describe '#dropboxUid', ->
     it 'matches the uid in the credentials', ->
       expect(@client.dropboxUid()).to.equal clientKeys.uid
 
-  describe 'getUserInfo', ->
+  describe '#getUserInfo', ->
     it 'returns reasonable information', (done) ->
       @client.getUserInfo (error, userInfo, rawUserInfo) ->
         expect(error).to.equal null
@@ -120,7 +120,7 @@ buildClientTests = (clientKeys) ->
         expect(rawUserInfo).to.have.property 'uid'
         done()
 
-  describe 'mkdir', ->
+  describe '#mkdir', ->
     afterEach (done) ->
       return done() unless @newFolder
       @client.remove @newFolder, (error, stat) -> done()
@@ -137,7 +137,7 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFolder).to.equal true
           done()
 
-  describe 'readFile', ->
+  describe '#readFile', ->
     it 'reads a text file', (done) ->
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
@@ -174,7 +174,7 @@ buildClientTests = (clientKeys) ->
           done()
         reader.readAsBinaryString blob
 
-  describe 'writeFile', ->
+  describe '#writeFile', ->
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -216,7 +216,7 @@ buildClientTests = (clientKeys) ->
     # TODO(pwnall): tests for writing binary files
 
 
-  describe 'stat', ->
+  describe '#stat', ->
     it 'retrieves a Stat for a file', (done) ->
       @client.stat @textFile, (error, stat) =>
         expect(error).to.equal null
@@ -268,7 +268,7 @@ buildClientTests = (clientKeys) ->
           expect(error.status).to.equal 404
         done()
 
-  describe 'readdir', ->
+  describe '#readdir', ->
     it 'retrieves a Stat and entries for a folder', (done) ->
       @client.readdir @testFolder, (error, entries, dir_stat, entry_stats) =>
         expect(error).to.equal null
@@ -287,7 +287,7 @@ buildClientTests = (clientKeys) ->
         expect(entry_stats[0].path).to.have.string @testFolder
         done()
 
-  describe 'history', ->
+  describe '#history', ->
     it 'gets a list of revisions', (done) ->
       @client.history @textFile, (error, versions) =>
         expect(error).to.equal null
@@ -305,7 +305,7 @@ buildClientTests = (clientKeys) ->
         expect(versions).not.to.be.ok
         done()
 
-  describe 'copy', ->
+  describe '#copy', ->
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -333,7 +333,7 @@ buildClientTests = (clientKeys) ->
               expect(stat.versionTag).to.equal @textFileTag
             done()
 
-  describe 'makeCopyReference', ->
+  describe '#makeCopyReference', ->
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -358,7 +358,7 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
             done()
 
-  describe 'move', ->
+  describe '#move', ->
     beforeEach (done) ->
       @timeout 10 * 1000  # This sequence is slow on the current API server.
       @moveFrom = "#{@testFolder}/move source of test-file.txt"
@@ -395,7 +395,7 @@ buildClientTests = (clientKeys) ->
               expect(stat).to.equal undefined
             done()
 
-  describe 'remove', ->
+  describe '#remove', ->
     beforeEach (done) ->
       @newFolder = "#{@testFolder}/folder delete test"
       @client.mkdir @newFolder, (error, stat) =>
@@ -428,7 +428,7 @@ buildClientTests = (clientKeys) ->
           expect(stat.isRemoved).to.equal true
           done()
 
-  describe 'revertFile', ->
+  describe '#revertFile', ->
     describe 'on a removed file', ->
       beforeEach (done) ->
         @timeout 12 * 1000  # This sequence seems to be quite slow.
@@ -466,7 +466,7 @@ buildClientTests = (clientKeys) ->
               expect(stat.isRemoved).to.equal false
             done()
 
-  describe 'findByName', ->
+  describe '#findByName', ->
     it 'locates the test folder given a partial name', (done) ->
       namePattern = @testFolder.substring 5
       @client.search '/', namePattern, (error, matches) =>
@@ -489,46 +489,47 @@ buildClientTests = (clientKeys) ->
         expect(matches).to.have.length 1
         done()
 
-  describe 'makeUrl for a short Web URL', ->
-    it 'returns a shortened Dropbox URL', (done) ->
-      @client.makeUrl @textFile, (error, publicUrl) ->
-        expect(error).to.equal null
-        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-        expect(publicUrl.isDirect).to.equal false
-        expect(publicUrl.url).to.contain '//db.tt/'
-        done()
-
-  describe 'makeUrl for a Web URL', ->
-    it 'returns an URL to a preview page', (done) ->
-      @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
-        expect(error).to.equal null
-        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-        expect(publicUrl.isDirect).to.equal false
-        expect(publicUrl.url).not.to.contain '//db.tt/'
-
-        # The cont/ents server does not return CORS headers.
-        return done() unless @nodejs
-        Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
+  describe '#makeUrl', ->
+    describe 'for a short Web URL', ->
+      it 'returns a shortened Dropbox URL', (done) ->
+        @client.makeUrl @textFile, (error, publicUrl) ->
           expect(error).to.equal null
-          expect(data).to.contain '<!DOCTYPE html>'
+          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+          expect(publicUrl.isDirect).to.equal false
+          expect(publicUrl.url).to.contain '//db.tt/'
           done()
 
-  describe 'makeUrl for a direct download URL', ->
-    it 'gets a direct download URL', (done) ->
-      @client.makeUrl @textFile, { download: true }, (error, publicUrl) =>
-        expect(error).to.equal null
-        expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-        expect(publicUrl.isDirect).to.equal true
-        expect(publicUrl.url).not.to.contain '//db.tt/'
-
-        # The contents server does not return CORS headers.
-        return done() unless @nodejs
-        Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
+    describe 'for a Web URL', ->
+      it 'returns an URL to a preview page', (done) ->
+        @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
           expect(error).to.equal null
-          expect(data).to.equal @textFileData
-          done()
+          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+          expect(publicUrl.isDirect).to.equal false
+          expect(publicUrl.url).not.to.contain '//db.tt/'
 
-  describe 'pullChanges', ->
+          # The cont/ents server does not return CORS headers.
+          return done() unless @nodejs
+          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
+            expect(error).to.equal null
+            expect(data).to.contain '<!DOCTYPE html>'
+            done()
+
+    describe 'for a direct download URL', ->
+      it 'gets a direct download URL', (done) ->
+        @client.makeUrl @textFile, { download: true }, (error, publicUrl) =>
+          expect(error).to.equal null
+          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+          expect(publicUrl.isDirect).to.equal true
+          expect(publicUrl.url).not.to.contain '//db.tt/'
+
+          # The contents server does not return CORS headers.
+          return done() unless @nodejs
+          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData
+            done()
+
+  describe '#pullChanges', ->
     afterEach (done) ->
       @timeout 10 * 1000  # The current API server is slow on this.
       return done() unless @newFile
@@ -575,14 +576,14 @@ buildClientTests = (clientKeys) ->
               expect(change.stat.path).to.equal @newFile
               done()
 
-  describe 'thumbnailUrl', ->
+  describe '#thumbnailUrl', ->
     it 'produces an URL that contains the file name', ->
       url = @client.thumbnailUrl @imageFile, { png: true, size: 'medium' }
       expect(url).to.contain 'tests'  # Fragment of the file name.
       expect(url).to.contain 'png'
       expect(url).to.contain 'medium'
 
-  describe 'readThumbnail', ->
+  describe '#readThumbnail', ->
     it 'reads the image into a string', (done) ->
       @timeout 12 * 1000  # Thumbnail generation is slow.
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
@@ -613,7 +614,7 @@ buildClientTests = (clientKeys) ->
           done()
         reader.readAsBinaryString blob
 
-  describe 'reset', ->
+  describe '#reset', ->
     beforeEach ->
       @client.reset()
 
@@ -626,7 +627,7 @@ buildClientTests = (clientKeys) ->
       expect(credentials).not.to.have.property 'tokenSecret'
       expect(credentials).not.to.have.property 'uid'
 
-  describe 'credentials', ->
+  describe '#credentials', ->
     it 'contains all the expected keys when DONE', ->
       credentials = @client.credentials()
       expect(credentials).to.have.property 'key'
@@ -674,7 +675,7 @@ buildClientTests = (clientKeys) ->
         expect(credentials).to.have.property 'secret'
 
 
-  describe 'setCredentials', ->
+  describe '#setCredentials', ->
     it 'gets the client into the RESET state', ->
       @client.setCredentials key: 'app-key', secret: 'app-secret'
       expect(@client.authState).to.equal Dropbox.Client.RESET
@@ -705,13 +706,23 @@ buildClientTests = (clientKeys) ->
       expect(credentials.tokenSecret).to.equal 'user-secret'
       expect(credentials.uid).to.equal '3141592'
 
+  describe '#appHash', ->
+    it 'is consistent', ->
+      client = new Dropbox.Client clientKeys
+      expect(client.appHash()).to.equal @client.appHash()
+
+    it 'is a non-trivial string', ->
+      expect(@client.appHash()).to.be.a 'string'
+      expect(@client.appHash().length).to.be.greaterThan 4
+
+
 describe 'DropboxClient with full Dropbox access', ->
   buildClientTests testFullDropboxKeys
 
 describe 'DropboxClient with Folder access', ->
   buildClientTests testKeys
 
-  describe 'authenticate + signOut', ->
+  describe '#authenticate + #signOut', ->
     # NOTE: we're not duplicating this test in the full Dropbox acess suite,
     #       because it's annoying to the tester
     it 'completes the authenticate flow', (done) ->
@@ -736,4 +747,9 @@ describe 'DropboxClient with Folder access', ->
               expect(error).to.be.ok
               expect(error.status).to.equal 401
               done()
+
+  describe '#appHash', ->
+    it 'depends on the app key', ->
+      client = new Dropbox.Client testFullDropboxKeys
+      expect(client.appHash()).not.to.equal @client.appHash()
 

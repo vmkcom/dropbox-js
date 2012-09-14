@@ -853,6 +853,11 @@ class DropboxClient
     @_credentials = null
     @
 
+  # @return {String} a string that uniquely identifies the Dropbox application
+  #     of this client
+  appHash: ->
+    @oauth.appHash()
+
   # Computes the URLs of all the Dropbox API calls.
   #
   # @private
