@@ -62,6 +62,22 @@ If your application requires full Dropbox access, leave out the `sandbox: true`
 parameter.
 
 
+### Browser and Open-Source Applications
+
+The Dropbox API guidelines ask that the API key and secret is never exposed in
+cleartext. This is an issue for browser-side and open-source applications.
+
+To meet this requirement,
+[encode your API key](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/api_keys.js/public/index.html)
+and pass the encoded key string to the `Dropbox.Client` constructor.
+
+```javascript
+var client = new Dropbox.Client({
+    key: "encoded-key-string|it-is-really-really-long", sandbox: true
+});
+```
+
+
 ## Authentication
 
 Before you can make any API calls, you need to authenticate your application's
