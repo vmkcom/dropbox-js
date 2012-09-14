@@ -14,7 +14,7 @@
   <script src="/test/vendor/chai.js"></script>
   <script src="/node_modules/sinon-chai/lib/sinon-chai.js"></script>
   <script src="/node_modules/mocha/mocha.js"></script>
-  <script>mocha.setup('bdd').slow(150).timeout(10000);</script>
+  <script>mocha.setup({ui: 'bdd', slow: 150, timeout: 10000});</script>
 
   <script src="/test/.token/token.js"></script>
   <script src="/test/vendor/favicon.js"></script>
