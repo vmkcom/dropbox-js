@@ -28,7 +28,8 @@ class WebFileServer
                             { hidden: true })
     options = key: fs.readFileSync 'test/ssl/cert.pem'
     options.cert = options.key
-    https.createServer(options, @app).listen @port
+    server = https.createServer(options, @app)
+    server.listen @port
 
 module.exports = new WebFileServer
 

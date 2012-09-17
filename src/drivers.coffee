@@ -207,6 +207,10 @@ class DropboxPopupDriver
   #     to use the current location for redirecting
   # @option options {String} receiverUrl URL to the page that receives the
   #     /authorize redirect and performs the postMessage
+  # @option options {Boolean} noFragment if true, the receiverUrl will be used
+  #     as given; by default, a hash "#" is appended to URLs that don't have
+  #     one, so the OAuth token is received as a URL fragment and does not hit
+  #     the file server
   # @option options {String} receiverFile the URL to the receiver page will be
   #     computed by replacing the file name (everything after the last /) of
   #     the current location with this parameter's value
@@ -227,11 +231,17 @@ class DropboxPopupDriver
   computeUrl: (options) ->
     if options
       if options.receiverUrl
-        return options.receiverUrl
+        if options.noFragment or options.receiverUrl.indexOf('#') isnt -1
+          return options.receiverUrl
+        else
+          return options.receiverUrl + '#'
       else if options.receiverFile
         fragments = DropboxPopupDriver.currentLocation().split '/'
         fragments[fragments.length - 1] = options.receiverFile
-        return fragments.join('/') + '#'
+        if options.noFragment
+          return fragments.join('/')
+        else
+          return fragments.join('/') + '#'
     DropboxPopupDriver.currentLocation()
 
   # Wrapper for window.location, for testing purposes.
@@ -279,8 +289,8 @@ class DropboxPopupDriver
     listener = (event) ->
       match = tokenRe.exec event.data.toString()
       if match and decodeURIComponent(match[2]) is token
-        callback()
         window.removeEventListener 'message', listener
+        callback()
     window.addEventListener 'message', listener, false
 
 

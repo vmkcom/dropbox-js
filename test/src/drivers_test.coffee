@@ -155,7 +155,44 @@ describe 'DropboxPopupDriver', ->
       driver = new Dropbox.Drivers.Popup receiverFile: 'another.file'
       expect(driver.url()).to.equal 'http://test:123/a/path/another.file#'
 
-    it 'replaces the entire URL correctly', ->
+    it 'replaces the current file without a fragment correctly', ->
+      driver = new Dropbox.Drivers.Popup
+        receiverFile: 'another.file', noFragment: true
+      expect(driver.url()).to.equal 'http://test:123/a/path/another.file'
+
+    it 'replaces an entire URL without a fragment correctly', ->
       driver = new Dropbox.Drivers.Popup
         receiverUrl: 'https://something.com/filez'
+      expect(driver.url()).to.equal 'https://something.com/filez#'
+
+    it 'replaces an entire URL with a fragment correctly', ->
+      driver = new Dropbox.Drivers.Popup
+        receiverUrl: 'https://something.com/filez#frag'
+      expect(driver.url()).to.equal 'https://something.com/filez#frag'
+
+    it 'replaces an entire URL without a fragment and useQuery correctly', ->
+      driver = new Dropbox.Drivers.Popup
+        receiverUrl: 'https://something.com/filez', noFragment: true
       expect(driver.url()).to.equal 'https://something.com/filez'
+
+  describe 'integration', ->
+    beforeEach ->
+      @node_js = module? and module?.exports? and require?
+
+    it 'should work with a query string', (done) ->
+      return done() if @node_js
+      @timeout 45 * 1000  # Time-consuming because the user must click.
+
+      client = new Dropbox.Client testKeys
+      client.reset()
+      authDriver = new Dropbox.Drivers.Popup
+        receiverFile: 'oauth_receiver.html', noFragment: true
+      client.authDriver authDriver
+      client.authenticate (error, client) =>
+        expect(error).to.equal null
+        expect(client.authState).to.equal Dropbox.Client.DONE
+        # Verify that we can do API calls.
+        client.getUserInfo (error, userInfo) ->
+          expect(error).to.equal null
+          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+          done()
