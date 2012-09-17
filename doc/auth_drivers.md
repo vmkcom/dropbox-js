@@ -130,6 +130,18 @@ and point the `Dropbox.Drivers.Popup` constructor to it.
 client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: 'https://url.to/receiver.html"}));
 ```
 
+The popup driver adds a `#` (fragment hash) to the receiver URL if necessary,
+to ensure that the user's Dropbox uid and OAuth token are passed to the
+receiver in a URL fragment. This measure may improve your users' privacy, as it
+reduces the chance that their uid or token ends up in a server log.
+
+If you have a good reason to disable the behavior above, set the `noFragment`
+option to true.
+
+```javascript
+client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: 'https://url.to/receiver.html", noFragment: true}));
+```
+
 
 ### Dropbox.Drivers.NodeServer
 
