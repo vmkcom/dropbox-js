@@ -127,7 +127,7 @@ to handle redirects, create a page on your site that contains the
 and point the `Dropbox.Drivers.Popup` constructor to it.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: 'https://url.to/receiver.html"}));
+client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: "https://url.to/receiver.html"}));
 ```
 
 The popup driver adds a `#` (fragment hash) to the receiver URL if necessary,
@@ -139,7 +139,7 @@ If you have a good reason to disable the behavior above, set the `noFragment`
 option to true.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: 'https://url.to/receiver.html", noFragment: true}));
+client.authDriver(new Dropbox.Drivers.Popup({receiverUrl: "https://url.to/receiver.html", noFragment: true}));
 ```
 
 
