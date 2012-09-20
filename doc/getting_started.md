@@ -16,6 +16,9 @@ To get started right away, place this snippet in your page's `<head>`.
 </script>
 ```
 
+The snippet is not a typo. [cdnjs](https://cdnjs.com) recommends using
+[protocol-relative URLs](http://paulirish.com/2010/the-protocol-relative-url/).
+
 To get the latest development build of dropbox.js, follow the steps in the
 [development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md).
 
