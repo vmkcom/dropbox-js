@@ -11,14 +11,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dropbox/dropbox-sdk.git"
+    "url": "https://github.com/dropbox/dropbox-js.git"
   },
   "engines": {
     "node": ">= 0.8.8"
   },
   "dependencies": {
     "open": ">= 0.0.2",
-    "xmlhttprequest": ">= 1.4.2"
+    "xmlhttprequest": ">= 1.5.0"
   },
   "devDependencies": {
     "chai": ">= 1.2.0",

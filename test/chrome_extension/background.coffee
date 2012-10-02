@@ -23,7 +23,7 @@ class Automator
   # @return {Boolean} true if the "Authorize" button should be auto-clicked
   shouldAutomateAuth: (url) ->
     return false unless @wired
-    !!(/(\?|&)oauth_callback=https?%3A%2F%2Flocalhost%3A891(1|2)%2F/.exec(url))
+    !!(/(\?|&)oauth_callback=https?%3A%2F%2Flocalhost%3A891[12]%2F/.exec(url))
 
   # Checks if an OAuth receiver window should be auto-closed.
   # @param {String} url the URL of the OAuth receiver window

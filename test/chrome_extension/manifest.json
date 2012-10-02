@@ -33,7 +33,7 @@
         "http://localhost/*",
         "https://localhost/*"
       ],
-      "include_globs": ["http?://localhost:8912/oauth_callback*"],
+      "include_globs": ["http*://localhost:8912/oauth_callback*"],
       "js": ["content_close.js"],
       "run_at": "document_idle"
     }
