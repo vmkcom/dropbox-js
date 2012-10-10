@@ -301,7 +301,8 @@ buildClientTests = (clientKeys) ->
     it 'returns 40x if the limit is set to 0', (done) ->
       @client.history @textFile, limit: 0, (error, versions) =>
         expect(error).to.be.instanceOf Dropbox.ApiError
-        expect(error.status).to.be.within 400, 499
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+          expect(error.status).to.be.within 400, 499
         expect(versions).not.to.be.ok
         done()
 
