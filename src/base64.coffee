@@ -2,8 +2,8 @@
 
 if window?
   if window.atob and window.btoa
-    atob = window.atob
-    btoa = window.btoa
+    atob = (string) -> window.atob string
+    btoa = (base64) -> window.btoa base64
   else
     # IE < 10 doesn't implement the standard atob / btoa functions.
     base64Digits =
