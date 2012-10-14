@@ -754,3 +754,8 @@ describe 'DropboxClient with Folder access', ->
       client = new Dropbox.Client testFullDropboxKeys
       expect(client.appHash()).not.to.equal @client.appHash()
 
+  describe '#constructor', ->
+    it 'raises an Error if initialized without an API key / secret', ->
+      expect(-> new Dropbox.Client(token: '123', tokenSecret: '456')).to.
+          throw(Error, /no api key/i)
+

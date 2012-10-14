@@ -35,6 +35,9 @@ class DropboxOauth
       @k = decodeURIComponent k
       @s = decodeURIComponent s
       @_appHash = null
+    else
+      unless @k
+        throw new Error('No API key supplied')
 
     if options.token
       @setToken options.token, options.tokenSecret

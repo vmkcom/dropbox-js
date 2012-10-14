@@ -117,3 +117,8 @@ describe 'Oauth', ->
       expect(oauth.appHash()).to.be.a 'string'
       expect(oauth.appHash().length).to.be.greaterThan 4
 
+  describe '#constructor', ->
+    it 'raises an Error if initialized without an API key / secret', ->
+      expect(-> new Dropbox.Oauth(token: '123', tokenSecret: '456')).to.
+          throw(Error, /no api key/i)
+
