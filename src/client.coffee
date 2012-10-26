@@ -46,7 +46,7 @@ class DropboxClient
   #     or Dropbox.Driver.NodeServer
   # @return {Dropbox.Client} this, for easy call chaining
   authDriver: (driver) ->
-    @authDriver = driver
+    @driver = driver
     @
 
   # The authenticated user's Dropbx user ID.
@@ -81,8 +81,8 @@ class DropboxClient
     _fsmStep = =>
       if oldAuthState isnt @authState
         oldAuthState = @authState
-        if @authDriver.onAuthStateChange
-          return @authDriver.onAuthStateChange(@, _fsmStep)
+        if @driver.onAuthStateChange
+          return @driver.onAuthStateChange(@, _fsmStep)
 
       switch @authState
         when DropboxClient.RESET  # No user credentials -> request token.
@@ -100,7 +100,7 @@ class DropboxClient
 
         when DropboxClient.REQUEST  # Have request token, get it authorized.
           authUrl = @authorizeUrl @oauth.token
-          @authDriver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
+          @driver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
             @authState = DropboxClient.AUTHORIZED
             @_credentials = null
             _fsmStep()
@@ -149,8 +149,8 @@ class DropboxClient
 
       @reset()
       @authState = DropboxClient.SIGNED_OFF
-      if @authDriver.onAuthStateChange
-        @authDriver.onAuthStateChange @, ->
+      if @driver.onAuthStateChange
+        @driver.onAuthStateChange @, ->
           callback error
       else
         callback error
@@ -955,7 +955,7 @@ class DropboxClient
   # @return {String} the URL that the user's browser should be redirected to
   #     in order to perform an /oauth/authorize request
   authorizeUrl: (token) ->
-    params = { oauth_token: token, oauth_callback: @authDriver.url() }
+    params = { oauth_token: token, oauth_callback: @driver.url() }
     "#{@urls.authorize}?" + DropboxXhr.urlEncode(params)
 
   # Exchanges an OAuth request token with an access token.
