@@ -1,5 +1,5 @@
 # Documentation for the interface to a Dropbox OAuth driver.
-class DropboxAuthDriver
+class Dropbox.AuthDriver
   # The callback URL that should be supplied to the OAuth /authorize call.
   #
   # The driver must be able to intercept redirects to the returned URL, in
@@ -53,9 +53,11 @@ class DropboxAuthDriver
   onAuthStateChange: (client, done) ->
     done()
 
+# Namespace for authentication drivers.
+Dropbox.Drivers = {}
 
 # OAuth driver that uses a redirect and localStorage to complete the flow.
-class DropboxRedirectDriver
+class Dropbox.Drivers.Redirect
   # Sets up the redirect-based OAuth driver.
   #
   # @param {?Object} options the advanced settings below
@@ -93,7 +95,7 @@ class DropboxRedirectDriver
     @storageKey = "dropbox-auth:#{@scope}:#{client.appHash()}"
 
     switch client.authState
-      when Dropbox.Client.RESET
+      when DropboxClient.RESET
         return done() unless credentials = @loadCredentials()
 
         if credentials.authState  # Incomplete authentication.
@@ -135,7 +137,7 @@ class DropboxRedirectDriver
   # Pre-computes the return value of url.
   computeUrl: ->
     querySuffix = "_dropboxjs_scope=#{encodeURIComponent @scope}"
-    location = DropboxRedirectDriver.currentLocation()
+    location = Dropbox.Drivers.Redirect.currentLocation()
     if location.indexOf('#') is -1
       fragment = null
     else
@@ -160,7 +162,7 @@ class DropboxRedirectDriver
   # @return {?String} the OAuth token that the user just authorized, or null if
   #     the user accessed this directly, without having authorized a token
   locationToken: ->
-    location = DropboxRedirectDriver.currentLocation()
+    location = Dropbox.Drivers.Redirect.currentLocation()
 
     # Check for the scope.
     scopePattern = "_dropboxjs_scope=#{encodeURIComponent @scope}&"
@@ -200,7 +202,7 @@ class DropboxRedirectDriver
     localStorage.removeItem @storageKey
 
 # OAuth driver that uses a popup window and postMessage to complete the flow.
-class DropboxPopupDriver
+class Dropbox.Drivers.Popup
   # Sets up a popup-based OAuth driver.
   #
   # @param {?Object} options one of the settings below; leave out the argument
@@ -236,13 +238,13 @@ class DropboxPopupDriver
         else
           return options.receiverUrl + '#'
       else if options.receiverFile
-        fragments = DropboxPopupDriver.currentLocation().split '/'
+        fragments = Dropbox.Drivers.Popup.currentLocation().split '/'
         fragments[fragments.length - 1] = options.receiverFile
         if options.noFragment
           return fragments.join('/')
         else
           return fragments.join('/') + '#'
-    DropboxPopupDriver.currentLocation()
+    Dropbox.Drivers.Popup.currentLocation()
 
   # Wrapper for window.location, for testing purposes.
   #
@@ -297,7 +299,7 @@ class DropboxPopupDriver
 # OAuth driver that redirects the browser to a node app to complete the flow.
 #
 # This is useful for testing node.js libraries and applications.
-class DropboxNodeServerDriver
+class Dropbox.Drivers.NodeServer
   # Starts up the node app that intercepts the browser redirect.
   #
   # @param {?Object} options one or more of the options below

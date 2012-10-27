@@ -13,20 +13,6 @@ else
   throw new Error('This library only supports node.js and modern browsers.')
 
 # These are mostly useful for testing. Clients shouldn't use internal stuff.
-Dropbox.ApiError = DropboxApiError
-Dropbox.Client = DropboxClient
-Dropbox.CopyReference = DropboxCopyReference
-Dropbox.Drivers =
-  Popup: DropboxPopupDriver
-  Redirect: DropboxRedirectDriver
-  NodeServer: DropboxNodeServerDriver
-Dropbox.Oauth = DropboxOauth
-Dropbox.PublicUrl = DropboxPublicUrl
-Dropbox.PulledChanges = DropboxPulledChanges
-Dropbox.PullChange = DropboxPullChange
-Dropbox.Stat = DropboxStat
-Dropbox.UserInfo = DropboxUserInfo
-Dropbox.Xhr = DropboxXhr
 Dropbox.atob = atob
 Dropbox.btoa = btoa
 Dropbox.hmac = base64HmacSha1

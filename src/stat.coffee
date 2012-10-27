@@ -1,5 +1,5 @@
 # The result of stat-ing a file or directory in a user's Dropbox.
-class DropboxStat
+class Dropbox.Stat
   # Creates a Stat instance from a raw "metadata" response.
   #
   # @param {?Object} metadata the result of parsing JSON API responses that are
@@ -8,7 +8,7 @@ class DropboxStat
   #     parameters that aren't parsed JSON objects are returned as they are
   @parse: (metadata) ->
     if metadata and typeof metadata is 'object'
-      new DropboxStat metadata
+      new Dropbox.Stat metadata
     else
       metadata
 

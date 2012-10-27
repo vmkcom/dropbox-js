@@ -21,7 +21,7 @@ else
   DropboxXhrCanSendForms = false
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
-class DropboxXhr
+class Dropbox.Xhr
   # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
   # Set to true when using the XDomainRequest API.
@@ -144,7 +144,8 @@ class DropboxXhr
 
   # Implementation for request and multipartRequest.
   #
-  # @see request2, multipartRequest
+  # @see Dropbox.Xhr.request2
+  # @see Dropbox.Xhr.multipartRequest
   # @return {XMLHttpRequest} the XHR object created for this request
   @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
@@ -211,7 +212,7 @@ class DropboxXhr
     return true if xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
 
     if xhr.status < 200 or xhr.status >= 300
-      apiError = new DropboxApiError xhr, method, url
+      apiError = new Dropbox.ApiError xhr, method, url
       callback apiError
       return true
 
@@ -276,6 +277,8 @@ class DropboxXhr
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   @onError: (xhr, method, url, callback) ->
-    apiError = new DropboxApiError xhr, method, url
+    apiError = new Dropbox.ApiError xhr, method, url
     callback apiError
     return true
+
+DropboxXhr = Dropbox.Xhr

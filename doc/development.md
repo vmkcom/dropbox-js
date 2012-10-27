@@ -20,7 +20,6 @@ suite.
 ```bash
 git clone https://github.com/dropbox/dropbox-sdk.git
 cd dropbox-sdk
-npm install -g coffee-script mocha uglify-js  # Prefix with sudo if necessary.
 npm install
 ```
 

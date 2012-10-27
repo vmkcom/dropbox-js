@@ -1,5 +1,5 @@
 # Information about a failed call to the Dropbox API.
-class DropboxApiError
+class Dropbox.ApiError
   # Wraps a failed XHR call to the Dropbox API.
   #
   # @param {String} method the HTTP verb of the API request (e.g., 'GET')

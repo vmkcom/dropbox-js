@@ -1,5 +1,5 @@
 # Information about a Dropbox user.
-class DropboxUserInfo
+class Dropbox.UserInfo
   # Creates a UserInfo instance from a raw API response.
   #
   # @param {?Object} userInfo the result of parsing a JSON API response that
@@ -9,7 +9,7 @@ class DropboxUserInfo
   #     the are
   @parse: (userInfo) ->
     if userInfo and typeof userInfo is 'object'
-      new DropboxUserInfo userInfo
+      new Dropbox.UserInfo userInfo
     else
       userInfo
 

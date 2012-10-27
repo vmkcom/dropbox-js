@@ -11,7 +11,8 @@ task 'test', ->
     build ->
       ssl_cert ->
         tokens ->
-          run 'mocha --colors --slow 200 --timeout 10000 --require test/js/helper.js test/js/*test.js'
+          run 'node_modules/mocha/bin/mocha --colors --slow 200 ' +
+              '--timeout 10000 --require test/js/helper.js test/js/*test.js'
 
 task 'webtest', ->
   vendor ->
@@ -35,16 +36,23 @@ task 'tokens', ->
     tokens ->
       process.exit 0
 
+task 'doc', ->
+  run 'node_modules/codo/bin/codo src'
+
 task 'extension', ->
-  run 'coffee --compile test/chrome_extension/*.coffee'
+  run 'node_modules/coffee/bin/coffee --compile test/chrome_extension/*.coffee'
 
 build = (callback) ->
   # Compile without --join for decent error messages.
-  run 'coffee --output tmp --compile src/*.coffee', ->
-    run 'coffee --output lib --compile --join dropbox.js src/*.coffee', ->
+  run 'node_modules/coffee-script/bin/coffee --output tmp ' +
+      '--compile src/*.coffee', ->
+    run 'node_modules/coffee-script/bin/coffee --output lib ' +
+        '--compile --join dropbox.js src/*.coffee', ->
       # Minify the javascript, for browser distribution.
-      run 'uglifyjs --no-copyright -o lib/dropbox.min.js lib/dropbox.js', ->
-        run 'coffee --output test/js --compile test/src/*.coffee',
+      run 'node_modules/uglify-js/bin/uglifyjs --no-copyright ' +
+          '--output lib/dropbox.min.js lib/dropbox.js', ->
+        run 'node_modules/coffee-script/bin/coffee --output test/js ' +
+            '--compile test/src/*.coffee',
             callback
 
 ssl_cert = (callback) ->

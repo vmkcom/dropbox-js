@@ -1,5 +1,5 @@
 # Represents a user accessing the application.
-class DropboxClient
+class Dropbox.Client
   # Dropbox client representing an application.
   #
   # For an optimal user experience, applications should use a single client for
@@ -144,7 +144,7 @@ class DropboxClient
   signOut: (callback) ->
     url = @urls.signOut
     params = @oauth.addAuthParams 'POST', url, {}
-    DropboxXhr.request 'POST', url, params, null, (error) =>
+    Dropbox.Xhr.request 'POST', url, params, null, (error) =>
       return callback(error) if error
 
       @reset()
@@ -170,9 +170,9 @@ class DropboxClient
   getUserInfo: (callback) ->
     url = @urls.accountInfo
     params = @oauth.addAuthParams 'GET', url, {}
-    DropboxXhr.request('GET', url, params, null,
+    Dropbox.Xhr.request('GET', url, params, null,
         (error, userData) ->
-          callback error, DropboxUserInfo.parse(userData), userData)
+          callback error, Dropbox.UserInfo.parse(userData), userData)
 
   # Retrieves the contents of a file stored in Dropbox.
   #
@@ -214,9 +214,9 @@ class DropboxClient
       if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request2('GET', url, params, null, null, responseType,
+    Dropbox.Xhr.request2('GET', url, params, null, null, responseType,
         (error, data, metadata) ->
-          callback error, data, DropboxStat.parse(metadata))
+          callback error, data, Dropbox.Stat.parse(metadata))
 
   # Store a file into a user's Dropbox.
   #
@@ -245,7 +245,7 @@ class DropboxClient
       callback = options
       options = null
 
-    useForm = DropboxXhr.canSendForms and typeof data is 'object'
+    useForm = Dropbox.Xhr.canSendForms and typeof data is 'object'
     if useForm
       @writeFileUsingForm path, data, options, callback
     else
@@ -285,8 +285,8 @@ class DropboxClient
       value: data,
       fileName: fileName
       contentType: 'application/octet-stream'
-    DropboxXhr.multipartRequest(url, fileField, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.multipartRequest(url, fileField, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # writeFile implementation that uses the /files_put API.
   #
@@ -305,8 +305,8 @@ class DropboxClient
         params.parent_rev = options.parentRev or options.parent_rev
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request2('POST', url, params, null, data, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request2('POST', url, params, null, data, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # Reads the metadata of a file or folder in a user's Dropbox.
   #
@@ -363,11 +363,12 @@ class DropboxClient
     params.list ||= 'false'
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request('GET', url, params, null,
+    Dropbox.Xhr.request('GET', url, params, null,
         (error, metadata) ->
-          stat = DropboxStat.parse metadata
+          stat = Dropbox.Stat.parse metadata
           if metadata?.contents
-            entries = (DropboxStat.parse(entry) for entry in metadata.contents)
+            entries =
+                (Dropbox.Stat.parse(entry) for entry in metadata.contents)
           else
             entries = undefined
           callback error, stat, entries
@@ -463,9 +464,9 @@ class DropboxClient
       params = {}
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
+    Dropbox.Xhr.request('POST', url, params, null,
         (error, urlData) ->
-          callback error, DropboxPublicUrl.parse(urlData, isDirect))
+          callback error, Dropbox.PublicUrl.parse(urlData, isDirect))
 
   # Retrieves the revision history of a file in a user's Dropbox.
   #
@@ -491,10 +492,10 @@ class DropboxClient
     if options and options.limit?
       params.rev_limit = options.limit
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request('GET', url, params, null,
+    Dropbox.Xhr.request('GET', url, params, null,
         (error, versions) ->
           if versions
-            stats = (DropboxStat.parse(metadata) for metadata in versions)
+            stats = (Dropbox.Stat.parse(metadata) for metadata in versions)
           else
             stats = undefined
           callback error, stats
@@ -577,9 +578,9 @@ class DropboxClient
     responseType = 'b'
     if options
       responseType = 'blob' if options.blob
-    DropboxXhr.request2('GET', url, {}, null, null, responseType,
+    Dropbox.Xhr.request2('GET', url, {}, null, null, responseType,
         (error, data, metadata) ->
-          callback error, data, DropboxStat.parse(metadata))
+          callback error, data, Dropbox.Stat.parse(metadata))
 
   # Reverts a file's contents to a previous version.
   #
@@ -601,8 +602,8 @@ class DropboxClient
     url = "#{@urls.restore}/#{@urlEncodePath(path)}"
     params = { rev: versionTag }
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request('POST', url, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # Alias for "revertFile" that matches the HTTP API.
   restore: (path, versionTag, callback) ->
@@ -643,10 +644,10 @@ class DropboxClient
       if options.removed or options.deleted
         params.include_deleted = true
     @oauth.addAuthParams 'GET', url, params
-    DropboxXhr.request('GET', url, params, null,
+    Dropbox.Xhr.request('GET', url, params, null,
         (error, results) ->
           if results
-            stats = (DropboxStat.parse(metadata) for metadata in results)
+            stats = (Dropbox.Stat.parse(metadata) for metadata in results)
           else
             stats = undefined
           callback error, stats
@@ -669,9 +670,9 @@ class DropboxClient
   makeCopyReference: (path, callback) ->
     url = "#{@urls.copyRef}/#{@urlEncodePath(path)}"
     params = @oauth.addAuthParams 'GET', url, {}
-    DropboxXhr.request('GET', url, params, null,
+    Dropbox.Xhr.request('GET', url, params, null,
         (error, refData) ->
-          callback error, DropboxCopyReference.parse(refData))
+          callback error, Dropbox.CopyReference.parse(refData))
 
   # Alias for "makeCopyReference" that matches the HTTP API.
   copyRef: (path, callback) ->
@@ -710,7 +711,7 @@ class DropboxClient
     else
       params = {}
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
+    Dropbox.Xhr.request('POST', url, params, null,
         (error, deltaInfo) -> callback error,
           Dropbox.PulledChanges.parse(deltaInfo))
 
@@ -731,8 +732,8 @@ class DropboxClient
     url = @urls.fileopsCreateFolder
     params = { root: @fileRoot, path: @normalizePath(path) }
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request('POST', url, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # Removes a file or diretory from a user's Dropbox.
   #
@@ -747,8 +748,8 @@ class DropboxClient
     url = @urls.fileopsDelete
     params = { root: @fileRoot, path: @normalizePath(path)  }
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request('POST', url, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # node.js-friendly alias for "remove".
   unlink: (path, callback) ->
@@ -787,7 +788,7 @@ class DropboxClient
       options = null
 
     params = { root: @fileRoot, to_path: @normalizePath(toPath) }
-    if from instanceof DropboxCopyReference
+    if from instanceof Dropbox.CopyReference
       params.from_copy_ref = from.tag
     else
       params.from_path = @normalizePath from
@@ -795,8 +796,8 @@ class DropboxClient
 
     url = @urls.fileopsCopy
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request('POST', url, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # Moves a file or folder to a different location in a user's Dropbox.
   #
@@ -821,8 +822,8 @@ class DropboxClient
     url = @urls.fileopsMove
     params = { root: @fileRoot, from_path: fromPath, to_path: toPath }
     @oauth.addAuthParams 'POST', url, params
-    DropboxXhr.request('POST', url, params, null,
-        (error, metadata) -> callback error, DropboxStat.parse(metadata))
+    Dropbox.Xhr.request('POST', url, params, null,
+        (error, metadata) -> callback error, Dropbox.Stat.parse(metadata))
 
   # Removes all login information.
   #
@@ -916,7 +917,7 @@ class DropboxClient
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
   urlEncodePath: (path) ->
-    DropboxXhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
+    Dropbox.Xhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
 
   # Normalizes a Dropbox path for API requests.
   #
@@ -933,8 +934,6 @@ class DropboxClient
       path.substring i
     else
       path
-
-  # Really low-level call to /oauth/request_token
   #
   # @private
   # This a low-level method called by authorize. Users should call authorize.
@@ -943,7 +942,7 @@ class DropboxClient
   #    /oauth/request_token HTTP request
   requestToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.requestToken, {}
-    DropboxXhr.request 'POST', @urls.requestToken, params, null, callback
+    Dropbox.Xhr.request 'POST', @urls.requestToken, params, null, callback
 
   # The URL for /oauth/authorize, embedding the user's token.
   #
@@ -956,7 +955,7 @@ class DropboxClient
   #     in order to perform an /oauth/authorize request
   authorizeUrl: (token) ->
     params = { oauth_token: token, oauth_callback: @driver.url() }
-    "#{@urls.authorize}?" + DropboxXhr.urlEncode(params)
+    "#{@urls.authorize}?" + Dropbox.Xhr.urlEncode(params)
 
   # Exchanges an OAuth request token with an access token.
   #
@@ -967,7 +966,7 @@ class DropboxClient
   #    /oauth/access_token HTTP request
   getAccessToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
-    DropboxXhr.request 'POST', @urls.accessToken, params, null, callback
+    Dropbox.Xhr.request 'POST', @urls.accessToken, params, null, callback
 
   # @return {String} the URL to the default value for the "server" option
   defaultApiServer: ->
@@ -1004,3 +1003,4 @@ class DropboxClient
       value.fileServer = @fileServer
     @_credentials = value
 
+DropboxClient = Dropbox.Client

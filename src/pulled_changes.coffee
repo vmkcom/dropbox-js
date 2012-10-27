@@ -1,5 +1,5 @@
 # Wraps the result of pullChanges, describing the changes in a user's Dropbox.
-class DropboxPulledChanges
+class Dropbox.PulledChanges
   # Creates a new Dropbox.PulledChanges instance from a /delta API call result.
   #
   # @param {?Object} deltaInfo the parsed JSON of a /delta API call result
@@ -8,7 +8,7 @@ class DropboxPulledChanges
   #     it is returned as is
   @parse: (deltaInfo) ->
     if deltaInfo and typeof deltaInfo is 'object'
-      new DropboxPulledChanges deltaInfo
+      new Dropbox.PulledChanges deltaInfo
     else
       deltaInfo
 
@@ -50,12 +50,12 @@ class DropboxPulledChanges
     @shouldPullAgain = deltaInfo.has_more
     @shouldBackOff = not @shouldPullAgain
     if deltaInfo.cursor and deltaInfo.cursor.length
-      @changes = (DropboxPullChange.parse entry for entry in deltaInfo.entries)
+      @changes = (Dropbox.PullChange.parse entry for entry in deltaInfo.entries)
     else
       @changes = []
 
 # Wraps a single change in a pullChanges result.
-class DropboxPullChange
+class Dropbox.PullChange
   # Creates a Dropbox.PullChange instance wrapping an entry in a /delta result.
   #
   # @param {?Object} entry the parsed JSON of a single entry in a /delta API
@@ -65,7 +65,7 @@ class DropboxPullChange
   #     parsed JSON, it is returned as is
   @parse: (entry) ->
     if entry and typeof entry is 'object'
-      new DropboxPullChange entry
+      new Dropbox.PullChange entry
     else
       entry
 
@@ -92,10 +92,9 @@ class DropboxPullChange
   #     call result
   constructor: (entry) ->
     @path = entry[0]
-    @stat = DropboxStat.parse entry[1]
+    @stat = Dropbox.Stat.parse entry[1]
     if @stat
       @wasRemoved = false
     else
       @stat = null
       @wasRemoved = true
-

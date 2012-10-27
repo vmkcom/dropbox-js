@@ -1,5 +1,5 @@
 # Wraps an URL to a Dropbox file or folder that can be publicly shared.
-class DropboxPublicUrl
+class Dropbox.PublicUrl
   # Creates a PublicUrl instance from a raw API response.
   #
   # @param {?Object} urlData the parsed JSON describing a public URL
@@ -8,9 +8,9 @@ class DropboxPublicUrl
   # @return {?Dropbox.PublicUrl} a PublicUrl instance wrapping the given public
   #     link info; parameters that don't look like parsed JSON are returned as
   #     they are
-  @parse: (urlData, isDirect) -> 
+  @parse: (urlData, isDirect) ->
     if urlData and typeof urlData is 'object'
-      new DropboxPublicUrl urlData, isDirect
+      new Dropbox.PublicUrl urlData, isDirect
     else
       urlData
 
@@ -39,7 +39,7 @@ class DropboxPublicUrl
   constructor: (urlData, isDirect) ->
     @url = urlData.url
     @expiresAt = new Date Date.parse(urlData.expires)
-    
+
     if isDirect is true
       @isDirect = true
     else if isDirect is false
@@ -48,16 +48,15 @@ class DropboxPublicUrl
       @isDirect = Date.now() - @expiresAt <= 86400000  # 1 day
     @isPreview = !@isDirect
 
-
 # Reference to a file that can be used to make a copy across users' Dropboxes.
-class DropboxCopyReference
+class Dropbox.CopyReference
   # Creates a CopyReference instance from a raw reference or API response.
   #
   # @param {?Object, ?String} refData the parsed JSON descring a copy
   #     reference, or the reference string
   @parse: (refData) ->
     if refData and (typeof refData is 'object' or typeof refData is 'string')
-      new DropboxCopyReference refData
+      new Dropbox.CopyReference refData
     else
       refData
 
@@ -68,7 +67,7 @@ class DropboxCopyReference
   expiresAt: undefined
 
   # Creates a CopyReference instance from a raw reference or API response.
-  # 
+  #
   # @private
   # This constructor is used by Dropbox.CopyReference.parse, and should not be
   # called directly.
