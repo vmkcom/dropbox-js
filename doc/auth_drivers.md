@@ -7,7 +7,7 @@ driver, and describes the drivers that ship with the library.
 
 An OAuth driver is a JavaScript object that implements the methods documented
 in the
-[DropboxAuthDriver class](https://github.com/dropbox/dropbox-js/blob/master/src/drivers.coffee).
+[Dropbox.AuthDriver class](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver.html).
 This class exists solely for the purpose of documenting these methods.
 
 A simple driver can get away with implementing `url` and `doAuthorize`. The
@@ -38,9 +38,8 @@ Implementations should call the `credentials` and `setCredentials` methods on
 the client to control the OAuth process.
 
 See the
-[source for DropboxRedirectDriver](https://github.com/dropbox/dropbox-js/blob/master/src/drivers.coffee)
-(exported as `Dropbox.Drivers.Redirect`) for a sample implementation of
-`onAuthStateChange`.
+[Dropbox.Drivers.Redirect source](https://github.com/dropbox/dropbox-js/blob/master/src/drivers.coffee)
+for a sample implementation of `onAuthStateChange`.
 
 
 ### The OAuth Process Steps
