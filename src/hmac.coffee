@@ -1,5 +1,5 @@
 # HMAC-SHA1 implementation heavily inspired from
-#     http://pajhome.org.uk/crypt/md5/sha1.js
+#   http://pajhome.org.uk/crypt/md5/sha1.js
 
 # Base64-encoded HMAC-SHA1.
 #
@@ -48,9 +48,9 @@ hmacSha1 = (string, key, length, keyLength) ->
 # SHA1 implementation.
 #
 # @param {Array} string the SHA1 input, as an array of 32-bit numbers; the
-#     computation trashes the array
+#   computation trashes the array
 # @param {Number} length the number of bytes in the SHA1 input; used in the
-#     SHA1 padding algorithm
+#   SHA1 padding algorithm
 # @return {Array<Number>} the SHA1 output, as an array of 32-bit numbers
 sha1 = (string, length) ->
   string[length >> 2] |= 1 << (31 - ((length & 0x03) << 3))

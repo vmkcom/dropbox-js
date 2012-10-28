@@ -5,7 +5,7 @@
 # @param {String} key the application's API key
 # @param {String} secret the application's API secret
 # @return {String} encoded key string that can be passed as the key option to
-#     the Dropbox.Client constructor
+#   the Dropbox.Client constructor
 dropboxEncodeKey = (key, secret) ->
   if secret
     secret = [encodeURIComponent(key), encodeURIComponent(secret)].join('?')

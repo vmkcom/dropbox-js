@@ -3,10 +3,10 @@ class Dropbox.UserInfo
   # Creates a UserInfo instance from a raw API response.
   #
   # @param {?Object} userInfo the result of parsing a JSON API response that
-  #     describes a user
+  #   describes a user
   # @return {Dropbox.UserInfo} a UserInfo instance wrapping the given API
-  #     response; parameters that aren't parsed JSON objects are returned as
-  #     the are
+  #   response; parameters that aren't parsed JSON objects are returned as
+  #   the are
   @parse: (userInfo) ->
     if userInfo and typeof userInfo is 'object'
       new Dropbox.UserInfo userInfo
@@ -17,14 +17,14 @@ class Dropbox.UserInfo
   name: null
 
   # @return {?String} the user's email; this is not in the official API
-  #     documentation, so it might not be supported
+  #   documentation, so it might not be supported
   email: null
 
   # @return {?String} two-letter country code, or null if unavailable
   countryCode: null
 
   # @return {String} unique ID for the user; this ID matches the unique ID
-  #     returned by the authentication process
+  #   returned by the authentication process
   uid: null
 
   # @return {String}
@@ -42,11 +42,11 @@ class Dropbox.UserInfo
   usedQuota: null
 
   # @return {Number} the number of bytes taken up by the user's data that is
-  #     not shared with other users
+  #   not shared with other users
   privateBytes: null
 
   # @return {Number} the number of bytes taken up by the user's data that is
-  #     shared with other users
+  #   shared with other users
   sharedBytes: null
 
   # Creates a UserInfo instance from a raw API response.
@@ -56,7 +56,7 @@ class Dropbox.UserInfo
   # called directly.
   #
   # @param {?Object} userInfo the result of parsing a JSON API response that
-  #     describes a user
+  #   describes a user
   constructor: (userInfo) ->
     @name = userInfo.display_name
     @email = userInfo.email

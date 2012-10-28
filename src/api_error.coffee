@@ -5,7 +5,7 @@ class Dropbox.ApiError
   # @param {String} method the HTTP verb of the API request (e.g., 'GET')
   # @param {String} url the URL of the API request
   # @param {XMLHttpRequest} xhr the XMLHttpRequest instance of the failed
-  #     request
+  #   request
   constructor: (xhr, @method, @url) ->
     @status = xhr.status
     if xhr.responseType

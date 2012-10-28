@@ -4,8 +4,8 @@ class Dropbox.PulledChanges
   #
   # @param {?Object} deltaInfo the parsed JSON of a /delta API call result
   # @return {?Dropbox.PulledChanges} a Dropbox.PulledChanges instance wrapping
-  #     the given information; if the parameter does not look like parsed JSON,
-  #     it is returned as is
+  #   the given information; if the parameter does not look like parsed JSON,
+  #   it is returned as is
   @parse: (deltaInfo) ->
     if deltaInfo and typeof deltaInfo is 'object'
       new Dropbox.PulledChanges deltaInfo
@@ -13,7 +13,7 @@ class Dropbox.PulledChanges
       deltaInfo
 
   # @return {Boolean} if true, the application should reset its copy of the
-  #     user's Dropbox before applying the changes described by this instance
+  #   user's Dropbox before applying the changes described by this instance
   blankSlate: undefined
 
   # @return {String} encodes a cursor in the list of changes to a user's
@@ -24,17 +24,17 @@ class Dropbox.PulledChanges
   cursorTag: undefined
 
   # @return {Array<Dropbox.PullChange> an array with one entry for each change
-  #     to the user's Dropbox returned by a pullChanges call.
+  #   to the user's Dropbox returned by a pullChanges call.
   changes: undefined
 
   # @return {Boolean} if true, the pullChanges call returned a subset of the
-  #     available changes, and the application should repeat the call
-  #     immediately to get more changes
+  #   available changes, and the application should repeat the call
+  #   immediately to get more changes
   shouldPullAgain: undefined
 
   # @return {Boolean} if true, the API call will not have any more changes
-  #     available in the nearby future, so the application should wait for at
-  #     least 5 miuntes before issuing another pullChanges request
+  #   available in the nearby future, so the application should wait for at
+  #   least 5 miuntes before issuing another pullChanges request
   shouldBackOff: undefined
 
   # Creates a new Dropbox.PulledChanges instance from a /delta API call result.
@@ -59,10 +59,10 @@ class Dropbox.PullChange
   # Creates a Dropbox.PullChange instance wrapping an entry in a /delta result.
   #
   # @param {?Object} entry the parsed JSON of a single entry in a /delta API
-  #     call result
+  #   call result
   # @return {?Dropbox.PullChange} a Dropbox.PullChange instance wrapping the
-  #     given entry of a /delta API call; if the parameter does not look like
-  #     parsed JSON, it is returned as is
+  #   given entry of a /delta API call; if the parameter does not look like
+  #   parsed JSON, it is returned as is
   @parse: (entry) ->
     if entry and typeof entry is 'object'
       new Dropbox.PullChange entry
@@ -73,13 +73,13 @@ class Dropbox.PullChange
   path: undefined
 
   # @return {Boolean} if true, this change is a deletion of the file or folder
-  #     at the change's path; if a folder is deleted, all its contents (files
-  #     and sub-folders) were also be deleted; pullChanges might not return
-  #     separate changes expressing for the files or sub-folders
+  #   at the change's path; if a folder is deleted, all its contents (files
+  #   and sub-folders) were also be deleted; pullChanges might not return
+  #   separate changes expressing for the files or sub-folders
   wasRemoved: undefined
 
   # @return {?Dropbox.Stat} a Stat instance containing updated information for
-  #     the file or folder; this is null if the change is a deletion
+  #   the file or folder; this is null if the change is a deletion
   stat: undefined
 
   # Creates a Dropbox.PullChange instance wrapping an entry in a /delta result.
@@ -89,7 +89,7 @@ class Dropbox.PullChange
   # called directly.
   #
   # @param {?Object} entry the parsed JSON of a single entry in a /delta API
-  #     call result
+  #   call result
   constructor: (entry) ->
     @path = entry[0]
     @stat = Dropbox.Stat.parse entry[1]

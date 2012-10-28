@@ -32,17 +32,17 @@ class Dropbox.Xhr
   # Sends off a AJAX request (XMLHttpRequest).
   #
   # @param {String} method the HTTP method used to make the request ('GET',
-  #     'POST', etc)
+  #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #     that receives the request
+  #   that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
-  #     request parameters
+  #   request parameters
   # @param {String} authHeader the value of the Authorization header
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #     the XHR completes; if an error occurs, the first parameter will be a
-  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #     instance of the required response type (e.g., String, Blob), and the
-  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  #   the XHR completes; if an error occurs, the first parameter will be a
+  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #   instance of the required response type (e.g., String, Blob), and the
+  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request: (method, url, params, authHeader, callback) ->
     @request2 method, url, params, authHeader, null, null, callback
@@ -55,21 +55,21 @@ class Dropbox.Xhr
   # method otherwise.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
-  #     'POST', etc)
+  #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #     that receives the request
+  #   that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
-  #     request parameters
+  #   request parameters
   # @param {String} authHeader the value of the Authorization header
   # @param {?Object} body the body to be sent in a non-GET request; should be
-  #     an ArrayBuffer, Blob, or String
+  #   an ArrayBuffer, Blob, or String
   # @param {String} responseType the value that will be assigned to the XHR's
-  #     responseType property
+  #   responseType property
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #     the XHR completes; if an error occurs, the first parameter will be a
-  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #     instance of the required response type (e.g., String, Blob), and the
-  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  #   the XHR completes; if an error occurs, the first parameter will be a
+  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #   instance of the required response type (e.g., String, Blob), and the
+  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @request2: (method, url, params, authHeader, body, responseType, callback) ->
     paramsInUrl = method is 'GET' or body? or @ieMode
@@ -95,18 +95,18 @@ class Dropbox.Xhr
   # given good browser support.
   #
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #     that receives the request
+  #   that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
-  #     request parameters
+  #   request parameters
   # @param {String} fieldName the name of the form field whose value is
-  #     submitted in the multipart/form-data body
+  #   submitted in the multipart/form-data body
   # @param {String} data the file content to be uploaded
   # @param {String} authHeader the value of the Authorization header
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #     the XHR completes; if an error occurs, the first parameter will be a
-  #     Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #     instance of the required response type (e.g., String, Blob), and the
-  #     third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  #   the XHR completes; if an error occurs, the first parameter will be a
+  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #   instance of the required response type (e.g., String, Blob), and the
+  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
     url = [url, '?', DropboxXhr.urlEncode(params)].join ''
@@ -178,7 +178,7 @@ class Dropbox.Xhr
   #
   # @param {Object} object the JavaScript object whose keys will be encoded
   # @return {String} the object's keys and values, encoded using
-  #     x-www-form-urlencoded
+  #   x-www-form-urlencoded
   @urlEncode: (object) ->
     chunks = []
     for key, value of object
@@ -188,9 +188,9 @@ class Dropbox.Xhr
   # Encodes an object into a x-www-form-urlencoded key or value.
   #
   # @param {Object} object the object to be encoded; the encoding calls
-  #     toString() on the object to obtain its string representation
+  #   toString() on the object to obtain its string representation
   # @return {String} encoded string, suitable for use as a key or value in an
-  #     x-www-form-urlencoded string
+  #   x-www-form-urlencoded string
   @urlEncodeValue: (object) ->
     encodeURIComponent(object.toString()).replace(/\!/g, '%21').
       replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').

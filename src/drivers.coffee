@@ -15,17 +15,17 @@ class Dropbox.AuthDriver
   # meaning the client has a request token that must be authorized by the user.
   #
   # @param {String} authUrl the URL that users should be sent to in order to
-  #     authorize the application's token; this points to a Web page on
-  #     Dropbox' servers
+  #   authorize the application's token; this points to a Web page on
+  #   Dropbox' servers
   # @param {String} token the OAuth token that the user is authorizing; this
-  #     will be provided by the Dropbox servers as a query parameter when the
-  #     user is redirected to the URL returned by the driver's url() method
+  #   will be provided by the Dropbox servers as a query parameter when the
+  #   user is redirected to the URL returned by the driver's url() method
   # @param {String} tokenSecret the secret associated with the given OAuth
-  #     token; the driver may store this together with the token
+  #   token; the driver may store this together with the token
   # @param {function()} callback called when users have completed the
-  #     authorization flow; the driver should call this when Dropbox redirects
-  #     users to the URL returned by the url() method, and the 'token' query
-  #     parameter matches the value of the token parameter
+  #   authorization flow; the driver should call this when Dropbox redirects
+  #   users to the URL returned by the url() method, and the 'token' query
+  #   parameter matches the value of the token parameter
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
     callback 'oauth-token'
 
@@ -33,23 +33,23 @@ class Dropbox.AuthDriver
   #
   # The OAuth process goes through the following states:
   # * RESET - the client has no OAuth token, and is about to ask for a request
-  #           token
+  #         token
   # * REQUEST - the client has a request OAuth token, and the user must go to
-  #             an URL on the Dropbox servers to authorize the token
+  #           an URL on the Dropbox servers to authorize the token
   # * AUTHORIZED - the client has a request OAuth token that was authorized by
-  #                the user, and is about to exchange it for an access token
+  #              the user, and is about to exchange it for an access token
   # * DONE - the client has an access OAuth token that can be used for all API
-  #          calls; the OAuth process is complete, and the callback passed to
-  #          authorize is about to be called
+  #        calls; the OAuth process is complete, and the callback passed to
+  #        authorize is about to be called
   # * SIGNED_OFF - the client's Dropbox.Client#signOut() was called, and the
-  #                client's OAuth token was invalidated
+  #              client's OAuth token was invalidated
   # * ERROR - the client encounered an error during the OAuth process; the
-  #           callback passed to authorize is about to be called with the error
-  #           information
+  #         callback passed to authorize is about to be called with the error
+  #         information
   #
   # @param {Dropbox.Client} client the client performing the OAuth process
   # @param {function()} done called when onAuthStateChange acknowledges the
-  #     state change
+  #   state change
   onAuthStateChange: (client, done) ->
     done()
 
@@ -62,17 +62,17 @@ class Dropbox.Drivers.Redirect
   #
   # @param {?Object} options the advanced settings below
   # @option options {Boolean} useQuery if true, the page will receive OAuth
-  #     data as query parameters; by default, the page receives OAuth data in
-  #     the fragment part of the URL (the string following the #,
-  #     available as document.location.hash), to avoid confusing the server
-  #     generating the page
+  #   data as query parameters; by default, the page receives OAuth data in
+  #   the fragment part of the URL (the string following the #,
+  #   available as document.location.hash), to avoid confusing the server
+  #   generating the page
   # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
-  #     saved in localStorage; if you use this, you MUST provide a UI item that
-  #     calls signOut() on Dropbox.Client, to let the user "log out" of the
-  #     application
+  #   saved in localStorage; if you use this, you MUST provide a UI item that
+  #   calls signOut() on Dropbox.Client, to let the user "log out" of the
+  #   application
   # @option options {String} scope embedded in the localStorage key that holds
-  #     the authentication data; useful for having multiple OAuth tokens in a
-  #     single application
+  #   the authentication data; useful for having multiple OAuth tokens in a
+  #   single application
   constructor: (options) ->
     @rememberUser = options?.rememberUser or false
     @scope = options?.scope or 'default'
@@ -91,7 +91,7 @@ class Dropbox.Drivers.Redirect
   # All the magic happens here.
   onAuthStateChange: (client, done) ->
     # NOTE: the storage key is dependent on the app hash so that multiple apps
-    #       hosted off the same server don't step on eachother's toes
+    #     hosted off the same server don't step on eachother's toes
     @storageKey = "dropbox-auth:#{@scope}:#{client.appHash()}"
 
     switch client.authState
@@ -160,7 +160,7 @@ class Dropbox.Drivers.Redirect
   # Figures out if the user completed the OAuth flow based on the current URL.
   #
   # @return {?String} the OAuth token that the user just authorized, or null if
-  #     the user accessed this directly, without having authorized a token
+  #   the user accessed this directly, without having authorized a token
   locationToken: ->
     location = Dropbox.Drivers.Redirect.currentLocation()
 
@@ -185,8 +185,8 @@ class Dropbox.Drivers.Redirect
   # Retrieves a token and secret from localStorage.
   #
   # @return {Array<?String>} 2-element array with the OAuth token and secret
-  #     stored by a previous call to storeToken, or two null elements if no
-  #     such token and secret were stored
+  #   stored by a previous call to storeToken, or two null elements if no
+  #   such token and secret were stored
   loadCredentials: ->
     jsonString = localStorage.getItem @storageKey
     return null unless jsonString
@@ -206,16 +206,16 @@ class Dropbox.Drivers.Popup
   # Sets up a popup-based OAuth driver.
   #
   # @param {?Object} options one of the settings below; leave out the argument
-  #     to use the current location for redirecting
+  #   to use the current location for redirecting
   # @option options {String} receiverUrl URL to the page that receives the
-  #     /authorize redirect and performs the postMessage
+  #   /authorize redirect and performs the postMessage
   # @option options {Boolean} noFragment if true, the receiverUrl will be used
-  #     as given; by default, a hash "#" is appended to URLs that don't have
-  #     one, so the OAuth token is received as a URL fragment and does not hit
-  #     the file server
+  #   as given; by default, a hash "#" is appended to URLs that don't have
+  #   one, so the OAuth token is received as a URL fragment and does not hit
+  #   the file server
   # @option options {String} receiverFile the URL to the receiver page will be
-  #     computed by replacing the file name (everything after the last /) of
-  #     the current location with this parameter's value
+  #   computed by replacing the file name (everything after the last /) of
+  #   the current location with this parameter's value
   constructor: (options) ->
     @receiverUrl = @computeUrl options
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
@@ -256,7 +256,7 @@ class Dropbox.Drivers.Popup
   #
   # @param {String} url the URL that will be loaded in the popup window
   # @return {?DOMRef} reference to the opened window, or null if the call
-  #     failed
+  #   failed
   openWindow: (url) ->
     window.open url, '_dropboxOauthSigninWindow', @popupWindowSpec(980, 980)
 
@@ -284,7 +284,7 @@ class Dropbox.Drivers.Popup
   # Listens for a postMessage from a previously opened popup window.
   #
   # @param {String} token the token string that must be received from the popup
-  #     window
+  #   window
   # @param {function()} called when the received message matches the token
   listenForMessage: (token, callback) ->
     tokenRe = @tokenRe
@@ -304,9 +304,9 @@ class Dropbox.Drivers.NodeServer
   #
   # @param {?Object} options one or more of the options below
   # @option options {Number} port the number of the TCP port that will receive
-  #     HTTP requests
+  #   HTTP requests
   # @param {String} faviconFile the path to a file that will be served at
-  #     /favicon.ico
+  #   /favicon.ico
   constructor: (options) ->
     @port = options?.port or 8912
     @faviconFile = options?.favicon or null
