@@ -17,6 +17,12 @@ test/chrome_extension/*.js
 test/js
 tmp/*.js
 
+# Documentation output.
+doc/*.html
+doc/assets
+doc/classes
+doc/files
+
 # Node packaging output.
 dropbox-*.tgz
 

@@ -6,23 +6,24 @@ class Dropbox.Client
   # all Dropbox interactions.
   #
   # @param {Object} options the application type and API key
-  # @option {Boolean} sandbox true for applications that request sandbox access
-  #   (access to a single folder exclusive to the app)
+  # @option options {Boolean} sandbox true for applications that request
+  #   sandbox access (access to a single folder exclusive to the app)
   # @option options {String} key the Dropbox application's key; browser-side
   #   applications should use Dropbox.encodeKey to obtain an encoded
   #   key string, and pass it as the key option
   # @option options {String} secret the Dropbox application's secret;
   #   browser-side applications should not use the secret option; instead,
   #   they should pass the result of Dropbox.encodeKey as the key option
-  # @option {String} key the application's API key
-  # @option {String} secret the application's API secret
-  # @option {String} token if set, the user's access token
-  # @option {String} tokenSecret if set, the secret for the user's access token
-  # @option {String} uid if set, the user's Dropbox UID
-  # @option {Number} authState if set, indicates that the token and tokenSecret
-  #   are in an intermediate state in the authentication process; this option
-  #   should never be set by hand, however it may be returned by calls to
-  #   credentials()
+  # @option options {String} key the application's API key
+  # @option options {String} secret the application's API secret
+  # @option options {String} token if set, the user's access token
+  # @option options {String} tokenSecret if set, the secret for the user's
+  #   access token
+  # @option options {String} uid if set, the user's Dropbox UID
+  # @option options {Number} authState if set, indicates that the token and
+  #   tokenSecret are in an intermediate state in the authentication process;
+  #   this option should never be set by hand, however it may be returned by
+  #   calls to credentials()
   constructor: (options) ->
     @sandbox = options.sandbox or false
     @apiServer = options.server or @defaultApiServer()
@@ -232,9 +233,9 @@ class Dropbox.Client
   # @option options {String} parentRev alias for "lastVersionTag" that matches
   #   the HTTP API
   # @option options {Boolean} noOverwrite if set, the write will not overwrite
-  #    a file with the same name that already exsits; instead the contents
-  #    will be written to a similarly named file (e.g. "notes (1).txt"
-  #    instead of "notes.txt")
+  #   a file with the same name that already exsits; instead the contents
+  #   will be written to a similarly named file (e.g. "notes (1).txt"
+  #   instead of "notes.txt")
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /files (POST) HTTP request; the second paramter is a
   #   Dropbox.Stat instance describing the newly created file, and the first
@@ -253,6 +254,7 @@ class Dropbox.Client
 
   # writeFile implementation that uses the POST /files API.
   #
+  # @private
   # This method is more demanding in terms of CPU and browser support, but does
   # not require CORS preflight, so it always completes in 1 HTTP request.
   writeFileUsingForm: (path, data, options, callback) ->
@@ -277,7 +279,7 @@ class Dropbox.Client
     # TODO: locale support would edit the params here
     @oauth.addAuthParams 'POST', url, params
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
-    #     signing the request; the code below works as intended
+    #       signing the request; the code below works as intended
     delete params.file
 
     fileField =
@@ -290,6 +292,7 @@ class Dropbox.Client
 
   # writeFile implementation that uses the /files_put API.
   #
+  # @private
   # This method is less demanding on CPU, and makes fewer assumptions about
   # browser support, but it takes 2 HTTP requests for binary files, because it
   # needs CORS preflight.
@@ -317,10 +320,10 @@ class Dropbox.Client
   # @option options {Number} version if set, the call will return the metadata
   #   for the given revision of the file / folder; the latest version is used
   #   by default
-  # @option {Boolean} removed if set to true, the results will include files
-  #   and folders that were deleted from the user's Dropbox
-  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
-  #   using this alias is not recommended, because it may cause confusion
+  # @option options {Boolean} removed if set to true, the results will include
+  #   files and folders that were deleted from the user's Dropbox
+  # @option options {Boolean} deleted alias for "removed" that matches the HTTP
+  #   API; using this alias is not recommended, because it may cause confusion
   #   with JavaScript's delete operation
   # @option options {Boolean, Number} readDir only meaningful when stat-ing
   #   folders; if this is set, the API call will also retrieve the folder's
@@ -381,10 +384,10 @@ class Dropbox.Client
   #   folder
   # @param {?Object} options the advanced settings below; for the default
   #   settings, skip the argument or pass null
-  # @option {Boolean} removed if set to true, the results will include files
-  #   and folders that were deleted from the user's Dropbox
-  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
-  #   using this alias is not recommended, because it may cause confusion
+  # @option options {Boolean} removed if set to true, the results will include
+  #   files and folders that were deleted from the user's Dropbox
+  # @option options {Boolean} deleted alias for "removed" that matches the HTTP
+  #   API; using this alias is not recommended, because it may cause confusion
   #   with JavaScript's delete operation
   # @option options {Boolean, Number} limit the maximum number of files and
   #   folders that should be returned; the default limit is 10,000 items; if
@@ -620,11 +623,11 @@ class Dropbox.Client
   #   settings, skip the argument or pass null
   # @option options {Number} limit if specified, the call will return at most
   #   this many versions
-  # @option {Boolean} removed if set to true, the results will include files
-  #   and folders that were deleted from the user's Dropbox; the default
+  # @option options {Boolean} removed if set to true, the results will include
+  #   files and folders that were deleted from the user's Dropbox; the default
   #   limit is the maximum value of 1,000
-  # @option {Boolean} deleted alias for "removed" that matches the HTTP API;
-  #   using this alias is not recommended, because it may cause confusion
+  # @option options {Boolean} deleted alias for "removed" that matches the HTTP
+  #   API; using this alias is not recommended, because it may cause confusion
   #   with JavaScript's delete operation
   # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
   #   with the result of the /search HTTP request; if the call succeeds, the
@@ -969,19 +972,25 @@ class Dropbox.Client
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
     Dropbox.Xhr.request 'POST', @urls.accessToken, params, null, callback
 
+  # @private
   # @return {String} the URL to the default value for the "server" option
   defaultApiServer: ->
     'https://api.dropbox.com'
 
+  # @private
   # @return {String} the URL to the default value for the "authServer" option
   defaultAuthServer: ->
     @apiServer.replace 'api.', 'www.'
 
+  # @private
   # @return {String} the URL to the default value for the "fileServer" option
   defaultFileServer: ->
     @apiServer.replace 'api.', 'api-content.'
 
   # Computes the cached value returned by credentials.
+  #
+  # @private
+  # @see Dropbox.Client#computeCredentials
   computeCredentials: ->
     value =
       key: @oauth.key
