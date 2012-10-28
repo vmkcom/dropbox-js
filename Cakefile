@@ -49,7 +49,7 @@ build = (callback) ->
     run 'node_modules/coffee-script/bin/coffee --output lib ' +
         '--compile --join dropbox.js src/*.coffee', ->
       # Minify the javascript, for browser distribution.
-      run 'node_modules/uglify-js/bin/uglifyjs --no-copyright ' +
+      run 'node_modules/uglify-js2/bin/uglifyjs2 --compress --mangle ' +
           '--output lib/dropbox.min.js lib/dropbox.js', ->
         run 'node_modules/coffee-script/bin/coffee --output test/js ' +
             '--compile test/src/*.coffee',

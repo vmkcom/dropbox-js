@@ -87,7 +87,7 @@ class Dropbox.Drivers.Redirect
     @receiverUrl
 
   # Redirects to the authorize page.
-  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+  doAuthorize: (authUrl) ->
     window.location.assign authUrl
 
   # All the magic happens here.
@@ -116,7 +116,7 @@ class Dropbox.Drivers.Redirect
 
         # Verify that the old access token still works.
         client.setCredentials credentials
-        client.getUserInfo (error, userInfo) =>
+        client.getUserInfo (error) =>
           if error
             client.reset()
             @forgetCredentials()

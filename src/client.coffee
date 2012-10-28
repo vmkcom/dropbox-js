@@ -65,7 +65,7 @@ class Dropbox.Client
   # @param {?Object} the result of a prior call to credentials()
   # @return {Object} a plain object whose properties can be passed to the
   #   Dropbox.Client constructor to reuse this client's login credentials
-  credentials: (newCredentials) ->
+  credentials: () ->
     @computeCredentials() unless @_credentials
     @_credentials
 
