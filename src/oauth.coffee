@@ -88,7 +88,7 @@ class Dropbox.Oauth
       delete params[param]
 
     # NOTE: the space after the comma is optional in the OAuth spec, so we'll
-    #     skip it to save some bandwidth
+    #       skip it to save some bandwidth
     'OAuth ' + header.join(',')
 
   # Generates OAuth-required HTTP parameters.

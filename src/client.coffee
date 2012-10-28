@@ -399,12 +399,12 @@ class Dropbox.Client
   #   obtained from the versionTag attribute of a Dropbox.Stat instance
   #   describing it
   # @param {function(?Dropbox.ApiError, ?Array<String>, ?Dropbox.Stat,
-  #                ?Array<Dropbox.Stat>)} callback called with the result of
-  #   the /metadata HTTP request; if the call succeeds, the second parameter
-  #   is an array containing the names of the files and folders in the given
-  #   folder, the third parameter is a Dropbox.Stat instance describing the
-  #   folder, the fourth parameter is an array of Dropbox.Stat instances
-  #   describing the folder's entries, and the first parameter is null
+  #   ?Array<Dropbox.Stat>)} callback called with the result of the /metadata
+  #   HTTP request; if the call succeeds, the second parameter is an array
+  #   containing the names of the files and folders in the given folder, the
+  #   third parameter is a Dropbox.Stat instance describing the folder, the
+  #   fourth parameter is an array of Dropbox.Stat instances describing the
+  #   folder's entries, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readdir: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -918,6 +918,10 @@ class Dropbox.Client
   @SIGNED_OFF: 5
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
+  #
+  # @private
+  # This is called internally by the other client functions, and should not be
+  # used outside the {Dropbox.Client} class.
   urlEncodePath: (path) ->
     Dropbox.Xhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
 
@@ -967,7 +971,7 @@ class Dropbox.Client
   # This a low-level method called by authorize. Users should call authorize.
   #
   # @param {function(error, data)} callback called with the result of the
-  #    /oauth/access_token HTTP request
+  #   /oauth/access_token HTTP request
   getAccessToken: (callback) ->
     params = @oauth.addAuthParams 'POST', @urls.accessToken, {}
     Dropbox.Xhr.request 'POST', @urls.accessToken, params, null, callback

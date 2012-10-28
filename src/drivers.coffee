@@ -32,20 +32,22 @@ class Dropbox.AuthDriver
   # Called when there is some progress in the OAuth process.
   #
   # The OAuth process goes through the following states:
-  # * RESET - the client has no OAuth token, and is about to ask for a request
-  #         token
-  # * REQUEST - the client has a request OAuth token, and the user must go to
-  #           an URL on the Dropbox servers to authorize the token
-  # * AUTHORIZED - the client has a request OAuth token that was authorized by
-  #              the user, and is about to exchange it for an access token
-  # * DONE - the client has an access OAuth token that can be used for all API
-  #        calls; the OAuth process is complete, and the callback passed to
-  #        authorize is about to be called
-  # * SIGNED_OFF - the client's Dropbox.Client#signOut() was called, and the
-  #              client's OAuth token was invalidated
-  # * ERROR - the client encounered an error during the OAuth process; the
-  #         callback passed to authorize is about to be called with the error
-  #         information
+  #
+  # * Dropbox.Client.RESET - the client has no OAuth token, and is about to
+  #   ask for a request token
+  # * Dropbox.Client.REQUEST - the client has a request OAuth token, and the
+  #   user must go to an URL on the Dropbox servers to authorize the token
+  # * Dropbox.Client.AUTHORIZED - the client has a request OAuth token that
+  #   was authorized by the user, and is about to exchange it for an access
+  #   token
+  # * Dropbox.Client.DONE - the client has an access OAuth token that can be
+  #   used for all API calls; the OAuth process is complete, and the callback
+  #   passed to authorize is about to be called
+  # * Dropbox.Client.SIGNED_OFF - the client's Dropbox.Client#signOut() was
+  #   called, and the client's OAuth token was invalidated
+  # * Dropbox.Client.ERROR - the client encounered an error during the OAuth
+  #   process; the callback passed to authorize is about to be called with the
+  #   error information
   #
   # @param {Dropbox.Client} client the client performing the OAuth process
   # @param {function()} done called when onAuthStateChange acknowledges the
@@ -91,7 +93,7 @@ class Dropbox.Drivers.Redirect
   # All the magic happens here.
   onAuthStateChange: (client, done) ->
     # NOTE: the storage key is dependent on the app hash so that multiple apps
-    #     hosted off the same server don't step on eachother's toes
+    #       hosted off the same server don't step on eachother's toes
     @storageKey = "dropbox-auth:#{@scope}:#{client.appHash()}"
 
     switch client.authState
