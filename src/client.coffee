@@ -161,7 +161,7 @@ class Dropbox.Client
 
   # Retrieves information about the logged in user.
   #
-  # @params {function(?Dropbox.ApiError, ?Dropbox.UserInfo, ?Object)} callback
+  # @param {function(?Dropbox.ApiError, ?Dropbox.UserInfo, ?Object)} callback
   #     called with the result of the /account/info HTTP request; if the call
   #     succeeds, the second parameter is a Dropbox.UserInfo instance, the
   #     third parameter is the parsed JSON data behind the Dropbox.UserInfo

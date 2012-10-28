@@ -24,6 +24,10 @@ Peruse the source code of the
 [sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples),
 and borrow as much as you need.
 
+The
+[dropbox.js API reference](http://coffeedoc.info/github/dropbox/dropbox-js/master/class_index.html)
+can be a good place to bookmark while building your application.
+
 ## Development
 
 The

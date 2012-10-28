@@ -209,14 +209,13 @@ Authentication was the hard part of the API integration, and error handling was
 the most boring part. Now that these are both behind us, you can interact
 with the user's Dropbox and focus on coding up your application!
 
-The following sections have some commonly used code snippets. To understand the
-entire Dropbox API, read the JSDoc comments in the
-[Dropbox.Client source](https://github.com/dropbox/dropbox-js/blob/master/src/client.coffee),
-the examples in the
-[Dropbox.Client tests](https://github.com/dropbox/dropbox-js/blob/master/test/src/client_test.coffee),
-and the
-[REST API reference](https://www.dropbox.com/developers/reference/api).
-
+The following sections have some commonly used code snippets. The
+[API reference](http://coffeedoc.info/github/dropbox/dropbox-js/master/class_index.html)
+will help you navigate less common scenarios.
+The Dropbox
+[REST API reference](https://www.dropbox.com/developers/reference/api)
+describes the underlying HTTP protocol, and can come in handy when debugging
+your application, or if you want to extend dropbox.js.
 
 ### User Info
 
