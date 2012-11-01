@@ -502,7 +502,7 @@ buildClientTests = (clientKeys) ->
 
     describe 'for a Web URL', ->
       it 'returns an URL to a preview page', (done) ->
-        @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { longUrl: false }, (error, publicUrl) =>
           expect(error).to.equal null
           expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
           expect(publicUrl.isDirect).to.equal false

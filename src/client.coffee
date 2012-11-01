@@ -461,7 +461,7 @@ class Dropbox.Client
       isDirect = false
       url = "#{@urls.shares}/#{path}"
 
-    if options and options.long
+    if options and options.longUrl
       params = { short_url: 'false' }
     else
       params = {}
