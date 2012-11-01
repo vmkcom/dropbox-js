@@ -443,6 +443,8 @@ class Dropbox.Client
   #   downlaod URLs can be generated for directories
   # @option options {Boolean} long if set, the URL will not be shortened using
   #   Dropbox's shortner; direct download URLs aren't shortened by default
+  # @option options {Boolean} longUrl synonym for long; makes life easy for
+  #     RhinoJS users
   # @param {function(?Dropbox.ApiError, ?Dropbox.PublicUrl)} callback called
   #   with the result of the /shares or /media HTTP request; if the call
   #   succeeds, the second parameter is a Dropbox.PublicUrl instance, and the
@@ -461,7 +463,11 @@ class Dropbox.Client
       isDirect = false
       url = "#{@urls.shares}/#{path}"
 
-    if options and options.longUrl
+    # NOTE: cannot use options.log; normally, the CoffeeScript compiler escapes
+    #       keywords for us; long isn't really a keyword, but the Rhino VM
+    #       thinks it is; this hack can be removed when the bug below is fixed:
+    #       https://github.com/mozilla/rhino/issues/93
+    if options and (options['long'] or options.longUrl)
       params = { short_url: 'false' }
     else
       params = {}

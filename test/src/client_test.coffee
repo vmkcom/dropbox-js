@@ -500,9 +500,9 @@ buildClientTests = (clientKeys) ->
           expect(publicUrl.url).to.contain '//db.tt/'
           done()
 
-    describe 'for a Web URL', ->
+    describe 'for a Web URL created with long: true', ->
       it 'returns an URL to a preview page', (done) ->
-        @client.makeUrl @textFile, { longUrl: false }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
           expect(error).to.equal null
           expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
           expect(publicUrl.isDirect).to.equal false
@@ -514,6 +514,15 @@ buildClientTests = (clientKeys) ->
             expect(error).to.equal null
             expect(data).to.contain '<!DOCTYPE html>'
             done()
+
+    describe 'for a Web URL created with longUrl: true', ->
+      it 'returns an URL to a preview page', (done) ->
+        @client.makeUrl @textFile, { longUrl: true }, (error, publicUrl) =>
+          expect(error).to.equal null
+          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+          expect(publicUrl.isDirect).to.equal false
+          expect(publicUrl.url).not.to.contain '//db.tt/'
+          done()
 
     describe 'for a direct download URL', ->
       it 'gets a direct download URL', (done) ->
