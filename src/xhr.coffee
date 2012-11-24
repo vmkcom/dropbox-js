@@ -74,9 +74,9 @@ class Dropbox.Xhr
   @request2: (method, url, params, authHeader, body, responseType, callback) ->
     paramsInUrl = method is 'GET' or body? or @ieMode
     if paramsInUrl
-      queryString = DropboxXhr.urlEncode params
+      queryString = Dropbox.Xhr.urlEncode params
       if queryString.length isnt 0
-        url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+        url = [url, '?', Dropbox.Xhr.urlEncode(params)].join ''
     headers = {}
     if authHeader
       headers['Authorization'] = authHeader
@@ -85,8 +85,8 @@ class Dropbox.Xhr
         headers['Content-Type'] = 'text/plain; charset=utf8'
     else if !paramsInUrl
       headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      body = DropboxXhr.urlEncode params
-    DropboxXhr.xhrRequest method, url, headers, body, responseType, callback
+      body = Dropbox.Xhr.urlEncode params
+    Dropbox.Xhr.xhrRequest method, url, headers, body, responseType, callback
 
   # Upload a file via a mulitpart/form-data method.
   #
@@ -109,7 +109,7 @@ class Dropbox.Xhr
   #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {XMLHttpRequest} the XHR object used for this request
   @multipartRequest: (url, fileField, params, authHeader, callback) ->
-    url = [url, '?', DropboxXhr.urlEncode(params)].join ''
+    url = [url, '?', Dropbox.Xhr.urlEncode(params)].join ''
 
     fileData = fileField.value
     useFormData = (typeof(fileData) is 'object') and
@@ -133,7 +133,7 @@ class Dropbox.Xhr
               "\r\n", '--', boundary, '--', "\r\n"].join ''
     if authHeader
       headers['Authorization'] = authHeader
-    DropboxXhr.xhrRequest 'POST', url, headers, body, null, callback
+    Dropbox.Xhr.xhrRequest 'POST', url, headers, body, null, callback
 
   # Generates a bounday suitable for separating multipart data.
   #
@@ -150,11 +150,11 @@ class Dropbox.Xhr
   @xhrRequest: (method, url, headers, body, responseType, callback) ->
     xhr = new @Request()
     if @ieMode
-      xhr.onload = -> DropboxXhr.onLoad xhr, method, url, callback
-      xhr.onerror = -> DropboxXhr.onError xhr, method, url, callback
+      xhr.onload = -> Dropbox.Xhr.onLoad xhr, method, url, callback
+      xhr.onerror = -> Dropbox.Xhr.onError xhr, method, url, callback
     else
       xhr.onreadystatechange = ->
-        DropboxXhr.onReadyStateChange xhr, method, url, responseType, callback
+        Dropbox.Xhr.onReadyStateChange xhr, method, url, responseType, callback
 
     xhr.open method, url, true
     if responseType
@@ -256,7 +256,7 @@ class Dropbox.Xhr
     text = if xhr.responseText? then xhr.responseText else xhr.response
     switch xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         callback null, DropboxXhr.urlDecode(text), metadata
+         callback null, Dropbox.Xhr.urlDecode(text), metadata
        when 'application/json', 'text/javascript'
          callback null, JSON.parse(text), metadata
        else
@@ -268,7 +268,7 @@ class Dropbox.Xhr
     text = xhr.responseText
     switch xhr.contentType
      when 'application/x-www-form-urlencoded'
-       callback null, DropboxXhr.urlDecode(text), undefined
+       callback null, Dropbox.Xhr.urlDecode(text), undefined
      when 'application/json', 'text/javascript'
        callback null, JSON.parse(text), undefined
      else
@@ -280,5 +280,3 @@ class Dropbox.Xhr
     apiError = new Dropbox.ApiError xhr, method, url
     callback apiError
     return true
-
-DropboxXhr = Dropbox.Xhr

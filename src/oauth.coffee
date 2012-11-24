@@ -53,8 +53,8 @@ class Dropbox.Oauth
     @tokenSecret = tokenSecret || ''
 
     # This is part of signing, but it's set here so it can be cached.
-    @hmacKey = DropboxXhr.urlEncodeValue(@s) + '&' +
-      DropboxXhr.urlEncodeValue(tokenSecret)
+    @hmacKey = Dropbox.Xhr.urlEncodeValue(@s) + '&' +
+      Dropbox.Xhr.urlEncodeValue(tokenSecret)
     null
 
   # Computes the value of the Authorization HTTP header.
@@ -83,8 +83,8 @@ class Dropbox.Oauth
     # Remove the parameters from the params hash and add them to the header.
     header = []
     for param in oauth_params
-      header.push DropboxXhr.urlEncodeValue(param) + '="' +
-          DropboxXhr.urlEncodeValue(params[param]) + '"'
+      header.push Dropbox.Xhr.urlEncodeValue(param) + '="' +
+          Dropbox.Xhr.urlEncodeValue(params[param]) + '"'
       delete params[param]
 
     # NOTE: the space after the comma is optional in the OAuth spec, so we'll
@@ -146,8 +146,8 @@ class Dropbox.Oauth
   # @return {String} the signature, ready to be used as the oauth_signature
   #   OAuth parameter
   signature: (method, url, params) ->
-    string = method.toUpperCase() + '&' + DropboxXhr.urlEncodeValue(url) +
-      '&' + DropboxXhr.urlEncodeValue(DropboxXhr.urlEncode(params))
+    string = method.toUpperCase() + '&' + Dropbox.Xhr.urlEncodeValue(url) +
+      '&' + Dropbox.Xhr.urlEncodeValue(Dropbox.Xhr.urlEncode(params))
     base64HmacSha1 string, @hmacKey
 
   # @return {String} a string that uniquely identifies the OAuth application
@@ -160,5 +160,3 @@ class Dropbox.Oauth
 unless Date.now?
   Date.now = () ->
     (new Date()).getTime()
-
-DropboxOauth = Dropbox.Oauth

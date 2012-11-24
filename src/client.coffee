@@ -30,7 +30,7 @@ class Dropbox.Client
     @authServer = options.authServer or @defaultAuthServer()
     @fileServer = options.fileServer or @defaultFileServer()
 
-    @oauth = new DropboxOauth options
+    @oauth = new Dropbox.Oauth options
     @uid = null
     @authState = null
     @authError = null
