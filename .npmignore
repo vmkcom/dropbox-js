@@ -14,8 +14,7 @@ node_modules
 # Vendored javascript modules.
 test/vendor
 
-# Minified library and .gitkeep.
-lib/.gitkeep
+# Minified library.
 lib/dropbox.min.js
 
 # Sample apps.
