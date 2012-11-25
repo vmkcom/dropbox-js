@@ -1,7 +1,7 @@
 # Client Library for the Dropbox API
 
-This is a JavaScript client for the Dropbox API, suitable for use in both
-modern browsers and in server-side code running under
+This is a JavaScript (via CoffeeScript) client for the Dropbox API, suitable
+for use in both modern browsers and in server-side code running under
 [node.js](http://nodejs.org/).
 
 
