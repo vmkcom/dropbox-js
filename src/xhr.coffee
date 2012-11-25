@@ -20,6 +20,7 @@ else
   # isn't subject to CORS and the same origin policy
   DropboxXhrCanSendForms = false
 
+
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class Dropbox.Xhr
   # The object used to perform AJAX requests (XMLHttpRequest).
@@ -29,23 +30,83 @@ class Dropbox.Xhr
   # Set to true if the browser has proper support for FormData.
   @canSendForms = DropboxXhrCanSendForms
 
-  # Sends off a AJAX request (XMLHttpRequest).
+  # Sets up an AJAX request.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
-  #   'POST', etc)
-  # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #   that receives the request
-  # @param {Object} params an associative array (hash) containing the HTTP
+  #     'POST', 'PUT', etc.)
+  # @param {String} baseUrl the URL that receives the request; this URL might
+  #     be modified, e.g. by appending parameters for GET requests
+  constructor: (@method, baseUrl) ->
+    @isGet = @method is 'GET'
+    @url = baseUrl
+    @headers = {}
+    @params = null
+    @body = null
+    @signed = false
+    @responseType = null
+    @callback = null
+    @xhr = null
+
+  # Sets the parameters (form field values) that will be sent with the request.
+  #
+  # @param {?Object} params an associative array (hash) containing the HTTP
   #   request parameters
-  # @param {String} authHeader the value of the Authorization header
-  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #   the XHR completes; if an error occurs, the first parameter will be a
-  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #   instance of the required response type (e.g., String, Blob), and the
-  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
-  # @return {XMLHttpRequest} the XHR object used for this request
-  @request: (method, url, params, authHeader, callback) ->
-    @request2 method, url, params, authHeader, null, null, callback
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  setParams: (params) ->
+    if @signed
+      throw new Error 'setParams called after addOauthParams or addOauthHeader'
+    if @params
+      throw new Error 'setParams cannot be called twice'
+    @params = params
+    @
+
+  # Ammends the request parameters to include an OAuth signature.
+  #
+  # The OAuth signature will become invalid if the parameters are changed after
+  # the signing process.
+  #
+  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
+  #     used to sign the request
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  addOauthParams: (oauth) ->
+    if @signed
+      throw new Error 'Request already has an OAuth signature'
+
+    @params or= {}
+    oauth.addAuthParams @method, @url, @params
+    @signed = true
+    @
+
+  # Adds an Authorize header containing an OAuth signature.
+  #
+  # The OAuth signature will become invalid if the parameters are changed after
+  # the signing process.
+  #
+  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
+  #     used to sign the request
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  addOauthHeader: (oauth) ->
+    if @signed
+      throw new Error 'Request already has an OAuth signature'
+
+    @params or= {}
+    @headers['Authorization'] = oauth.authHeader @method, @url, @params
+    @signed = true
+    @
+
+  # Sets the body (piece of data) that will be sent with the request.
+  #
+  # @param {String, Blob, ArrayBuffer} body the body to be sent in a request;
+  #     GET requests cannot have a body
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  setBody: (body) ->
+    if @isGet
+      throw new Error 'setBody cannot be called on GET requests'
+    if @body isnt null
+      throw new Error 'Request already has a body'
+
+    @body = body
+    @
 
   # Sends off an AJAX request and requests a custom response type.
   #
@@ -54,127 +115,148 @@ class Dropbox.Xhr
   # check whether window.Blob is truthy, and fallback to the plain "request"
   # method otherwise.
   #
-  # @param {String} method the HTTP method used to make the request ('GET',
-  #   'POST', etc)
-  # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #   that receives the request
-  # @param {Object} params an associative array (hash) containing the HTTP
-  #   request parameters
-  # @param {String} authHeader the value of the Authorization header
-  # @param {?Object} body the body to be sent in a non-GET request; should be
-  #   an ArrayBuffer, Blob, or String
   # @param {String} responseType the value that will be assigned to the XHR's
   #   responseType property
-  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #   the XHR completes; if an error occurs, the first parameter will be a
-  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #   instance of the required response type (e.g., String, Blob), and the
-  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
-  # @return {XMLHttpRequest} the XHR object used for this request
-  @request2: (method, url, params, authHeader, body, responseType, callback) ->
-    paramsInUrl = method is 'GET' or body? or @ieMode
-    if paramsInUrl
-      queryString = Dropbox.Xhr.urlEncode params
-      if queryString.length isnt 0
-        url = [url, '?', Dropbox.Xhr.urlEncode(params)].join ''
-    headers = {}
-    if authHeader
-      headers['Authorization'] = authHeader
-    if body?
-      if typeof body is 'string'
-        headers['Content-Type'] = 'text/plain; charset=utf8'
-    else if !paramsInUrl
-      headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      body = Dropbox.Xhr.urlEncode params
-    Dropbox.Xhr.xhrRequest method, url, headers, body, responseType, callback
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  setResponseType: (@responseType) ->
+    @
 
-  # Upload a file via a mulitpart/form-data method.
+  # Sets the Authorization header to be used for OAuth2 requests.
   #
-  # This is a one-off method for POST /files. It is rather unwieldy, but it
-  # lets us skip CORS preflight and write binary files in one HTTP request,
-  # given good browser support.
+  # Setting the Authorization header requires a CORS preflight, so it will make
+  # the whole request slower.
   #
-  # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
-  #   that receives the request
-  # @param {Object} params an associative array (hash) containing the HTTP
-  #   request parameters
-  # @param {String} fieldName the name of the form field whose value is
-  #   submitted in the multipart/form-data body
-  # @param {String} data the file content to be uploaded
   # @param {String} authHeader the value of the Authorization header
-  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #   the XHR completes; if an error occurs, the first parameter will be a
-  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #   instance of the required response type (e.g., String, Blob), and the
-  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
-  # @return {XMLHttpRequest} the XHR object used for this request
-  @multipartRequest: (url, fileField, params, authHeader, callback) ->
-    url = [url, '?', Dropbox.Xhr.urlEncode(params)].join ''
+  setAuthHeader: (authHeader) ->
+    @headers['Authorization'] = authHeader
 
-    fileData = fileField.value
+  # Simulates having an <input type="file"> being sent with the request.
+  #
+  # @param {String} fieldName the name of the form field / parameter (not of
+  #     the uploaded file)
+  # @param {String} fileName the name of the uploaded file (not the name of the
+  #     form field / parameter)
+  # @param {String, Blob, File} fileData contents of the file to be uploaded
+  # @param {?String} contentType the MIME type of the file to be uploaded; if
+  #     fileData is a Blob or File, its MIME type is used instead
+  setFileField: (fieldName, fileName, fileData, contentType) ->
+    if @body isnt null
+      throw new Error 'Request already has a body'
+
+    if @isGet
+      throw new Error 'paramsToBody cannot be called on GET requests'
+
     useFormData = (typeof(fileData) is 'object') and
-        ((Blob? and (fileField.value instanceof Blob)) or
-         (File? and (fileField.value instanceof File)))
+        ((Blob? and (fileData instanceof Blob)) or
+         (File? and (fileData instanceof File)))
 
     if useFormData
-      headers = {}
-      body = new FormData()
-      body.append fileField.name, fileData, fileField.fileName
+      @body = new FormData()
+      @body.append fieldName, fileData, fileName
     else
-      fileType = fileField.contentType or 'application/octet-stream'
+      contentType or= 'application/octet-stream'
       boundary = @multipartBoundary()
-      headers = { 'Content-Type': "multipart/form-data; boundary=#{boundary}" }
-      body = ['--', boundary, "\r\n",
-              'Content-Disposition: form-data; name="', fileField.name,
-                  '"; filename="', fileField.fileName, "\"\r\n",
-              'Content-Type: ', fileType, "\r\n",
-              "Content-Transfer-Encoding: binary\r\n\r\n",
-              fileData,
-              "\r\n", '--', boundary, '--', "\r\n"].join ''
-    if authHeader
-      headers['Authorization'] = authHeader
-    Dropbox.Xhr.xhrRequest 'POST', url, headers, body, null, callback
+      @headers['Content-Type'] = "multipart/form-data; boundary=#{boundary}"
+      @body = ['--', boundary, "\r\n",
+               'Content-Disposition: form-data; name="', fieldName,
+                   '"; filename="', fileName, "\"\r\n",
+               'Content-Type: ', contentType, "\r\n",
+               "Content-Transfer-Encoding: binary\r\n\r\n",
+               fileData,
+               "\r\n", '--', boundary, '--', "\r\n"].join ''
 
-  # Generates a bounday suitable for separating multipart data.
-  #
-  # @return {String} boundary suitable for multipart form data
-  @multipartBoundary: ->
-    [Date.now().toString(36),
-     Math.random().toString(36)].join '----'
+  # @private
+  # @return {String} a nonce suitable for use as a part boundary in a multipart
+  #     MIME message
+  multipartBoundary: ->
+    [Date.now().toString(36), Math.random().toString(36)].join '----'
 
-  # Implementation for request and multipartRequest.
+  # Moves this request's parameters to its URL.
   #
-  # @see Dropbox.Xhr.request2
-  # @see Dropbox.Xhr.multipartRequest
-  # @return {XMLHttpRequest} the XHR object created for this request
-  @xhrRequest: (method, url, headers, body, responseType, callback) ->
-    xhr = new @Request()
-    if @ieMode
-      xhr.onload = -> Dropbox.Xhr.onLoad xhr, method, url, callback
-      xhr.onerror = -> Dropbox.Xhr.onError xhr, method, url, callback
+  # @private
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  paramsToUrl: ->
+    if @params
+      queryString = Dropbox.Xhr.urlEncode @params
+      if queryString.length isnt 0
+        @url = [@url, '?', queryString].join ''
+      @params = null
+    @
+
+  # Moves this request's parameters to its body.
+  #
+  # @private
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  paramsToBody: ->
+    if @params
+      if @body isnt null
+        throw new Error 'Request already has a body'
+      if @isGet
+        throw new Error 'paramsToBody cannot be called on GET requests'
+      @headers['Content-Type'] = 'application/x-www-form-urlencoded'
+      @body = Dropbox.Xhr.urlEncode @params
+      @params = null
+    @
+
+  # Sets up an XHR request.
+  #
+  # This method completely sets up a native XHR object and stops short of
+  # calling its send() method, so the API client has a chance of customizing
+  # the XHR. After customizing the XHR, Dropbox.Xhr#send should be called.
+  #
+  #
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  prepare: ->
+    ieMode = Dropbox.Xhr.ieMode
+    if @isGet or @body isnt null or ieMode
+      @paramsToUrl()
+      if @body isnt null and typeof @body is 'string'
+        @headers['Content-Type'] = 'text/plain; charset=utf8'
     else
-      xhr.onreadystatechange = ->
-        Dropbox.Xhr.onReadyStateChange xhr, method, url, responseType, callback
+      @paramsToBody()
 
-    xhr.open method, url, true
-    if responseType
-      if responseType is 'b'
-        if xhr.overrideMimeType
-          xhr.overrideMimeType 'text/plain; charset=x-user-defined'
+    @xhr = new Dropbox.Xhr.Request()
+    if ieMode
+      @xhr.onload = => @onLoad()
+      @xhr.onerror = => @onError()
+    else
+      @xhr.onreadystatechange = => @onReadyStateChange()
+    @xhr.open @method, @url, true
+
+    unless ieMode
+      for own header, value of @headers
+        @xhr.setRequestHeader header, value
+
+    if @responseType
+      if @responseType is 'b'
+        if @xhr.overrideMimeType
+          @xhr.overrideMimeType 'text/plain; charset=x-user-defined'
       else
-        xhr.responseType = responseType
-    unless @ieMode
-      for own header, value of headers
-        xhr.setRequestHeader header, value
-    if body?
-      xhr.send body
+        @xhr.responseType = @responseType
+
+    @
+
+  # Fires off the prepared XHR request.
+  #
+  # Dropbox.Xhr#prepare should be called exactly once before this method.
+  #
+  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
+  #   the XHR completes; if an error occurs, the first parameter will be a
+  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #   instance of the required response type (e.g., String, Blob), and the
+  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  send: (@callback) ->
+    if @body isnt null
+      @xhr.send @body
     else
-      xhr.send()
-    xhr
+      @xhr.send()
+    @
 
   # Encodes an associative array (hash) into a x-www-form-urlencoded String.
   #
-  # For consistency, the keys are encoded using
+  # For consistency, the keys are sorted in alphabetical order in the encoded
+  # output.
   #
   # @param {Object} object the JavaScript object whose keys will be encoded
   # @return {String} the object's keys and values, encoded using
@@ -208,15 +290,15 @@ class Dropbox.Xhr
     result
 
   # Handles the XHR readystate event.
-  @onReadyStateChange: (xhr, method, url, responseType, callback) ->
-    return true if xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
+  onReadyStateChange: ->
+    return true if @xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
 
-    if xhr.status < 200 or xhr.status >= 300
-      apiError = new Dropbox.ApiError xhr, method, url
-      callback apiError
+    if @xhr.status < 200 or @xhr.status >= 300
+      apiError = new Dropbox.ApiError @xhr, @method, @url
+      @callback apiError
       return true
 
-    metadataJson = xhr.getResponseHeader 'x-dropbox-metadata'
+    metadataJson = @xhr.getResponseHeader 'x-dropbox-metadata'
     if metadataJson?.length
       try
         metadata = JSON.parse metadataJson
@@ -226,12 +308,12 @@ class Dropbox.Xhr
     else
       metadata = undefined
 
-    if responseType
-      if responseType is 'b'
-        dirtyText = if xhr.responseText?
-          xhr.responseText
+    if @responseType
+      if @responseType is 'b'
+        dirtyText = if @xhr.responseText?
+          @xhr.responseText
         else
-          xhr.response
+          @xhr.response
         ###
         jsString = ['["']
         for i in [0...dirtyText.length]
@@ -248,35 +330,35 @@ class Dropbox.Xhr
         for i in [0...dirtyText.length]
           bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
         text = bytes.join ''
-        callback null, text, metadata
+        @callback null, text, metadata
       else
-        callback null, xhr.response, metadata
+        @callback null, @xhr.response, metadata
       return true
 
-    text = if xhr.responseText? then xhr.responseText else xhr.response
-    switch xhr.getResponseHeader('Content-Type')
+    text = if @xhr.responseText? then @xhr.responseText else @xhr.response
+    switch @xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         callback null, Dropbox.Xhr.urlDecode(text), metadata
+         @callback null, Dropbox.Xhr.urlDecode(text), metadata
        when 'application/json', 'text/javascript'
-         callback null, JSON.parse(text), metadata
+         @callback null, JSON.parse(text), metadata
        else
-          callback null, text, metadata
+          @callback null, text, metadata
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
-  @onLoad: (xhr, method, url, callback) ->
-    text = xhr.responseText
-    switch xhr.contentType
+  onLoad: ->
+    text = @xhr.responseText
+    switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
-       callback null, Dropbox.Xhr.urlDecode(text), undefined
+       @callback null, Dropbox.Xhr.urlDecode(text), undefined
      when 'application/json', 'text/javascript'
-       callback null, JSON.parse(text), undefined
+       @callback null, JSON.parse(text), undefined
      else
-        callback null, text, undefined
+        @callback null, text, undefined
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
-  @onError: (xhr, method, url, callback) ->
-    apiError = new Dropbox.ApiError xhr, method, url
-    callback apiError
+  onError: ->
+    apiError = new Dropbox.ApiError @xhr, @method, @url
+    @callback apiError
     return true

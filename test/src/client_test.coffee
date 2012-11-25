@@ -26,15 +26,14 @@ buildClientTests = (clientKeys) ->
     if Blob? and (test.node_js or
                   window.navigator.userAgent.indexOf('Gecko') isnt -1)
       testImageServerOn()
-      Dropbox.Xhr.request2('GET', testImageUrl, {}, null, null, 'blob',
-          (error, blob) =>
-            testImageServerOff()
-            expect(error).to.equal null
-            test.__client.writeFile test.imageFile, blob, (error, stat) ->
-              expect(error).to.equal null
-              test.imageFileTag = stat.versionTag
-              done()
-          )
+      xhr = new Dropbox.Xhr 'GET', testImageUrl
+      xhr.setResponseType('blob').prepare().send (error, blob) =>
+        testImageServerOff()
+        expect(error).to.equal null
+        test.__client.writeFile test.imageFile, blob, (error, stat) ->
+          expect(error).to.equal null
+          test.imageFileTag = stat.versionTag
+          done()
     else
       test.__client.writeFile(test.imageFile, test.imageFileData,
           { binary: true },
