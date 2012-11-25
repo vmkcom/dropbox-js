@@ -8,7 +8,7 @@ learn CoffeeScript.
 
 ## Do I need to learn CoffeeScript to use the library?
 
-*No.*
+**No.**
 
 The examples in the
 [getting started guide](https://github.com/dropbox/dropbox-js/blob/master/doc/getting_started.md)
@@ -28,7 +28,7 @@ sample CoffeeScript into very readable JavaScript.
 
 ## Do I need to learn CoffeeScript to know how dropbox.js works?
 
-*No.*
+**No.**
 
 You can follow the
 [development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md)
@@ -42,7 +42,7 @@ with CoffeeScript.
 
 ## Do I need to learn CoffeeScript to modify dropbox.js?
 
-*No, but maybe you don't need to.*
+**Yes, but you might not need to modify the library.**
 
 You do need to learn CoffeeScript to change the `dropbox.js` source code. At
 the same time, you can take advantage of the library hooks and the dynamic
@@ -59,7 +59,7 @@ replace methods) with wrappers that tweak the original behavior
 
 ## Can I contribute to dropbox.js without learning CoffeeScript?
 
-*Yes.*
+**Yes.**
 
 Most of the development time is spent on API design, developing tests,
 documentation and sample code. Contributing a good testing strategy with a bug
@@ -77,7 +77,7 @@ easier to use for JavaScript developers that don't speak CoffeeScript.
 
 ## Can I complain to get dropbox.js to switch away from CoffeeScript?
 
-*No.*
+**No.**
 
 At the moment, 100% of the library's development comes from unpaid, voluntary
 efforts. Switching to JavaScript would reduce the efficiency of these efforts,

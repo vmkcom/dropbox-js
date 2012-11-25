@@ -33,7 +33,7 @@ can be a good place to bookmark while building your application.
 
 ## Development
 
-This library is written in [CoffeeScript](http://coffeescript.org/).
+This library is written in CoffeeScript.
 [This document](https://github.com/dropbox/dropbox-js/blob/master/doc/coffee_faq.md)
 can help you understand if that matters to you.
 
