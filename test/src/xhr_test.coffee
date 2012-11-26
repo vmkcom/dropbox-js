@@ -295,6 +295,17 @@ Content-Transfer-Encoding: binary\r
         expect(data).to.have.property 'oauth_token_secret'
         done()
 
+    it 'processes data correctly when using setCallback', (done) ->
+      xhr = new Dropbox.Xhr 'POST',
+                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr.addOauthParams @oauth
+      xhr.setCallback (error, data) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+        done()
+      xhr.prepare().send()
+
     it 'sends Authorize headers correctly', (done) ->
       return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't set headers.
 

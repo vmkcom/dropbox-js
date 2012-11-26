@@ -60,6 +60,19 @@ class Dropbox.Xhr
     @params = params
     @
 
+  # Sets the function called when the XHR completes.
+  #
+  # This function can also be set when calling Dropbox.Xhr#send.
+  #
+  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
+  #   the XHR completes; if an error occurs, the first parameter will be a
+  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
+  #   instance of the required response type (e.g., String, Blob), and the
+  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  setCallback: (@callback) ->
+    @
+
   # Ammends the request parameters to include an OAuth signature.
   #
   # The OAuth signature will become invalid if the parameters are changed after
@@ -246,7 +259,9 @@ class Dropbox.Xhr
   #   instance of the required response type (e.g., String, Blob), and the
   #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
   # @return {Dropbox.Xhr} this, for easy call chaining
-  send: (@callback) ->
+  send: (callback) ->
+    @callback = callback or @callback
+
     if @body isnt null
       @xhr.send @body
     else

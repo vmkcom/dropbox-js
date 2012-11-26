@@ -3,8 +3,8 @@ class Dropbox.PublicUrl
   # Creates a PublicUrl instance from a raw API response.
   #
   # @param {?Object} urlData the parsed JSON describing a public URL
-  # @param {Boolean} isDirect true if this link was obtained using the /media
-  #   API
+  # @param {Boolean} isDirect true if this is a direct download link, false if
+  #   is a file / folder preview link
   # @return {?Dropbox.PublicUrl} a PublicUrl instance wrapping the given public
   #   link info; parameters that don't look like parsed JSON are returned as
   #   they are
@@ -36,6 +36,8 @@ class Dropbox.PublicUrl
   # called directly.
   #
   # @param {?Object} urlData the parsed JSON describing a public URL
+  # @param {Boolean} isDirect true if this is a direct download link, false if
+  #   is a file / folder preview link
   constructor: (urlData, isDirect) ->
     @url = urlData.url
     @expiresAt = new Date Date.parse(urlData.expires)

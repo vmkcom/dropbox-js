@@ -173,6 +173,51 @@ buildClientTests = (clientKeys) ->
           done()
         reader.readAsBinaryString blob
 
+  describe '#readFile with an XHR filter', ->
+    beforeEach ->
+      @filterCalled = false
+      @callbackCalled = false
+
+    it 'calls the filter with the correct arguments', (done) ->
+      @client.xhrFilter (nativeXhr, xhr) =>
+        expect(nativeXhr).to.be.instanceOf Dropbox.Xhr.Request
+        expect(xhr).to.be.instanceOf Dropbox.Xhr
+        @filterCalled = true
+        true
+
+      @client.readFile @textFile, (error, data, stat) =>
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData
+        done() if @filterCalled
+
+    it 'calls the filter before firing the XHR', (done) ->
+      @client.xhrFilter (nativeXhr, xhr) =>
+        expect(nativeXhr.readyState).to.equal 1
+        expect(@callbackCalled).to.equal false
+        @filterCalled = true
+        true
+
+      @client.readFile @textFile, (error, data, stat) =>
+        @callbackCalled = true
+        expect(@filterCalled).to.equal true
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData
+        done() if @filterCalled
+
+    it 'does not send the XHR if the filter returns false', (done) ->
+      @client.xhrFilter (nativeXhr, xhr) =>
+        expect(@callbackCalled).to.equal false
+        @filterCalled = true
+        # NOTE: if the client calls send(), a DOM error will fail the test
+        xhr.send()
+        false
+
+      @client.readFile @textFile, (error, data, stat) =>
+        @callbackCalled = true
+        expect(@filterCalled).to.equal true
+        done() if @filterCalled
+
+
   describe '#writeFile', ->
     afterEach (done) ->
       return done() unless @newFile
@@ -532,6 +577,22 @@ buildClientTests = (clientKeys) ->
           expect(publicUrl.url).not.to.contain '//db.tt/'
 
           # The contents server does not return CORS headers.
+          return done() unless @nodejs
+          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData
+            done()
+
+    describe 'for a direct download URL created with downloadHack: true', ->
+      it 'gets a direct long-lived download URL', (done) ->
+        @client.makeUrl @textFile, { downloadHack: true }, (error, publicUrl) =>
+          expect(error).to.equal null
+          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
+          expect(publicUrl.isDirect).to.equal true
+          expect(publicUrl.url).not.to.contain '//db.tt/'
+          expect(publicUrl.expiresAt - Date.now()).to.be.above 86400000
+
+          # The download server does not return CORS headers.
           return done() unless @nodejs
           Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
             expect(error).to.equal null
