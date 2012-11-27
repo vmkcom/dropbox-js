@@ -206,7 +206,14 @@ class Dropbox.Client
   #   Blob, instead of a String; this requires XHR Level 2 support, which is
   #   not available in IE <= 9
   # @option options {Boolean} binary if true, the file will be retrieved as a
-  #   binary string; the default is an UTF-8 encoded string
+  #   binary string; the default is an UTF-8 encoded string; this relies on
+  #   browser hacks and should not be used if the environment supports the Blob
+  #   API
+  # @option options {Object} bytes if set, a subset of the file's contents will
+  #   be retrieved; must be an object with the property length, indicating
+  #   how many bytes to be retrieved, and the optional property start,
+  #   indicating the 0-based offset of the first byte to be retrieved; if bytes
+  #   does not define the start property, the last "length" bytes are retrieved
   # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat)} callback
   #   called with the result of the /files (GET) HTTP request; the second
   #   parameter is the contents of the file, the third parameter is a
@@ -220,6 +227,7 @@ class Dropbox.Client
 
     params = {}
     responseType = null
+    rangeHeader = null
     if options
       if options.versionTag
         params.rev = options.versionTag
@@ -231,8 +239,20 @@ class Dropbox.Client
       if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
 
+      if options.bytes
+        unless options.bytes.length
+          throw new Error 'Missing bytes.length'
+        if options.bytes.start?
+          rangeStart = options.bytes.start
+          rangeEnd = options.bytes.start + options.bytes.length - 1
+        else
+          rangeStart = ''
+          rangeEnd = options.bytes.length
+        rangeHeader = "bytes=#{rangeStart}-#{rangeEnd}"
+
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
     xhr.setParams(params).addOauthParams(@oauth).setResponseType(responseType)
+    xhr.setRangeHeader(rangeHeader) if rangeHeader
     @dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.Stat.parse(metadata)
 

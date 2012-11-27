@@ -147,6 +147,43 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFile).to.equal true
         done()
 
+    it 'reads the beginning of a text file', (done) ->
+      @client.readFile @textFile, bytes: { start: 0, length: 10 },
+          (error, data, stat) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData.substring(0, 10)
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @textFile
+              expect(stat.isFile).to.equal true
+            done()
+
+    it 'reads the middle of a text file', (done) ->
+      @client.readFile @textFile, bytes: { start: 8, length: 10 },
+          (error, data, stat) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData.substring(8, 18)
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @textFile
+              expect(stat.isFile).to.equal true
+            done()
+
+    # NOTE: this test case is skipped because the Dropbox backend currently
+    #       parses "Range: bytes=-10" as Range: bytes=0-10" instead of
+    #       returning the last 10 bytes of the file.
+    it.skip 'reads the end of a text file', (done) ->
+      @client.readFile @textFile, bytes: { length: 10 },
+          (error, data, stat) =>
+            expect(error).to.equal null
+            expect(data).to.
+                equal @textFileData.substring(@textFileData.length - 10)
+            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @textFile
+              expect(stat.isFile).to.equal true
+            done()
+
     it 'reads a binary file into a string', (done) ->
       @client.readFile @imageFile, { binary: true }, (error, data, stat) =>
         expect(error).to.equal null

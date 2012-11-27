@@ -134,7 +134,7 @@ class Dropbox.Xhr
   setResponseType: (@responseType) ->
     @
 
-  # Sets the Authorization header to be used for OAuth2 requests.
+  # Sets the Authorization HTTP header to be used for OAuth2 requests.
   #
   # Setting the Authorization header requires a CORS preflight, so it will make
   # the whole request slower.
@@ -142,6 +142,10 @@ class Dropbox.Xhr
   # @param {String} authHeader the value of the Authorization header
   setAuthHeader: (authHeader) ->
     @headers['Authorization'] = authHeader
+
+  # Sets the Range HTTP header to be used for
+  setRangeHeader: (rangeHeader) ->
+    @headers['Range'] = rangeHeader
 
   # Simulates having an <input type="file"> being sent with the request.
   #

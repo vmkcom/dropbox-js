@@ -34,6 +34,14 @@ describe 'DropboxXhr', ->
         it 'throws an error', ->
           expect(=> @xhr.paramsToBody()).to.throw Error
 
+      describe '#setRangeHeader', ->
+        beforeEach ->
+          @xhr.setRangeHeader 'bytes=0-1000'
+
+        it 'adds a Range header', ->
+          expect(@xhr.headers).to.have.property 'Range'
+          expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
+
       describe '#addOauthParams', ->
         beforeEach ->
           @xhr.addOauthParams @oauth
@@ -157,6 +165,14 @@ describe 'DropboxXhr', ->
         it 'does not work twice', ->
           @xhr.setParams answer: 43
           expect(=> @xhr.paramsToBody()).to.throw Error
+
+      describe '#setRangeHeader', ->
+        beforeEach ->
+          @xhr.setRangeHeader 'bytes=0-1000'
+
+        it 'adds a Range header', ->
+          expect(@xhr.headers).to.have.property 'Range'
+          expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
 
       describe '#addOauthParams', ->
         beforeEach ->
