@@ -12,6 +12,17 @@ describe 'DropboxXhr', ->
       expect(@xhr.method).to.equal 'GET'
       expect(@xhr.url).to.equal 'http://request.url'
 
+    describe '#setHeader', ->
+      beforeEach ->
+        @xhr.setHeader 'Range', 'bytes=0-1000'
+
+      it 'adds a HTTP header header', ->
+        expect(@xhr.headers).to.have.property 'Range'
+        expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
+
+      it 'does not work twice for the same header', ->
+        expect(=> @xhr.setHeader('Range', 'bytes=0-1000')).to.throw Error
+
     describe '#setParams', ->
       beforeEach ->
         @xhr.setParams 'param 1': true, 'answer': 42
@@ -33,14 +44,6 @@ describe 'DropboxXhr', ->
       describe '#paramsToBody', ->
         it 'throws an error', ->
           expect(=> @xhr.paramsToBody()).to.throw Error
-
-      describe '#setRangeHeader', ->
-        beforeEach ->
-          @xhr.setRangeHeader 'bytes=0-1000'
-
-        it 'adds a Range header', ->
-          expect(@xhr.headers).to.have.property 'Range'
-          expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
 
       describe '#addOauthParams', ->
         beforeEach ->
@@ -126,6 +129,17 @@ describe 'DropboxXhr', ->
       expect(@xhr.method).to.equal 'POST'
       expect(@xhr.url).to.equal 'http://request.url'
 
+    describe '#setHeader', ->
+      beforeEach ->
+        @xhr.setHeader 'Range', 'bytes=0-1000'
+
+      it 'adds a HTTP header header', ->
+        expect(@xhr.headers).to.have.property 'Range'
+        expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
+
+      it 'does not work twice for the same header', ->
+        expect(=> @xhr.setHeader('Range', 'bytes=0-1000')).to.throw Error
+
     describe '#setParams', ->
       beforeEach ->
         @xhr.setParams 'param 1': true, 'answer': 42
@@ -165,14 +179,6 @@ describe 'DropboxXhr', ->
         it 'does not work twice', ->
           @xhr.setParams answer: 43
           expect(=> @xhr.paramsToBody()).to.throw Error
-
-      describe '#setRangeHeader', ->
-        beforeEach ->
-          @xhr.setRangeHeader 'bytes=0-1000'
-
-        it 'adds a Range header', ->
-          expect(@xhr.headers).to.have.property 'Range'
-          expect(@xhr.headers['Range']).to.equal 'bytes=0-1000'
 
       describe '#addOauthParams', ->
         beforeEach ->

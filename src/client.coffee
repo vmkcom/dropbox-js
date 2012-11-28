@@ -194,6 +194,10 @@ class Dropbox.Client
 
   # Retrieves the contents of a file stored in Dropbox.
   #
+  # Some options are silently ignored in Internet Explorer 9 and below, due to
+  # insufficient support in its proprietary XDomainRequest replacement for XHR.
+  # Currently, the options are: blob, length, start, modifiedSince.
+  #
   # @param {String} path the path of the file to be read, relative to the
   #   user's Dropbox or to the application's folder
   # @param {?Object} options the advanced settings below; for the default
@@ -209,11 +213,17 @@ class Dropbox.Client
   #   binary string; the default is an UTF-8 encoded string; this relies on
   #   browser hacks and should not be used if the environment supports the Blob
   #   API
-  # @option options {Object} bytes if set, a subset of the file's contents will
-  #   be retrieved; must be an object with the property length, indicating
-  #   how many bytes to be retrieved, and the optional property start,
-  #   indicating the 0-based offset of the first byte to be retrieved; if bytes
-  #   does not define the start property, the last "length" bytes are retrieved
+  # @option options {Number} length the number of bytes to be retrieved from
+  #   the file; if the start option is not present, the last "length" bytes
+  #   will be read (after issue #30 is closed); by default, the entire file is
+  #   read
+  # @option options {Number} start the 0-based offset of the first byte to be
+  #   retrieved; if the length option is not present, the bytes between
+  #   "start" and the file's end will be read; by default, the entire
+  #   file is read
+  # @option options {Date, Number} modifiedSince if specified, the file
+  #   contents will only be retrieved if it changed since the given date; this
+  #   can reduce bandwidth usage when caching is used
   # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat)} callback
   #   called with the result of the /files (GET) HTTP request; the second
   #   parameter is the contents of the file, the third parameter is a
@@ -227,6 +237,7 @@ class Dropbox.Client
 
     params = {}
     responseType = null
+    modifiedSinceHeader = null
     rangeHeader = null
     if options
       if options.versionTag
@@ -239,20 +250,25 @@ class Dropbox.Client
       if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
 
-      if options.bytes
-        unless options.bytes.length
-          throw new Error 'Missing bytes.length'
-        if options.bytes.start?
-          rangeStart = options.bytes.start
-          rangeEnd = options.bytes.start + options.bytes.length - 1
+      if options.length
+        if options.start?
+          rangeStart = options.start
+          rangeEnd = options.start + options.length - 1
         else
           rangeStart = ''
-          rangeEnd = options.bytes.length
+          rangeEnd = options.length
         rangeHeader = "bytes=#{rangeStart}-#{rangeEnd}"
+      else if options.start?
+        rangeHeader = "bytes=#{options.start}-"
+
+      if options.modifiedSince
+        modifiedSinceHeader = new Date(options.modifiedSince).toUTCString()
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
     xhr.setParams(params).addOauthParams(@oauth).setResponseType(responseType)
-    xhr.setRangeHeader(rangeHeader) if rangeHeader
+    if modifiedSinceHeader
+      xhr.setHeader 'If-Modified-Since', modifiedSinceHeader
+    xhr.setHeader 'Range', rangeHeader if rangeHeader
     @dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.Stat.parse(metadata)
 

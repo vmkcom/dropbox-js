@@ -103,9 +103,8 @@ class Dropbox.Xhr
       throw new Error 'Request already has an OAuth signature'
 
     @params or= {}
-    @headers['Authorization'] = oauth.authHeader @method, @url, @params
     @signed = true
-    @
+    @setHeader 'Authorization', oauth.authHeader(@method, @url, @params)
 
   # Sets the body (piece of data) that will be sent with the request.
   #
@@ -134,18 +133,21 @@ class Dropbox.Xhr
   setResponseType: (@responseType) ->
     @
 
-  # Sets the Authorization HTTP header to be used for OAuth2 requests.
+  # Sets the value of a custom HTTP header.
   #
-  # Setting the Authorization header requires a CORS preflight, so it will make
-  # the whole request slower.
+  # Custom HTTP headers require a CORS preflight in browsers, so requests that
+  # use them will take more time to complete, especially on high-latency mobile
+  # connections.
   #
-  # @param {String} authHeader the value of the Authorization header
-  setAuthHeader: (authHeader) ->
-    @headers['Authorization'] = authHeader
-
-  # Sets the Range HTTP header to be used for
-  setRangeHeader: (rangeHeader) ->
-    @headers['Range'] = rangeHeader
+  # @param {String} headerName the name of the HTTP header
+  # @param {String} value the value that the header will be set to
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  setHeader: (headerName, value) ->
+    if @headers[headerName]
+      oldValue = @headers[headerName]
+      throw new Error "HTTP header #{headerName} already set to #{oldValue}"
+    @headers[headerName] = value
+    @
 
   # Simulates having an <input type="file"> being sent with the request.
   #

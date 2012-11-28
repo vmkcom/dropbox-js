@@ -148,41 +148,81 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'reads the beginning of a text file', (done) ->
-      @client.readFile @textFile, bytes: { start: 0, length: 10 },
-          (error, data, stat) =>
-            expect(error).to.equal null
-            expect(data).to.equal @textFileData.substring(0, 10)
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
-              expect(stat.path).to.equal @textFile
-              expect(stat.isFile).to.equal true
-            done()
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      @client.readFile @textFile, start: 0, length: 10, (error, data, stat) =>
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData.substring(0, 10)
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @textFile
+        expect(stat.isFile).to.equal true
+        done()
 
     it 'reads the middle of a text file', (done) ->
-      @client.readFile @textFile, bytes: { start: 8, length: 10 },
-          (error, data, stat) =>
-            expect(error).to.equal null
-            expect(data).to.equal @textFileData.substring(8, 18)
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
-              expect(stat.path).to.equal @textFile
-              expect(stat.isFile).to.equal true
-            done()
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      @client.readFile @textFile, start: 8, length: 10, (error, data, stat) =>
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData.substring(8, 18)
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @textFile
+        expect(stat.isFile).to.equal true
+        done()
+
+    it 'reads the end of a text file via the start: option', (done) ->
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      @client.readFile @textFile, start: 10, (error, data, stat) =>
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData.substring(10)
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @textFile
+        expect(stat.isFile).to.equal true
+        done()
 
     # NOTE: this test case is skipped because the Dropbox backend currently
     #       parses "Range: bytes=-10" as Range: bytes=0-10" instead of
     #       returning the last 10 bytes of the file.
-    it.skip 'reads the end of a text file', (done) ->
-      @client.readFile @textFile, bytes: { length: 10 },
+    it.skip 'reads the end of a text file via the length: option', (done) ->
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      @client.readFile @textFile, length: 10, (error, data, stat) =>
+        expect(error).to.equal null
+        expect(data).to.
+            equal @textFileData.substring(@textFileData.length - 10)
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @textFile
+        expect(stat.isFile).to.equal true
+        done()
+
+    it 'reads a text file if modifiedSince is in the past', (done) ->
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      @client.readFile @textFile, modifiedSince: new Date() - 3600 * 1000,
           (error, data, stat) =>
             expect(error).to.equal null
-            expect(data).to.
-                equal @textFileData.substring(@textFileData.length - 10)
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
-              expect(stat.path).to.equal @textFile
-              expect(stat.isFile).to.equal true
+            expect(data).to.equal @textFileData
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @textFile
+            expect(stat.isFile).to.equal true
             done()
+
+    # NOTE: this test case is skipped because the Dropbox backend currently
+    #       does reads even if the If-Modified-Since header is in the future
+    it.skip 'does not read a text file if modifiedSince is in the future', (done) ->
+      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+
+      futureDate = new Date()
+      futureDate.setFullYear futureDate.getFullYear() + 1
+      @client.readFile @textFile, modifiedSince: futureDate,
+          (error, data, stat) =>
+            expect(error).to.equal null
+            expect(data).to.equal ''
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @textFile
+            expect(stat.isFile).to.equal true
+            done()
+
 
     it 'reads a binary file into a string', (done) ->
       @client.readFile @imageFile, { binary: true }, (error, data, stat) =>
@@ -637,15 +677,19 @@ buildClientTests = (clientKeys) ->
             done()
 
   describe '#pullChanges', ->
+    beforeEach ->
+      # Pulling an entire Dropbox can take a lot of time, so we need fancy
+      # logic here.
+      @timeoutValue = 60 * 1000
+      @timeout @timeoutValue
+
     afterEach (done) ->
-      @timeout 10 * 1000  # The current API server is slow on this.
+      @timeoutValue += 10 * 1000
+      @timeout @timeoutValue
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
     it 'gets a cursor, then it gets relevant changes', (done) ->
-      # Pulling an entire Dropbox can take a lot of time, so we need fancy
-      # logic here.
-      @timeoutValue = 10 * 1000
       @timeout @timeoutValue
 
       @client.pullChanges (error, changes) =>
@@ -656,7 +700,7 @@ buildClientTests = (clientKeys) ->
         # Calls pullChanges until it's done listing the user's Dropbox.
         drainEntries = (client, callback) =>
           return callback() unless changes.shouldPullAgain
-          @timeoutValue += 2 * 1000  # 2 extra seconds per call
+          @timeoutValue += 10 * 1000  # 10 extra seconds per call
           @timeout @timeoutValue
           client.pullChanges changes, (error, _changes) ->
             expect(error).to.equal null
