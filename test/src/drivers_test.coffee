@@ -1,7 +1,7 @@
 describe 'DropboxRedirectDriver', ->
   describe 'url', ->
     beforeEach ->
-      @stub = sinon.stub Dropbox.Drivers.Redirect, 'currentLocation'
+      @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
     afterEach ->
       @stub.restore()
 
@@ -68,7 +68,7 @@ describe 'DropboxRedirectDriver', ->
 
   describe 'locationToken', ->
     beforeEach ->
-      @stub = sinon.stub Dropbox.Drivers.Redirect, 'currentLocation'
+      @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
     afterEach ->
       @stub.restore()
 
@@ -141,7 +141,7 @@ describe 'DropboxRedirectDriver', ->
 describe 'DropboxPopupDriver', ->
   describe 'url', ->
     beforeEach ->
-      @stub = sinon.stub Dropbox.Drivers.Popup, 'currentLocation'
+      @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
       @stub.returns 'http://test:123/a/path/file.htmx'
 
     afterEach ->
@@ -186,7 +186,8 @@ describe 'DropboxPopupDriver', ->
       client = new Dropbox.Client testKeys
       client.reset()
       authDriver = new Dropbox.Drivers.Popup
-        receiverFile: 'oauth_receiver.html', noFragment: true
+        receiverFile: 'oauth_receiver.html', noFragment: true,
+        scope: 'popup-integration'
       client.authDriver authDriver
       client.authenticate (error, client) =>
         expect(error).to.equal null

@@ -12,7 +12,8 @@
         if (opener) {
           var client = new Dropbox.Client(window.testFullDropboxKeys);
           client.reset();
-          client.authDriver(new Dropbox.Drivers.Redirect());
+          client.authDriver(new Dropbox.Drivers.Redirect(
+              {scope: "redirect-integration"}));
           client.authenticate(function(error, _client) {
             var message = [error || null, _client && _client.credentials()];
             var json = JSON.stringify(message);
