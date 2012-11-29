@@ -69,7 +69,7 @@ class Dropbox.Drivers.BrowserBase
   # constructor.
   #
   # @param {?Object} options the advanced settings below
-  # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
+  # @option options {Boolean} rememberUser if true, the user's OAuth tokens are
   #   saved in localStorage; if you use this, you MUST provide a UI item that
   #   calls signOut() on Dropbox.Client, to let the user "log out" of the
   #   application
@@ -184,7 +184,7 @@ class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
   #   the fragment part of the URL (the string following the #,
   #   available as document.location.hash), to avoid confusing the server
   #   generating the page
-  # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
+  # @option options {Boolean} rememberUser if true, the user's OAuth tokens are
   #   saved in localStorage; if you use this, you MUST provide a UI item that
   #   calls signOut() on Dropbox.Client, to let the user "log out" of the
   #   application
@@ -265,7 +265,7 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
   #
   # @param {?Object} options one of the settings below; leave out the argument
   #   to use the current location for redirecting
-  # @option otpions {Boolean} rememberUser if true, the user's OAuth tokens are
+  # @option options {Boolean} rememberUser if true, the user's OAuth tokens are
   #   saved in localStorage; if you use this, you MUST provide a UI item that
   #   calls signOut() on Dropbox.Client, to let the user "log out" of the
   #   application

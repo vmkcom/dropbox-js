@@ -33,9 +33,8 @@ if global? and require? and module?
 else
   # Browser
   exports = window
-  exports.authDriver =
-      new Dropbox.Drivers.Popup receiverFile: 'oauth_receiver.html',
-                                scope: 'helper-popup'
+  exports.authDriver = new Dropbox.Drivers.Popup(
+      receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
 
   exports.testImageUrl = '/test/binary/dropbox.png'
   exports.testImageServerOn = -> null
