@@ -12,13 +12,17 @@ if window?
     # https://bugzilla.mozilla.org/show_bug.cgi?id=690659
     DropboxXhrCanSendForms =
       window.navigator.userAgent.indexOf('Firefox') is -1
+  DropboxXhrDoesPreflight = true
 else
   # Node.js needs an adapter for the XHR API.
   DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
   DropboxXhrIeMode = false
-  # Node.js can definitely send forms, but we don't want it to, because it
-  # isn't subject to CORS and the same origin policy
+  # Node.js doesn't have FormData. We wouldn't want to bother putting together
+  # upload forms in node.js anyway, because it doesn't do CORS preflight
+  # checks, so we can use PUT requests without a performance hit.
   DropboxXhrCanSendForms = false
+  # Node.js is a server so it doesn't do annoying browser checks.
+  DropboxXhrDoesPreflight = false
 
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
@@ -27,8 +31,10 @@ class Dropbox.Xhr
   @Request = DropboxXhrRequest
   # Set to true when using the XDomainRequest API.
   @ieMode = DropboxXhrIeMode
-  # Set to true if the browser has proper support for FormData.
+  # Set to true if the platform has proper support for FormData.
   @canSendForms = DropboxXhrCanSendForms
+  # Set to true if the platform performs CORS preflight checks.
+  @doesPreflight = DropboxXhrDoesPreflight
 
   # Sets up an AJAX request.
   #
@@ -42,6 +48,7 @@ class Dropbox.Xhr
     @headers = {}
     @params = null
     @body = null
+    @preflight = not (@isGet or (@method is 'POST'))
     @signed = false
     @responseType = null
     @callback = null
@@ -72,6 +79,22 @@ class Dropbox.Xhr
   # @return {Dropbox.Xhr} this, for easy call chaining
   setCallback: (@callback) ->
     @
+
+  # Ammends the request parameters to include an OAuth signature.
+  #
+  # The OAuth signature will become invalid if the parameters are changed after
+  # the signing process.
+  #
+  # This method automatically decides the best way to add the OAuth signature
+  # to the current request. Modifying the request in any way (e.g., by adding
+  # headers) might result in a valid signature that is applied in a sub-optimal
+  # fashion. For best results, call this right before Dropbox.Xhr#prepare.
+  #
+  signWithOauth: (oauth) ->
+    if Dropbox.Xhr.ieMode or (Dropbox.Xhr.doesPreflight and (not @preflight))
+      @addOauthParams oauth
+    else
+      @addOauthHeader oauth
 
   # Ammends the request parameters to include an OAuth signature.
   #
@@ -117,6 +140,10 @@ class Dropbox.Xhr
     if @body isnt null
       throw new Error 'Request already has a body'
 
+    unless @preflight
+      unless FormData? and body instanceof FormData
+        @preflight = true
+
     @body = body
     @
 
@@ -124,8 +151,7 @@ class Dropbox.Xhr
   #
   # This method requires XHR Level 2 support, which is not available in IE
   # versions <= 9. If these browsers must be supported, it is recommended to
-  # check whether window.Blob is truthy, and fallback to the plain "request"
-  # method otherwise.
+  # check whether window.Blob is truthy.
   #
   # @param {String} responseType the value that will be assigned to the XHR's
   #   responseType property
@@ -146,6 +172,9 @@ class Dropbox.Xhr
     if @headers[headerName]
       oldValue = @headers[headerName]
       throw new Error "HTTP header #{headerName} already set to #{oldValue}"
+    if headerName is 'Content-Type'
+      throw new Error 'Content-Type is automatically computed based on setBody'
+    @preflight = true
     @headers[headerName] = value
     @
 

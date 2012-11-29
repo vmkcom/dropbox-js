@@ -286,6 +286,16 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
     @receiverUrl = @computeUrl options
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
 
+  # Removes credentials stuck in the REQUEST stage.
+  onAuthStateChange: (client, done) ->
+    @setStorageKey client
+    if client.authState is DropboxClient.RESET
+      if credentials = @loadCredentials()
+        if credentials.authState  # Incomplete authentication.
+          # The authentication process broke down, start over.
+          @forgetCredentials()
+    super client, done
+
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
     @listenForMessage token, callback

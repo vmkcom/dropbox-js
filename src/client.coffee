@@ -162,7 +162,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   signOut: (callback) ->
     xhr = new Dropbox.Xhr 'POST', @urls.signOut
-    xhr.addOauthParams @oauth
+    xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error) =>
       return callback(error) if error
 
@@ -188,7 +188,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   getUserInfo: (callback) ->
     xhr = new Dropbox.Xhr 'GET', @urls.accountInfo
-    xhr.addOauthParams @oauth
+    xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error, userData) ->
       callback error, Dropbox.UserInfo.parse(userData), userData
 
@@ -265,7 +265,7 @@ class Dropbox.Client
         modifiedSinceHeader = new Date(options.modifiedSince).toUTCString()
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams(@oauth).setResponseType(responseType)
+    xhr.setParams(params).signWithOauth(@oauth).setResponseType(responseType)
     if modifiedSinceHeader
       xhr.setHeader 'If-Modified-Since', modifiedSinceHeader
     xhr.setHeader 'Range', rangeHeader if rangeHeader
@@ -331,7 +331,7 @@ class Dropbox.Client
     # TODO: locale support would edit the params here
 
     xhr = new Dropbox.Xhr 'POST', "#{@urls.postFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams(@oauth).setFileField('file', fileName,
+    xhr.setParams(params).signWithOauth(@oauth).setFileField('file', fileName,
         data, 'application/octet-stream')
 
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
@@ -358,7 +358,7 @@ class Dropbox.Client
         params.parent_rev = options.parentRev or options.parent_rev
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Xhr 'POST', "#{@urls.putFile}/#{@urlEncodePath(path)}"
-    xhr.setBody(data).setParams(params).addOauthParams(@oauth)
+    xhr.setBody(data).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -416,7 +416,7 @@ class Dropbox.Client
     params.list ||= 'false'
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Xhr 'GET', "#{@urls.metadata}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams @oauth
+    xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
       stat = Dropbox.Stat.parse metadata
       if metadata?.contents
@@ -529,7 +529,7 @@ class Dropbox.Client
         url = "#{@urls.media}/#{path}"
 
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr('POST', url).setParams(params).addOauthParams(@oauth)
+    xhr = new Dropbox.Xhr('POST', url).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, urlData) ->
       if useDownloadHack and urlData and urlData.url
         urlData.url = urlData.url.replace(@authServer, @downloadServer)
@@ -559,7 +559,7 @@ class Dropbox.Client
       params.rev_limit = options.limit
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.revisions}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams(@oauth)
+    xhr.setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, versions) ->
       if versions
         stats = (Dropbox.Stat.parse(metadata) for metadata in versions)
@@ -654,7 +654,7 @@ class Dropbox.Client
         params.size = options.size
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.thumbnails}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams(@oauth)
+    xhr.setParams(params).signWithOauth(@oauth)
 
   # Reverts a file's contents to a previous version.
   #
@@ -674,7 +674,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   revertFile: (path, versionTag, callback) ->
     xhr = new Dropbox.Xhr 'POST', "#{@urls.restore}/#{@urlEncodePath(path)}"
-    xhr.setParams(rev: versionTag).addOauthParams @oauth
+    xhr.setParams(rev: versionTag).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -717,7 +717,7 @@ class Dropbox.Client
         params.include_deleted = true
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.search}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).addOauthParams(@oauth)
+    xhr.setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, results) ->
       if results
         stats = (Dropbox.Stat.parse(metadata) for metadata in results)
@@ -741,7 +741,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
     xhr = new Dropbox.Xhr 'GET', "#{@urls.copyRef}/#{@urlEncodePath(path)}"
-    xhr.addOauthParams @oauth
+    xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error, refData) ->
       callback error, Dropbox.CopyReference.parse(refData)
 
@@ -781,7 +781,7 @@ class Dropbox.Client
       params = {}
 
     xhr = new Dropbox.Xhr 'POST', @urls.delta
-    xhr.setParams(params).addOauthParams @oauth
+    xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, deltaInfo) ->
       callback error, Dropbox.PulledChanges.parse(deltaInfo)
 
@@ -801,7 +801,7 @@ class Dropbox.Client
   mkdir: (path, callback) ->
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsCreateFolder
     xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
-        addOauthParams(@oauth)
+        signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -817,7 +817,7 @@ class Dropbox.Client
   remove: (path, callback) ->
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsDelete
     xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
-        addOauthParams(@oauth)
+        signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -864,7 +864,7 @@ class Dropbox.Client
     # TODO: locale support would edit the params here
 
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsCopy
-    xhr.setParams(params).addOauthParams @oauth
+    xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -889,7 +889,7 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsMove
     xhr.setParams(
         root: @fileRoot, from_path: @normalizePath(fromPath),
-        to_path: @normalizePath(toPath)).addOauthParams @oauth
+        to_path: @normalizePath(toPath)).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
@@ -1015,7 +1015,7 @@ class Dropbox.Client
   # @param {function(error, data)} callback called with the result of the
   #   /oauth/request_token HTTP request
   requestToken: (callback) ->
-    xhr = new Dropbox.Xhr('POST', @urls.requestToken).addOauthParams(@oauth)
+    xhr = new Dropbox.Xhr('POST', @urls.requestToken).signWithOauth(@oauth)
     @dispatchXhr xhr, callback
 
   # The URL for /oauth/authorize, embedding the user's token.
@@ -1039,7 +1039,7 @@ class Dropbox.Client
   # @param {function(error, data)} callback called with the result of the
   #   /oauth/access_token HTTP request
   getAccessToken: (callback) ->
-    xhr = new Dropbox.Xhr('POST', @urls.accessToken).addOauthParams(@oauth)
+    xhr = new Dropbox.Xhr('POST', @urls.accessToken).signWithOauth(@oauth)
     @dispatchXhr xhr, callback
 
   # Prepares an XHR before it is sent to the server.

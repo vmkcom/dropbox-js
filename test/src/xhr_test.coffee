@@ -11,6 +11,7 @@ describe 'DropboxXhr', ->
       expect(@xhr.isGet).to.equal true
       expect(@xhr.method).to.equal 'GET'
       expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.preflight).to.equal false
 
     describe '#setHeader', ->
       beforeEach ->
@@ -23,9 +24,18 @@ describe 'DropboxXhr', ->
       it 'does not work twice for the same header', ->
         expect(=> @xhr.setHeader('Range', 'bytes=0-1000')).to.throw Error
 
+      it 'flags the Xhr as needing preflight', ->
+        expect(@xhr.preflight).to.equal true
+
+      it 'rejects Content-Type', ->
+        expect(=> @xhr.setHeader('Content-Type', 'text/plain')).to.throw Error
+
     describe '#setParams', ->
       beforeEach ->
         @xhr.setParams 'param 1': true, 'answer': 42
+
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
 
       it 'does not work twice', ->
         expect(=> @xhr.setParams 'answer': 43).to.throw Error
@@ -90,6 +100,25 @@ describe 'DropboxXhr', ->
       it 'adds an Authorization header', ->
         expect(@xhr.headers).to.have.property 'Authorization'
 
+    describe '#signWithOauth for a request that does not need preflight', ->
+      beforeEach ->
+        @xhr.signWithOauth @oauth
+
+      if Dropbox.Xhr.doesPreflight
+        it 'uses addOauthParams', ->
+          expect(@xhr.params).to.have.property 'oauth_signature'
+      else
+        it 'uses addOauthHeader', ->
+          expect(@xhr.headers).to.have.property 'Authorization'
+
+    describe '#signWithOauth for a request that needs preflight', ->
+      beforeEach ->
+        @xhr.setHeader 'Range', 'bytes=0-1000'
+        @xhr.signWithOauth @oauth
+
+      it 'uses addOauthHeader', ->
+        expect(@xhr.headers).to.have.property 'Authorization'
+
     describe '#setFileField', ->
       it 'throws an error', ->
         expect(=> @xhr.setFileField('file', 'filename.bin', '<p>File Data</p>',
@@ -99,12 +128,18 @@ describe 'DropboxXhr', ->
       it 'throws an error', ->
         expect(=> @xhr.setBody('body data')).to.throw Error
 
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
+
     describe '#setResponseType', ->
       beforeEach ->
         @xhr.setResponseType 'b'
 
       it 'changes responseType', ->
         expect(@xhr.responseType).to.equal 'b'
+
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
 
     describe '#prepare with params', ->
       beforeEach ->
@@ -128,6 +163,7 @@ describe 'DropboxXhr', ->
       expect(@xhr.isGet).to.equal false
       expect(@xhr.method).to.equal 'POST'
       expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.preflight).to.equal false
 
     describe '#setHeader', ->
       beforeEach ->
@@ -140,12 +176,21 @@ describe 'DropboxXhr', ->
       it 'does not work twice for the same header', ->
         expect(=> @xhr.setHeader('Range', 'bytes=0-1000')).to.throw Error
 
+      it 'flags the Xhr as needing preflight', ->
+        expect(@xhr.preflight).to.equal true
+
+      it 'rejects Content-Type', ->
+        expect(=> @xhr.setHeader('Content-Type', 'text/plain')).to.throw Error
+
     describe '#setParams', ->
       beforeEach ->
         @xhr.setParams 'param 1': true, 'answer': 42
 
       it 'does not work twice', ->
         expect(=> @xhr.setParams 'answer': 43).to.throw Error
+
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
 
       describe '#paramsToUrl', ->
         beforeEach ->
@@ -225,6 +270,25 @@ describe 'DropboxXhr', ->
       it 'adds an Authorization header', ->
         expect(@xhr.headers).to.have.property 'Authorization'
 
+    describe '#signWithOauth for a request that does not need preflight', ->
+      beforeEach ->
+        @xhr.signWithOauth @oauth
+
+      if Dropbox.Xhr.doesPreflight
+        it 'uses addOauthParams', ->
+          expect(@xhr.params).to.have.property 'oauth_signature'
+      else
+        it 'uses addOauthHeader', ->
+          expect(@xhr.headers).to.have.property 'Authorization'
+
+    describe '#signWithOauth for a request that needs preflight', ->
+      beforeEach ->
+        @xhr.setBody 'binary data here'
+        @xhr.signWithOauth @oauth
+
+      it 'uses addOauthHeader', ->
+        expect(@xhr.headers).to.have.property 'Authorization'
+
     describe '#setFileField with a String', ->
       beforeEach ->
         @nonceStub = sinon.stub @xhr, 'multipartBoundary'
@@ -254,7 +318,10 @@ Content-Transfer-Encoding: binary\r
         expect(=> @xhr.setFileField('file', 'filename.bin', '<p>File Data</p>',
                                     'text/html')).to.throw Error
 
-    describe '#setBody', ->
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
+
+    describe '#setBody with a string', ->
       beforeEach ->
         @xhr.setBody 'body data'
 
@@ -264,12 +331,28 @@ Content-Transfer-Encoding: binary\r
       it 'does not work twice', ->
         expect(=> @xhr.setBody('body data')).to.throw Error
 
+      it 'flags the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal true
+
+    if FormData?
+      describe '#setBody with FormData', ->
+        beforeEach ->
+          formData = new FormData()
+          formData.append 'name', 'value'
+          @xhr.setBody formData
+
+        it 'does not flag the XHR as needing preflight', ->
+          expect(@xhr.preflight).to.equal false
+
     describe '#setResponseType', ->
       beforeEach ->
         @xhr.setResponseType 'b'
 
       it 'changes responseType', ->
         expect(@xhr.responseType).to.equal 'b'
+
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
 
     describe '#prepare with params', ->
       beforeEach ->
@@ -284,6 +367,16 @@ Content-Transfer-Encoding: binary\r
 
       it 'pushes the params in the body', ->
         expect(@xhr.body).to.equal 'answer=42'
+
+  describe 'with a PUT', ->
+    beforeEach ->
+      @xhr = new Dropbox.Xhr 'PUT', 'http://request.url'
+
+    it 'initializes correctly', ->
+      expect(@xhr.isGet).to.equal false
+      expect(@xhr.method).to.equal 'PUT'
+      expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.preflight).to.equal true
 
   describe '#send', ->
     it 'reports errors correctly', (done) ->
