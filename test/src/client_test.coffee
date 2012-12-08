@@ -180,10 +180,7 @@ buildClientTests = (clientKeys) ->
         expect(stat.isFile).to.equal true
         done()
 
-    # NOTE: this test case is skipped because the Dropbox backend currently
-    #       parses "Range: bytes=-10" as Range: bytes=0-10" instead of
-    #       returning the last 10 bytes of the file.
-    it.skip 'reads the end of a text file via the length: option', (done) ->
+    it 'reads the end of a text file via the length: option', (done) ->
       return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, length: 10, (error, data, stat) =>
