@@ -222,7 +222,7 @@ buildClientTests = (clientKeys) ->
 
 
     it 'reads a binary file into a string', (done) ->
-      @client.readFile @imageFile, { binary: true }, (error, data, stat) =>
+      @client.readFile @imageFile, binary: true, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @imageFileData
         unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
@@ -233,7 +233,7 @@ buildClientTests = (clientKeys) ->
 
     it 'reads a binary file into a Blob', (done) ->
       return done() unless Blob?
-      @client.readFile @imageFile, { blob: true }, (error, blob, stat) =>
+      @client.readFile @imageFile, blob: true, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
         unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
@@ -246,6 +246,21 @@ buildClientTests = (clientKeys) ->
           expect(reader.result).to.equal @imageFileData
           done()
         reader.readAsBinaryString blob
+
+    it 'reads a binary file into an ArrayBuffer', (done) ->
+      return done() unless ArrayBuffer?
+      @client.readFile @imageFile, arrayBuffer: true, (error, buffer, stat) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf ArrayBuffer
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @imageFile
+          expect(stat.isFile).to.equal true
+        view = new Uint8Array buffer
+        bytes = (String.fromCharCode view[i] for i in [0...buffer.byteLength]).
+            join('')
+        expect(bytes).to.equal @imageFileData
+        done()
 
   describe '#readFile with an XHR filter', ->
     beforeEach ->
@@ -266,7 +281,8 @@ buildClientTests = (clientKeys) ->
 
     it 'calls the filter before firing the XHR', (done) ->
       @client.xhrFilter (nativeXhr, xhr) =>
-        expect(nativeXhr.readyState).to.equal 1
+        unless Dropbox.Xhr.ieMode  # IE's XHR doesn't have readyState
+          expect(nativeXhr.readyState).to.equal 1
         expect(@callbackCalled).to.equal false
         @filterCalled = true
         true
@@ -290,7 +306,6 @@ buildClientTests = (clientKeys) ->
         @callbackCalled = true
         expect(@filterCalled).to.equal true
         done() if @filterCalled
-
 
   describe '#writeFile', ->
     afterEach (done) ->
@@ -331,8 +346,85 @@ buildClientTests = (clientKeys) ->
             expect(stat.isFile).to.equal true
           done()
 
-    # TODO(pwnall): tests for writing binary files
+    it 'writes a Blob to a binary file', (done) ->
+      return done() unless Blob? and ArrayBuffer?
+      @newFile = "#{@testFolder}/test image from blob.png"
+      newBuffer = new ArrayBuffer @imageFileData.length
+      newBytes = new Uint8Array newBuffer
+      for i in [0...@imageFileData.length]
+        newBytes[i] = @imageFileData.charCodeAt i
+      @newBlob = new Blob [newBytes], type: 'image/png'
+      @client.writeFile @newFile, @newBlob, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
 
+        @client.readFile @newFile, blob: true, (error, readBlob, stat) =>
+          expect(error).to.equal null
+          expect(readBlob).to.be.instanceOf Blob
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @newFile
+          expect(stat.isFile).to.equal true
+          reader = new FileReader
+          reader.onloadend = =>
+            return unless reader.readyState == FileReader.DONE
+            expect(reader.result).to.equal @imageFileData
+            done()
+          reader.readAsBinaryString readBlob
+
+    it 'writes an ArrayBuffer to a binary file', (done) ->
+      return done() unless ArrayBuffer?
+      @newFile = "#{@testFolder}/test image from arraybuffer.png"
+      @newBuffer = new ArrayBuffer @imageFileData.length
+      newBytes = new Uint8Array @newBuffer
+      for i in [0...@imageFileData.length]
+        newBytes[i] = @imageFileData.charCodeAt i
+      @client.writeFile @newFile, @newBuffer, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
+
+        @client.readFile @newFile, arrayBuffer: true,
+            (error, buffer, stat) =>
+              expect(error).to.equal null
+              expect(buffer).to.be.instanceOf ArrayBuffer
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @newFile
+              expect(stat.isFile).to.equal true
+              view = new Uint8Array buffer
+              byteCount = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+                  join('')
+              expect(bytes).to.equal @imageFileData
+              done()
+
+    it 'writes an ArrayBufferView to a binary file', (done) ->
+      return done() unless ArrayBuffer?
+      @newFile = "#{@testFolder}/test image from arraybufferview.png"
+      @newBytes = new Uint8Array @imageFileData.length
+      for i in [0...@imageFileData.length]
+        @newBytes[i] = @imageFileData.charCodeAt i
+      @client.writeFile @newFile, @newBytes, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
+
+        @client.readFile @newFile, arrayBuffer: true,
+            (error, buffer, stat) =>
+              expect(error).to.equal null
+              expect(buffer).to.be.instanceOf ArrayBuffer
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @newFile
+              expect(stat.isFile).to.equal true
+              view = new Uint8Array buffer
+              byteCount = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+                  join('')
+              expect(bytes).to.equal @imageFileData
+              done()
 
   describe '#stat', ->
     it 'retrieves a Stat for a file', (done) ->

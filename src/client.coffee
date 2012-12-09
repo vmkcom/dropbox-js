@@ -206,9 +206,14 @@ class Dropbox.Client
   #   of the file contents; the most recent version is retrieved by default
   # @option options {String} rev alias for "versionTag" that matches the HTTP
   #   API
-  # @option options {Boolean} blob if true, the file will be retrieved as a
-  #   Blob, instead of a String; this requires XHR Level 2 support, which is
-  #   not available in IE <= 9
+  # @option options {Boolean} arrayBuffer if true, the file's contents  will be
+  #   passed to the callback in an ArrayBuffer; this is a good method of
+  #   reading non-UTF8 data, such as images; requires XHR Level 2 support,
+  #   which is not available in IE <= 9
+  # @option options {Boolean} blob if true, the file's contents  will be
+  #   passed to the callback in a Blob; this is a good method of reading
+  #   non-UTF8 data, such as images; requires XHR Level 2 support, which is not
+  #   available in IE <= 9
   # @option options {Boolean} binary if true, the file will be retrieved as a
   #   binary string; the default is an UTF-8 encoded string; this relies on
   #   browser hacks and should not be used if the environment supports the Blob
@@ -245,9 +250,11 @@ class Dropbox.Client
       else if options.rev
         params.rev = options.rev
 
-      if options.blob
+      if options.arrayBuffer
+        responseType = 'arraybuffer'
+      else if options.blob
         responseType = 'blob'
-      if options.binary
+      else if options.binary
         responseType = 'b'  # See the Dropbox.Xhr.request2 docs
 
       if options.length
@@ -276,7 +283,8 @@ class Dropbox.Client
   #
   # @param {String} path the path of the file to be created, relative to the
   #   user's Dropbox or to the application's folder
-  # @param {String} data the contents to be written
+  # @param {String, ArrayBuffer, ArrayBufferView, Blob, File} data the contents
+  #   written to the file; if a File is passed, its name is ignored
   # @param {?Object} options the advanced settings below; for the default
   #   settings, skip the argument or pass null
   # @option options {String} lastVersionTag the identifier string for the
