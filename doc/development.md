@@ -22,14 +22,14 @@ package manager), then use it to install the libraries required by the test
 suite.
 
 ```bash
-git clone https://github.com/dropbox/dropbox-sdk.git
-cd dropbox-sdk
+git clone https://github.com/dropbox/dropbox-js.git
+cd dropbox-js
 npm install
 ```
 
 ## Build
 
-Run `npm pack` and ignore the deprecation warnings.
+Run `npm pack` and ignore any deprecation warnings that might come up.
 
 ```bash
 npm pack
