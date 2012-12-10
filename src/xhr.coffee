@@ -211,6 +211,10 @@ class Dropbox.Xhr
           fileData instanceof Dropbox.Xhr.ArrayBufferView
         contentType or= 'application/octet-stream'
         fileData = new Blob [fileData], type: contentType
+      # Workaround for http://crbug.com/165095
+      if typeof File isnt 'undefined' and fileData instanceof File
+        fileData = new Blob [fileData], type: fileData.type
+        #fileData = fileData
       useFormData = fileData instanceof Blob
     else
       useFormData = false

@@ -360,18 +360,65 @@ buildClientTests = (clientKeys) ->
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
 
-        @client.readFile @newFile, blob: true, (error, readBlob, stat) =>
+        @client.readFile @newFile, arrayBuffer: true,
+            (error, buffer, stat) =>
+              expect(error).to.equal null
+              expect(buffer).to.be.instanceOf ArrayBuffer
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @newFile
+              expect(stat.isFile).to.equal true
+              view = new Uint8Array buffer
+              byteCount = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+                  join('')
+              expect(bytes).to.equal @imageFileData
+              done()
+
+    it 'writes a File to a binary file', (done) ->
+      return done() unless File? and Blob? and ArrayBuffer?
+      @newFile = "#{@testFolder}/test image from blob.png"
+      newBuffer = new ArrayBuffer @imageFileData.length
+      newBytes = new Uint8Array newBuffer
+      for i in [0...@imageFileData.length]
+        newBytes[i] = @imageFileData.charCodeAt i
+      newBlob = new Blob [newBytes], type: 'image/png'
+
+      # Called when we have a File wrapping newBlob.
+      actualTestCase = (file) =>
+        @newFileObject = file
+        @client.writeFile @newFile, @newFileObject, (error, stat) =>
           expect(error).to.equal null
-          expect(readBlob).to.be.instanceOf Blob
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
-          reader = new FileReader
-          reader.onloadend = =>
-            return unless reader.readyState == FileReader.DONE
-            expect(reader.result).to.equal @imageFileData
-            done()
-          reader.readAsBinaryString readBlob
+
+          @client.readFile @newFile, arrayBuffer: true,
+              (error, buffer, stat) =>
+                expect(error).to.equal null
+                expect(buffer).to.be.instanceOf ArrayBuffer
+                expect(stat).to.be.instanceOf Dropbox.Stat
+                expect(stat.path).to.equal @newFile
+                expect(stat.isFile).to.equal true
+                view = new Uint8Array buffer
+                byteCount = buffer.byteLength
+                bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+                    join('')
+                expect(bytes).to.equal @imageFileData
+                done()
+
+      # TODO(pwnall): use lighter method of constructing a File, when available
+      #               http://crbug.com/164933
+      return done() if typeof webkitRequestFileSystem is 'undefined'
+      webkitRequestFileSystem window.TEMPORARY, 1024 * 1024, (fileSystem) ->
+        # NOTE: the File name is different from the uploaded file name, to
+        #       catch bugs such as http://crbug.com/165095
+        fileSystem.root.getFile 'test image file.png',
+            create: true, exclusive: false, (fileEntry) ->
+              fileEntry.createWriter (fileWriter) ->
+                fileWriter.onwriteend = ->
+                  fileEntry.file (file) ->
+                    actualTestCase file
+                fileWriter.write newBlob
 
     it 'writes an ArrayBuffer to a binary file', (done) ->
       return done() unless ArrayBuffer?
