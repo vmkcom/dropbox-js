@@ -6,6 +6,10 @@ class TokenStash
   #     work for Folder access
   constructor: (options) ->
     @fs = require 'fs'
+    # Node 0.6 hack.
+    unless @fs.existsSync
+      path = require 'path'
+      @fs.existsSync = (filePath) -> path.existsSync filePath
     @getCache = null
     @sandbox = !options?.fullDropbox
     @setupFs()

@@ -10,10 +10,12 @@ suitable for use in both modern browsers and in server-side code running under
 
 This library is tested against the following JavaScript platforms
 
-* node.js 0.8
-* Chrome 21
-* Firefox 15
+* [node.js](http://nodejs.org/) 0.6 and 0.8
+* [Chrome](https://www.google.com/chrome) 23
+* [Firefox](www.mozilla.org/firefox) 17
 * Internet Explorer 9
+
+Keep in mind that the versions above are not hard requirements.
 
 
 ## Installation and Usage

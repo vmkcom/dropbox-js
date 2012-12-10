@@ -1,5 +1,11 @@
 {spawn, exec} = require 'child_process'
 fs = require 'fs'
+
+# Node 0.6 compatibility hack.
+unless fs.existsSync
+  path = require 'path'
+  fs.existsSync = (filePath) -> path.existsSync filePath
+
 log = console.log
 remove = require 'remove'
 
