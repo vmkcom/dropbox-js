@@ -328,7 +328,8 @@ class Dropbox.Xhr
         @xhr.send body
       catch e
         # Firefox doesn't support sending ArrayBufferViews.
-        if Dropbox.Xhr.ArrayBufferView and
+        # Node.js doesn't implement Blob.
+        if typeof Blob isnt 'undefined' and Dropbox.Xhr.ArrayBufferView and
             body instanceof Dropbox.Xhr.ArrayBufferView
           body = new Blob [body], type: 'application/octet-stream'
           @xhr.send body
