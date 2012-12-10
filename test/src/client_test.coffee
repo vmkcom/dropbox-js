@@ -192,35 +192,6 @@ buildClientTests = (clientKeys) ->
         expect(stat.isFile).to.equal true
         done()
 
-    it 'reads a text file if modifiedSince is in the past', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
-
-      @client.readFile @textFile, modifiedSince: new Date() - 3600 * 1000,
-          (error, data, stat) =>
-            expect(error).to.equal null
-            expect(data).to.equal @textFileData
-            expect(stat).to.be.instanceOf Dropbox.Stat
-            expect(stat.path).to.equal @textFile
-            expect(stat.isFile).to.equal true
-            done()
-
-    # NOTE: this test case is skipped because the Dropbox backend currently
-    #       does reads even if the If-Modified-Since header is in the future
-    it.skip 'does not read a text file if modifiedSince is in the future', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
-
-      futureDate = new Date()
-      futureDate.setFullYear futureDate.getFullYear() + 1
-      @client.readFile @textFile, modifiedSince: futureDate,
-          (error, data, stat) =>
-            expect(error).to.equal null
-            expect(data).to.equal ''
-            expect(stat).to.be.instanceOf Dropbox.Stat
-            expect(stat.path).to.equal @textFile
-            expect(stat.isFile).to.equal true
-            done()
-
-
     it 'reads a binary file into a string', (done) ->
       @client.readFile @imageFile, binary: true, (error, data, stat) =>
         expect(error).to.equal null

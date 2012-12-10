@@ -196,7 +196,7 @@ class Dropbox.Client
   #
   # Some options are silently ignored in Internet Explorer 9 and below, due to
   # insufficient support in its proprietary XDomainRequest replacement for XHR.
-  # Currently, the options are: blob, length, start, modifiedSince.
+  # Currently, the options are: arrayBuffer, blob, length, start.
   #
   # @param {String} path the path of the file to be read, relative to the
   #   user's Dropbox or to the application's folder
@@ -226,9 +226,6 @@ class Dropbox.Client
   #   retrieved; if the length option is not present, the bytes between
   #   "start" and the file's end will be read; by default, the entire
   #   file is read
-  # @option options {Date, Number} modifiedSince if specified, the file
-  #   contents will only be retrieved if it changed since the given date; this
-  #   can reduce bandwidth usage when caching is used
   # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat)} callback
   #   called with the result of the /files (GET) HTTP request; the second
   #   parameter is the contents of the file, the third parameter is a
@@ -242,7 +239,6 @@ class Dropbox.Client
 
     params = {}
     responseType = null
-    modifiedSinceHeader = null
     rangeHeader = null
     if options
       if options.versionTag
@@ -268,13 +264,8 @@ class Dropbox.Client
       else if options.start?
         rangeHeader = "bytes=#{options.start}-"
 
-      if options.modifiedSince
-        modifiedSinceHeader = new Date(options.modifiedSince).toUTCString()
-
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth(@oauth).setResponseType(responseType)
-    if modifiedSinceHeader
-      xhr.setHeader 'If-Modified-Since', modifiedSinceHeader
     xhr.setHeader 'Range', rangeHeader if rangeHeader
     @dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.Stat.parse(metadata)
