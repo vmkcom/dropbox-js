@@ -13,39 +13,39 @@ class Dropbox.UserInfo
     else
       userInfo
 
-  # @return {String} the user's name, in a form that is fit for display
+  # @property {String} the user's name, in a form that is fit for display
   name: null
 
-  # @return {?String} the user's email; this is not in the official API
+  # @property {?String} the user's email; this is not in the official API
   #   documentation, so it might not be supported
   email: null
 
-  # @return {?String} two-letter country code, or null if unavailable
+  # @property {?String} two-letter country code, or null if unavailable
   countryCode: null
 
-  # @return {String} unique ID for the user; this ID matches the unique ID
+  # @property {String} unique ID for the user; this ID matches the unique ID
   #   returned by the authentication process
   uid: null
 
-  # @return {String}
+  # @property {String}
   referralUrl: null
 
   # Specific to applications whose access type is "public app folder".
   #
-  # @return {String} prefix for URLs to the application's files
+  # @property {String} prefix for URLs to the application's files
   publicAppUrl: null
 
-  # @return {Number} the maximum amount of bytes that the user can store
+  # @property {Number} the maximum amount of bytes that the user can store
   quota: null
 
-  # @return {Number} the number of bytes taken up by the user's data
+  # @property {Number} the number of bytes taken up by the user's data
   usedQuota: null
 
-  # @return {Number} the number of bytes taken up by the user's data that is
+  # @property {Number} the number of bytes taken up by the user's data that is
   #   not shared with other users
   privateBytes: null
 
-  # @return {Number} the number of bytes taken up by the user's data that is
+  # @property {Number} the number of bytes taken up by the user's data that is
   #   shared with other users
   sharedBytes: null
 

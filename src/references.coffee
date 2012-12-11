@@ -14,18 +14,18 @@ class Dropbox.PublicUrl
     else
       urlData
 
-  # @return {String} the public URL
+  # @property {String} the public URL
   url: undefined
 
-  # @return {Date} after this time, the URL is not usable
+  # @property {Date} after this time, the URL is not usable
   expiresAt: undefined
 
-  # @return {Boolean} true if this is a direct download URL, false for URLs to
+  # @property {Boolean} true if this is a direct download URL, false for URLs to
   #   preview pages in the Dropbox web app; folders do not have direct link
   #
   isDirect: undefined
 
-  # @return {Boolean} true if this is URL points to a file's preview page in
+  # @property {Boolean} true if this is URL points to a file's preview page in
   #   Dropbox, false for direct links
   isPreview: undefined
 
@@ -62,10 +62,10 @@ class Dropbox.CopyReference
     else
       refData
 
-  # @return {String} the raw reference, for use with Dropbox APIs
+  # @property {String} the raw reference, for use with Dropbox APIs
   tag: undefined
 
-  # @return {Date} deadline for using the reference in a copy operation
+  # @property {Date} deadline for using the reference in a copy operation
   expiresAt: undefined
 
   # Creates a CopyReference instance from a raw reference or API response.

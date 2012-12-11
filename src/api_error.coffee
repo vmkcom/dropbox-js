@@ -1,5 +1,23 @@
 # Information about a failed call to the Dropbox API.
 class Dropbox.ApiError
+  # @property {Number} the HTTP error code (e.g., 403)
+  status: undefined
+
+  # @property {String} the HTTP method of the failed request (e.g., 'GET')
+  method: undefined
+
+  # @property {String} the URL of the failed request
+  url: undefined
+
+  # @property {?String} the body of the HTTP error response; can be null if
+  #   the error was caused by a network failure or by a security issue
+  responseText: undefined
+
+  # @property {?Object} the result of parsing the JSON in the HTTP error
+  #   response; can be null if the API server didn't return JSON, or if the
+  #   HTTP response body is unavailable
+  response: undefined
+
   # Wraps a failed XHR call to the Dropbox API.
   #
   # @param {String} method the HTTP verb of the API request (e.g., 'GET')
