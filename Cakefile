@@ -1,13 +1,14 @@
+async = require 'async'
 {spawn, exec} = require 'child_process'
 fs = require 'fs'
+log = console.log
+remove = require 'remove'
 
 # Node 0.6 compatibility hack.
 unless fs.existsSync
   path = require 'path'
   fs.existsSync = (filePath) -> path.existsSync filePath
 
-log = console.log
-remove = require 'remove'
 
 task 'build', ->
   build()
@@ -49,17 +50,19 @@ task 'extension', ->
   run 'node_modules/coffee/bin/coffee --compile test/chrome_extension/*.coffee'
 
 build = (callback) ->
+  commands = []
   # Compile without --join for decent error messages.
-  run 'node_modules/coffee-script/bin/coffee --output tmp ' +
-      '--compile src/*.coffee', ->
-    run 'node_modules/coffee-script/bin/coffee --output lib ' +
-        '--compile --join dropbox.js src/*.coffee', ->
-      # Minify the javascript, for browser distribution.
-      run 'node_modules/uglify-js/bin/uglifyjs --compress --mangle ' +
-          '--output lib/dropbox.min.js lib/dropbox.js', ->
-        run 'node_modules/coffee-script/bin/coffee --output test/js ' +
-            '--compile test/src/*.coffee',
-            callback
+  commands.push 'node_modules/coffee-script/bin/coffee --output tmp ' +
+                '--compile src/*.coffee'
+  commands.push 'node_modules/coffee-script/bin/coffee --output lib ' +
+                '--compile --join dropbox.js src/*.coffee'
+  # Minify the javascript, for browser distribution.
+  commands.push 'node_modules/uglify-js/bin/uglifyjs --compress --mangle ' +
+                '--output lib/dropbox.min.js lib/dropbox.js'
+  commands.push 'node_modules/coffee-script/bin/coffee --output test/js ' +
+                '--compile test/src/*.coffee'
+  async.forEachSeries commands, run, ->
+    callback() if callback
 
 ssl_cert = (callback) ->
   fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'
@@ -86,12 +89,16 @@ vendor = (callback) ->
   js = "window.testImageBytes = \"#{fragments.join('')}\";"
   fs.writeFileSync 'test/vendor/favicon.js', js
 
-  # chai.js ships different builds for browsers vs node.js
-  download 'http://chaijs.com/chai.js', 'test/vendor/chai.js', ->
-    # sinon.js also ships special builds for browsers, and separate code for IE
-    download 'http://sinonjs.org/releases/sinon.js', 'test/vendor/sinon.js', ->
-      download 'http://sinonjs.org/releases/sinon-ie.js',
-               'test/vendor/sinon-ie.js', callback
+  downloads = [
+    # chai.js ships different builds for browsers vs node.js
+    ['http://chaijs.com/chai.js', 'test/vendor/chai.js'],
+    # sinon.js also ships special builds for browsers
+    ['http://sinonjs.org/releases/sinon.js', 'test/vendor/sinon.js'],
+    # ... and sinon.js ships an IE-only module
+    ['http://sinonjs.org/releases/sinon-ie.js', 'test/vendor/sinon-ie.js']
+  ]
+  async.forEachSeries downloads, download, ->
+    callback() if callback
 
 tokens = (callback) ->
   TokenStash = require './test/js/token_stash.js'
@@ -115,7 +122,7 @@ run = (args...) ->
   process.on 'SIGHUP', -> cmd.kill()
   cmd.on 'exit', (code) -> callback() if callback? and code is 0
 
-download = (url, file, callback) ->
+download = ([url, file], callback) ->
   if fs.existsSync file
     callback() if callback?
     return
