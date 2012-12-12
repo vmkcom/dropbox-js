@@ -50,10 +50,10 @@ class Dropbox.AuthDriver
   #   error information
   #
   # @param {Dropbox.Client} client the client performing the OAuth process
-  # @param {function()} done called when onAuthStateChange acknowledges the
+  # @param {function()} callback called when onAuthStateChange acknowledges the
   #   state change
-  onAuthStateChange: (client, done) ->
-    done()
+  onAuthStateChange: (client, callback) ->
+    callback()
 
 # Namespace for authentication drivers.
 Dropbox.Drivers = {}
@@ -81,46 +81,45 @@ class Dropbox.Drivers.BrowserBase
     @scope = options?.scope or 'default'
 
   # The magic happens here.
-  onAuthStateChange: (client, done) ->
+  onAuthStateChange: (client, callback) ->
     @setStorageKey client
 
     switch client.authState
       when DropboxClient.RESET
-        return done() unless credentials = @loadCredentials()
+        @loadCredentials (credentials) ->
+          return callback() unless credentials
 
-        if credentials.authState  # Incomplete authentication.
-          client.setCredentials credentials
-          return done()
+          if credentials.authState  # Incomplete authentication.
+            client.setCredentials credentials
+            return callback()
 
-        # There is an old access token. Only use it if the app supports logout.
-        unless @rememberUser
-          @forgetCredentials()
-          return done()
-
-        # Verify that the old access token still works.
-        client.setCredentials credentials
-        client.getUserInfo (error) =>
-          if error
-            client.reset()
+          # There is an old access token. Only use it if the app supports
+          # logout.
+          unless @rememberUser
             @forgetCredentials()
-          return done()
+            return done()
+
+          # Verify that the old access token still works.
+          client.setCredentials credentials, ->
+            client.getUserInfo (error) =>
+              if error
+                client.reset()
+                @forgetCredentials done
+              else
+                callback()
       when DropboxClient.REQUEST
-        @storeCredentials client.credentials()
-        done()
+        @storeCredentials client.credentials(), callback
       when DropboxClient.DONE
-        if @rememberUser
-          @storeCredentials client.credentials()
-        else
-          @forgetCredentials()
-        done()
+        unless @rememberUser
+          return @forgetCredentials callback
+        @storeCredentials client.credentials(), callback
       when DropboxClient.SIGNED_OFF
-        @forgetCredentials()
-        done()
+        @forgetCredentials callback
       when DropboxClient.ERROR
-        @forgetCredentials()
-        done()
+        @forgetCredentials callback
       else
-        done()
+        callback()
+        @
 
   # Computes the @storageKey used by loadCredentials and forgetCredentials.
   #
@@ -140,33 +139,49 @@ class Dropbox.Drivers.BrowserBase
   #
   # @private
   # onAuthStateChange calls this method during the authentication flow.
-  storeCredentials: (credentials) ->
+  #
+  # @param {Object} credentials the result of a Drobpox.Client#credentials call
+  # @param {function()} callback called when the storing operation is complete
+  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  storeCredentials: (credentials, callback) ->
     localStorage.setItem @storageKey, JSON.stringify(credentials)
+    callback()
+    @
 
   # Retrieves a token and secret from localStorage.
   #
   # @private
   # onAuthStateChange calls this method during the authentication flow.
   #
-  # @return {Array<?String>} 2-element array with the OAuth token and secret
-  #   stored by a previous call to storeToken, or two null elements if no
-  #   such token and secret were stored
-  loadCredentials: ->
+  # @param {function(?Object)} callback supplied with the credentials object
+  #   stored by a previous call to
+  #   Dropbox.Drivers.BrowserBase#storeCredentials; null if no credentials were
+  #   stored, or if the previously stored credentials were deleted
+  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  loadCredentials: (callback) ->
     jsonString = localStorage.getItem @storageKey
-    return null unless jsonString
+    unless jsonString
+      callback null
+      return @
 
     try
-      return JSON.parse(jsonString)
+      callback JSON.parse(jsonString)
     catch e
-      # Parse errors
-      return null
+      # Parse errors.
+      callback null
+    @
 
   # Deletes information previously stored by a call to storeToken.
   #
   # @private
   # onAuthStateChange calls this method during the authentication flow.
-  forgetCredentials: ->
+  #
+  # @param {function()} callback called after the credentials are deleted
+  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  forgetCredentials: (callback) ->
     localStorage.removeItem @storageKey
+    callback()
+    @
 
   # Wrapper for window.location, for testing purposes.
   #
@@ -198,20 +213,25 @@ class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
 
   # Forwards the authentication process from REQUEST to AUTHORIZED on redirect.
-  onAuthStateChange: (client, done) ->
+  onAuthStateChange: (client, callback) ->
+    superCall = do => => super client, callback
+
     @setStorageKey client
     if client.authState is DropboxClient.RESET
-      if credentials = @loadCredentials()
-        if credentials.authState  # Incomplete authentication.
-          if credentials.token is @locationToken() and
-              credentials.authState is DropboxClient.REQUEST
-            # locationToken matched, so the redirect happened
-            credentials.authState = DropboxClient.AUTHORIZED
-            @storeCredentials credentials
-          else
-            # The authentication process broke down, start over.
-            @forgetCredentials()
-    super client, done
+      @loadCredentials (credentials) =>
+        if credentials
+          if credentials.authState  # Incomplete authentication.
+            if credentials.token is @locationToken() and
+                credentials.authState is DropboxClient.REQUEST
+              # locationToken matched, so the redirect happened
+              credentials.authState = DropboxClient.AUTHORIZED
+              return @storeCredentials credentials, superCall
+            else
+              # The authentication process broke down, start over.
+              return @forgetCredentials superCall
+        superCall()
+    else
+      superCall()
 
   # URL of the current page, since the user will be sent right back.
   url: ->
@@ -287,14 +307,17 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
     @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
 
   # Removes credentials stuck in the REQUEST stage.
-  onAuthStateChange: (client, done) ->
+  onAuthStateChange: (client, callback) ->
+    superCall = do => => super client, callback
     @setStorageKey client
     if client.authState is DropboxClient.RESET
-      if credentials = @loadCredentials()
-        if credentials.authState  # Incomplete authentication.
+      @loadCredentials (credentials) ->
+        if credentials and credentials.authState  # Incomplete authentication.
           # The authentication process broke down, start over.
-          @forgetCredentials()
-    super client, done
+          return @forgetCredentials superCall
+        superCall()
+    else
+      superCall()
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
@@ -328,7 +351,7 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
   # @return {?DOMRef} reference to the opened window, or null if the call
   #   failed
   openWindow: (url) ->
-    window.open url, '_dropboxOauthSigninWindow', @popupWindowSpec(980, 980)
+    window.open url, '_dropboxOauthSigninWindow', @popupWindowSpec(980, 700)
 
   # Spec string for window.open to create a nice popup.
   #
@@ -345,6 +368,8 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
     # Computed popup window metrics.
     popupLeft = Math.round x0 + (width - popupWidth) / 2
     popupTop = Math.round y0 + (height - popupHeight) / 2.5
+    popupLeft = x0 if popupLeft < x0
+    popupTop = y0 if popupTop < y0
 
     # The specification string.
     "width=#{popupWidth},height=#{popupHeight}," +
@@ -357,9 +382,8 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
   #   window
   # @param {function()} called when the received message matches the token
   listenForMessage: (token, callback) ->
-    tokenRe = @tokenRe
-    listener = (event) ->
-      match = tokenRe.exec event.data.toString()
+    listener = (event) =>
+      match = @tokenRe.exec event.data.toString()
       if match and decodeURIComponent(match[2]) is token
         window.removeEventListener 'message', listener
         callback()
