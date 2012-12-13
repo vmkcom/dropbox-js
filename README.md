@@ -32,6 +32,10 @@ The
 [dropbox.js API reference](http://coffeedoc.info/github/dropbox/dropbox-js/master/class_index.html)
 can be a good place to bookmark while building your application.
 
+If you run into a problem, take a look at
+[the dropbox.js GitHub issue list](https://github.com/dropbox/dropbox-js/issues).
+Please open a new issue if your problem wasn't already reported.
+
 
 ## Development
 

@@ -974,45 +974,47 @@ buildClientTests = (clientKeys) ->
       expect(@client.appHash().length).to.be.greaterThan 4
 
 
-describe 'DropboxClient with full Dropbox access', ->
-  buildClientTests testFullDropboxKeys
+describe 'Dropbox.Client', ->
+  describe 'with full Dropbox access', ->
+    buildClientTests testFullDropboxKeys
 
-describe 'DropboxClient with Folder access', ->
-  buildClientTests testKeys
+describe 'Dropbox.Client', ->
+  describe 'with Folder access', ->
+    buildClientTests testKeys
 
-  describe '#authenticate + #signOut', ->
-    # NOTE: we're not duplicating this test in the full Dropbox acess suite,
-    #       because it's annoying to the tester
-    it 'completes the authenticate flow', (done) ->
-      @timeout 45 * 1000  # Time-consuming because the user must click.
-      @client.reset()
-      @client.authDriver authDriver
-      @client.authenticate (error, client) =>
-        expect(error).to.equal null
-        expect(client).to.equal @client
-        expect(client.authState).to.equal Dropbox.Client.DONE
-        # Verify that we can do API calls.
-        client.getUserInfo (error, userInfo) ->
+    describe '#authenticate + #signOut', ->
+      # NOTE: we're not duplicating this test in the full Dropbox acess suite,
+      #       because it's annoying to the tester
+      it 'completes the authenticate flow', (done) ->
+        @timeout 45 * 1000  # Time-consuming because the user must click.
+        @client.reset()
+        @client.authDriver authDriver
+        @client.authenticate (error, client) =>
           expect(error).to.equal null
-          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-          credentials = client.credentials()
-          client.signOut (error) ->
+          expect(client).to.equal @client
+          expect(client.authState).to.equal Dropbox.Client.DONE
+          # Verify that we can do API calls.
+          client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
-            expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
-            # Verify that we can't use the old token in API calls.
-            client.setCredentials credentials
-            client.getUserInfo (error, userInfo) ->
-              expect(error).to.be.ok
-              expect(error.status).to.equal 401
-              done()
+            expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+            credentials = client.credentials()
+            client.signOut (error) ->
+              expect(error).to.equal null
+              expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
+              # Verify that we can't use the old token in API calls.
+              client.setCredentials credentials
+              client.getUserInfo (error, userInfo) ->
+                expect(error).to.be.ok
+                expect(error.status).to.equal 401
+                done()
 
-  describe '#appHash', ->
-    it 'depends on the app key', ->
-      client = new Dropbox.Client testFullDropboxKeys
-      expect(client.appHash()).not.to.equal @client.appHash()
+    describe '#appHash', ->
+      it 'depends on the app key', ->
+        client = new Dropbox.Client testFullDropboxKeys
+        expect(client.appHash()).not.to.equal @client.appHash()
 
-  describe '#constructor', ->
-    it 'raises an Error if initialized without an API key / secret', ->
-      expect(-> new Dropbox.Client(token: '123', tokenSecret: '456')).to.
-          throw(Error, /no api key/i)
+    describe '#constructor', ->
+      it 'raises an Error if initialized without an API key / secret', ->
+        expect(-> new Dropbox.Client(token: '123', tokenSecret: '456')).to.
+            throw(Error, /no api key/i)
 

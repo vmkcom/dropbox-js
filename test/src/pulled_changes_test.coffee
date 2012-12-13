@@ -1,4 +1,4 @@
-describe 'DropboxPulledChanges', ->
+describe 'Dropbox.PulledChanges', ->
   describe 'parse', ->
     describe 'on a sample response', ->
       beforeEach ->
@@ -63,7 +63,7 @@ describe 'DropboxPulledChanges', ->
       expect(Dropbox.PulledChanges.parse(undefined)).to.equal undefined
 
 
-describe 'DropboxPullChange', ->
+describe 'Dropbox.PullChange', ->
   describe 'parse', ->
     describe 'on a modification change', ->
       beforeEach ->

@@ -1,4 +1,4 @@
-describe 'DropboxXhr', ->
+describe 'Dropbox.Xhr', ->
   beforeEach ->
     @node_js = module? and module?.exports? and require?
     @oauth = new Dropbox.Oauth testKeys

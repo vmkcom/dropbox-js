@@ -1,4 +1,4 @@
-describe 'Oauth', ->
+describe 'Dropbox.Oauth', ->
   beforeEach ->
     @oauth = new Dropbox.Oauth
       key: 'dpf43f3p2l4k3l03',

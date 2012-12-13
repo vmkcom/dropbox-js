@@ -1,4 +1,4 @@
-describe 'DropboxStat', ->
+describe 'Dropbox.Stat', ->
   describe 'parse', ->
     describe 'on the API file example', ->
       beforeEach ->

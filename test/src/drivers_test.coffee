@@ -1,4 +1,37 @@
-describe 'DropboxRedirectDriver', ->
+describe 'Dropbox.Drivers.BrowserBase', ->
+  beforeEach ->
+    @node_js = module? and module?.exports? and require?
+    @client = new Dropbox.Client testKeys
+
+  describe 'with rememberUser: false', ->
+    beforeEach (done) ->
+      return done() if @node_js
+      @driver = new Dropbox.Drivers.BrowserBase
+      @driver.setStorageKey @client
+      @driver.forgetCredentials done
+
+    afterEach (done) ->
+      return done() if @node_js
+      @driver.forgetCredentials done
+
+    describe 'loadCredentials', ->
+      it 'produces the credentials passed to storeCredentials', (done) ->
+        return done() if @node_js
+        goldCredentials = @client.credentials()
+        @driver.storeCredentials goldCredentials, =>
+          @driver.loadCredentials (credentials) ->
+            expect(credentials).to.deep.equal goldCredentials
+            done()
+
+      it 'produces null after forgetCredentials was called', (done) ->
+        return done() if @node_js
+        @driver.storeCredentials @client.credentials(), =>
+          @driver.forgetCredentials =>
+            @driver.loadCredentials (credentials) ->
+              expect(credentials).to.equal null
+              done()
+
+describe 'Dropbox.Drivers.Redirect', ->
   describe 'url', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
@@ -138,7 +171,7 @@ describe 'DropboxRedirectDriver', ->
       (new Dropbox.Drivers.Popup()).openWindow(
           '/test/html/redirect_driver_test.html')
 
-describe 'DropboxPopupDriver', ->
+describe 'Dropbox.Drivers.Popup', ->
   describe 'url', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
@@ -187,7 +220,7 @@ describe 'DropboxPopupDriver', ->
       client.reset()
       authDriver = new Dropbox.Drivers.Popup
         receiverFile: 'oauth_receiver.html', noFragment: true,
-        scope: 'popup-integration'
+        scope: 'popup-integration', rememberUser: false
       client.authDriver authDriver
       client.authenticate (error, client) =>
         expect(error).to.equal null
@@ -196,4 +229,45 @@ describe 'DropboxPopupDriver', ->
         client.getUserInfo (error, userInfo) ->
           expect(error).to.equal null
           expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-          done()
+
+          # Follow-up authenticate() should restart the process.
+          client.reset()
+          authDriver.doAuthorize = (authUrl, token, tokenSecret, callback) ->
+            client.reset()
+            done()
+          client.authenticate ->
+            assert false, 'The second authenticate() should not complete.'
+            done()
+
+    it 'should work with a URL fragment and rememberUser: true', (done) ->
+      return done() if @node_js
+      @timeout 45 * 1000  # Time-consuming because the user must click.
+
+      client = new Dropbox.Client testKeys
+      client.reset()
+      authDriver = new Dropbox.Drivers.Popup
+        receiverFile: 'oauth_receiver.html', noFragment: false,
+        scope: 'popup-integration', rememberUser: true
+      client.authDriver authDriver
+      authDriver.setStorageKey client
+      authDriver.forgetCredentials ->
+        client.authenticate (error, client) ->
+          expect(error).to.equal null
+          expect(client.authState).to.equal Dropbox.Client.DONE
+          # Verify that we can do API calls.
+          client.getUserInfo (error, userInfo) ->
+            expect(error).to.equal null
+            expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+
+            # Follow-up authenticate() should use stored credentials.
+            client.reset()
+            authDriver.doAuthorize = (authUrl, token, tokenSecret, callback) ->
+              assert false,
+                     'Stored credentials not used in second authenticate()'
+              done()
+            client.authenticate (error, client) ->
+              # Verify that we can do API calls.
+              client.getUserInfo (error, userInfo) ->
+                expect(error).to.equal null
+                expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+                done()

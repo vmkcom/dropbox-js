@@ -1,4 +1,4 @@
-describe 'DropboxPublicUrl', ->
+describe 'Dropbox.PublicUrl', ->
   describe 'parse', ->
     describe 'on the /shares API example', ->
       beforeEach ->
@@ -33,7 +33,7 @@ describe 'DropboxPublicUrl', ->
       expect(Dropbox.PublicUrl.parse(undefined)).to.equal undefined
 
 
-describe 'DropboxCopyReference', ->
+describe 'Dropbox.CopyReference', ->
   describe 'parse', ->
     describe 'on the API example', ->
       beforeEach ->

@@ -86,7 +86,7 @@ class Dropbox.Drivers.BrowserBase
 
     switch client.authState
       when DropboxClient.RESET
-        @loadCredentials (credentials) ->
+        @loadCredentials (credentials) =>
           return callback() unless credentials
 
           if credentials.authState  # Incomplete authentication.
@@ -97,22 +97,22 @@ class Dropbox.Drivers.BrowserBase
           # logout.
           unless @rememberUser
             @forgetCredentials()
-            return done()
+            return callback()
 
           # Verify that the old access token still works.
-          client.setCredentials credentials, ->
-            client.getUserInfo (error) =>
-              if error
-                client.reset()
-                @forgetCredentials done
-              else
-                callback()
+          client.setCredentials credentials
+          client.getUserInfo (error) =>
+            if error
+              client.reset()
+              @forgetCredentials callback
+            else
+              callback()
       when DropboxClient.REQUEST
         @storeCredentials client.credentials(), callback
       when DropboxClient.DONE
-        unless @rememberUser
-          return @forgetCredentials callback
-        @storeCredentials client.credentials(), callback
+        if @rememberUser
+          return @storeCredentials(client.credentials(), callback)
+        @forgetCredentials callback
       when DropboxClient.SIGNED_OFF
         @forgetCredentials callback
       when DropboxClient.ERROR
@@ -215,20 +215,18 @@ class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
   # Forwards the authentication process from REQUEST to AUTHORIZED on redirect.
   onAuthStateChange: (client, callback) ->
     superCall = do => => super client, callback
-
     @setStorageKey client
     if client.authState is DropboxClient.RESET
       @loadCredentials (credentials) =>
-        if credentials
-          if credentials.authState  # Incomplete authentication.
-            if credentials.token is @locationToken() and
-                credentials.authState is DropboxClient.REQUEST
-              # locationToken matched, so the redirect happened
-              credentials.authState = DropboxClient.AUTHORIZED
-              return @storeCredentials credentials, superCall
-            else
-              # The authentication process broke down, start over.
-              return @forgetCredentials superCall
+        if credentials and credentials.authState  # Incomplete authentication.
+          if credentials.token is @locationToken() and
+              credentials.authState is DropboxClient.REQUEST
+            # locationToken matched, so the redirect happened
+            credentials.authState = DropboxClient.AUTHORIZED
+            return @storeCredentials credentials, superCall
+          else
+            # The authentication process broke down, start over.
+            return @forgetCredentials superCall
         superCall()
     else
       superCall()
