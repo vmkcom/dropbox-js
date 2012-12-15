@@ -14,8 +14,6 @@ class Dropbox.Client
   # @option options {String} secret the Dropbox application's secret;
   #   browser-side applications should not use the secret option; instead,
   #   they should pass the result of Dropbox.encodeKey as the key option
-  # @option options {String} key the application's API key
-  # @option options {String} secret the application's API secret
   # @option options {String} token if set, the user's access token
   # @option options {String} tokenSecret if set, the secret for the user's
   #   access token
@@ -492,7 +490,7 @@ class Dropbox.Client
   #   documented hack at https://www.dropbox.com/help/201 to turn the preview
   #   URL into a download URL
   # @option options {Boolean} long if set, the URL will not be shortened using
-  #   Dropbox's shortner; direct download URLs aren't shortened by default
+  #   Dropbox's shortner; the download and downloadHack options imply long
   # @option options {Boolean} longUrl synonym for long; makes life easy for
   #     RhinoJS users
   # @param {function(?Dropbox.ApiError, ?Dropbox.PublicUrl)} callback called
