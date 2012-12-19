@@ -42,6 +42,13 @@ version, optimized for browser apps.
 
 ## Test
 
+Install the CoffeeScript npm package globally, so you can type `cake` instead
+of `node_modules/coffee-script/bin/cake`.
+
+```bash
+npm install -g coffee-script
+```
+
 First, you will need to obtain a couple of Dropbox tokens that will be used by
 the automated tests.
 

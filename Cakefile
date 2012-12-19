@@ -47,7 +47,8 @@ task 'doc', ->
   run 'node_modules/codo/bin/codo src'
 
 task 'extension', ->
-  run 'node_modules/coffee/bin/coffee --compile test/chrome_extension/*.coffee'
+  run 'node_modules/coffee-script/bin/coffee ' +
+      '--compile test/chrome_extension/*.coffee'
 
 build = (callback) ->
   commands = []
