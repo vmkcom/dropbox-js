@@ -16,7 +16,10 @@
     "storage"
   ],
   "browser_action": {
-    "default_icon": "images/action_off.png",
+    "default_icon": {
+      "19": "images/action_off19.png",
+      "38": "images/action_off38.png"
+    },
     "default_title": "dropbox.js Test Automator"
   },
   "background": {

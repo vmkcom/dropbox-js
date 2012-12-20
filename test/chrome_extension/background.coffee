@@ -10,11 +10,17 @@ class Automator
   # @param {Boolean} enabled if true, the extension's functionality is enabled
   lifeSwitch: (enabled) ->
     if enabled
-      chrome.browserAction.setIcon path: 'images/action_on.png'
+      chrome.browserAction.setIcon
+        path:
+          19: 'images/action_on19.png'
+          38: 'images/action_on38.png'
       chrome.browserAction.setTitle title: '(on) dropbox.js Test Automator'
       @wire()
     else
-      chrome.browserAction.setIcon path: 'images/action_off.png'
+      chrome.browserAction.setIcon
+        path:
+          19: 'images/action_off19.png',
+          38: 'images/action_off38.png'
       chrome.browserAction.setTitle title: '(off) dropbox.js Test Automator'
       @unwire()
 
