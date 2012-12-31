@@ -56,11 +56,16 @@ describe 'Dropbox.UserInfo', ->
       it 'parses publicAppUrl correctly', ->
         expect(@userInfo.publicAppUrl).to.equal null
 
+      it 'round-trips through json / parse correctly', ->
+        newInfo = Dropbox.UserInfo.parse @userInfo.json()
+        expect(newInfo).to.deep.equal @userInfo
+
     it 'passes null through', ->
       expect(Dropbox.UserInfo.parse(null)).to.equal null
 
     it 'passes undefined through', ->
       expect(Dropbox.UserInfo.parse(undefined)).to.equal undefined
+
 
     describe 'on real data from a "public app folder" application', ->
       beforeEach ->
@@ -82,3 +87,9 @@ describe 'Dropbox.UserInfo', ->
       it 'parses publicAppUrl correctly', ->
         expect(@userInfo.publicAppUrl).to.
           equal 'https://dl-web.dropbox.com/spa/90vw6zlu4268jh4'
+
+      it 'round-trips through json / parse correctly', ->
+        newInfo = Dropbox.UserInfo.parse @userInfo.json()
+        expect(newInfo).to.deep.equal @userInfo
+
+

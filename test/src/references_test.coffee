@@ -26,6 +26,15 @@ describe 'Dropbox.PublicUrl', ->
         expect(@url).to.have.property 'isPreview'
         expect(@url.isPreview).to.equal true
 
+      assertUrlEquality = (url1, url2) ->
+        expect(url1.url).to.equal url2.url
+        expect(url1.expiresAt.toString()).to.equal url2.expiresAt.toString()
+        expect(url1.isDirect).to.equal url2.isDirect
+
+      it 'round-trips through json / parse correctly', ->
+        newUrl = Dropbox.PublicUrl.parse @url.json()
+        assertUrlEquality newUrl, @url
+
     it 'passes null through', ->
       expect(Dropbox.PublicUrl.parse(null)).to.equal null
 
@@ -35,6 +44,10 @@ describe 'Dropbox.PublicUrl', ->
 
 describe 'Dropbox.CopyReference', ->
   describe 'parse', ->
+    assertRefEquality = (ref1, ref2) ->
+      expect(ref1.tag).to.equal ref2.tag
+      expect(ref1.expiresAt.toString()).to.equal ref2.expiresAt.toString()
+
     describe 'on the API example', ->
       beforeEach ->
         refData = {
@@ -53,6 +66,10 @@ describe 'Dropbox.CopyReference', ->
         expect(@ref.expiresAt.toUTCString()).to.
             equal 'Fri, 31 Jan 2042 21:01:05 GMT'
 
+      it 'round-trips through json / parse correctly', ->
+        newRef = Dropbox.CopyReference.parse @ref.json()
+        assertRefEquality newRef, @ref
+
     describe 'on a reference string', ->
       beforeEach ->
         rawRef = 'z1X6ATl6aWtzOGq0c3g5Ng'
@@ -66,6 +83,10 @@ describe 'Dropbox.CopyReference', ->
         expect(@ref).to.have.property 'expiresAt'
         expect(@ref.expiresAt).to.be.instanceOf Date
         expect(@ref.expiresAt - (new Date())).to.be.below 1000
+
+      it 'round-trips through json / parse correctly', ->
+        newRef = Dropbox.CopyReference.parse @ref.json()
+        assertRefEquality newRef, @ref
 
     it 'passes null through', ->
       expect(Dropbox.CopyReference.parse(null)).to.equal null

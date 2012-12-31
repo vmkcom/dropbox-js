@@ -1,6 +1,7 @@
 async = require 'async'
 {spawn, exec} = require 'child_process'
 fs = require 'fs'
+glob = require 'glob'
 log = console.log
 remove = require 'remove'
 
@@ -52,11 +53,18 @@ task 'extension', ->
 
 build = (callback) ->
   commands = []
+
+  # Ignoring ".coffee" when sorting.
+  # We want "driver.coffee" to sort before "driver-browser.coffee"
+  source_files = glob.sync 'src/*.coffee'
+  source_files.sort (a, b) ->
+    a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
+
   # Compile without --join for decent error messages.
   commands.push 'node_modules/coffee-script/bin/coffee --output tmp ' +
-                '--compile src/*.coffee'
+                "--compile #{source_files.join(' ')}"
   commands.push 'node_modules/coffee-script/bin/coffee --output lib ' +
-                '--compile --join dropbox.js src/*.coffee'
+                "--compile --join dropbox.js #{source_files.join(' ')}"
   # Minify the javascript, for browser distribution.
   commands.push 'node_modules/uglify-js/bin/uglifyjs --compress --mangle ' +
                 '--output lib/dropbox.min.js lib/dropbox.js'

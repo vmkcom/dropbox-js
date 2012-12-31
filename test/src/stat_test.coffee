@@ -78,6 +78,11 @@ describe 'Dropbox.Stat', ->
         expect(@stat.clientModifiedAt.toUTCString()).to.
             equal 'Mon, 18 Jul 2011 18:04:35 GMT'
 
+      it 'round-trips through json / parse correctly', ->
+        newStat = Dropbox.Stat.parse @stat.json()
+        expect(newStat).to.deep.equal @stat
+
+
     describe 'on the API directory example', ->
       beforeEach ->
         # Folder example at
@@ -153,6 +158,10 @@ describe 'Dropbox.Stat', ->
       it 'parses missing clientModifiedAt correctly', ->
         expect(@stat).to.have.property 'clientModifiedAt'
         expect(@stat.clientModifiedAt).to.equal null
+
+      it 'round-trips through json / parse correctly', ->
+        newStat = Dropbox.Stat.parse @stat.json()
+        expect(newStat).to.deep.equal @stat
 
     it 'passes null through', ->
       expect(Dropbox.Stat.parse(null)).to.equal null
