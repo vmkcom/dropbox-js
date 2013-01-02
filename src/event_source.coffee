@@ -23,7 +23,7 @@ class Dropbox.EventSource
   # @return {Dropbox.EventSource} this, for easy call chaining
   addListener: (listener) ->
     unless typeof listener is 'function'
-      raise new Error 'Invalid listener type; expected function'
+      throw new TypeError 'Invalid listener type; expected function'
     unless listener in @_listeners
       @_listeners.push listener
     @

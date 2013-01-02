@@ -881,6 +881,9 @@ buildClientTests = (clientKeys) ->
 
   describe '#reset', ->
     beforeEach ->
+      @authStates = []
+      @client.onAuthStateChange.addListener (client) =>
+        @authStates.push client.authState
       @client.reset()
 
     it 'gets the client into the RESET state', ->
@@ -891,6 +894,14 @@ buildClientTests = (clientKeys) ->
       expect(credentials).not.to.have.property 'token'
       expect(credentials).not.to.have.property 'tokenSecret'
       expect(credentials).not.to.have.property 'uid'
+
+    it 'triggers onAuthStateChange', ->
+      expect(@authStates).to.deep.equal [Dropbox.Client.RESET]
+
+    it 'does not trigger onAuthState if already reset', ->
+      @authStates = []
+      @client.reset()
+      expect(@authStates).to.deep.equal []
 
   describe '#credentials', ->
     it 'contains all the expected keys when DONE', ->
@@ -971,6 +982,21 @@ buildClientTests = (clientKeys) ->
       expect(credentials.tokenSecret).to.equal 'user-secret'
       expect(credentials.uid).to.equal '3141592'
 
+    beforeEach ->
+      @authStates = []
+      @client.onAuthStateChange.addListener (client) =>
+        @authStates.push client.authState
+
+    it 'triggers onAuthStateChange when switching from DONE to RESET', ->
+      @client.setCredentials key: 'app-key', secret: 'app-secret'
+      expect(@authStates).to.deep.equal [Dropbox.Client.RESET]
+
+    it 'does not trigger onAuthStateChange when not switching', ->
+      @client.setCredentials key: 'app-key', secret: 'app-secret'
+      @authStates = []
+      @client.setCredentials key: 'app-key', secret: 'app-secret'
+      expect(@authStates).to.deep.equal []
+
   describe '#appHash', ->
     it 'is consistent', ->
       client = new Dropbox.Client clientKeys
@@ -988,6 +1014,21 @@ buildClientTests = (clientKeys) ->
       @client.reset()
       expect(@client.isAuthenticated()).to.equal false
 
+  describe '#authenticate', ->
+    it 'fails to move from RESET without an OAuth driver', ->
+      @client.reset()
+      @client.authDriver null
+      expect(=> @client.authenticate(->
+        expect('authentication completed').to.equal false
+      )).to.throw(Error, /authDriver/)
+
+    it 'completes without an OAuth driver if already in DONE', (done) ->
+      @client.authDriver null
+      @client.authenticate (error, client) =>
+        expect(error).to.equal null
+        expect(client).to.equal @client
+        done()
+
 describe 'Dropbox.Client', ->
   describe 'with full Dropbox access', ->
     buildClientTests testFullDropboxKeys
@@ -1003,20 +1044,29 @@ describe 'Dropbox.Client', ->
         @timeout 45 * 1000  # Time-consuming because the user must click.
         @client.reset()
         @client.authDriver authDriver
+        authStateChanges = []
+        @client.onAuthStateChange.addListener (client) ->
+          authStateChanges.push client.authState
         @client.authenticate (error, client) =>
           expect(error).to.equal null
           expect(client).to.equal @client
           expect(client.authState).to.equal Dropbox.Client.DONE
           expect(client.isAuthenticated()).to.equal true
+          expect(authStateChanges).to.deep.
+              equal [Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
+                     Dropbox.Client.DONE]
           # Verify that we can do API calls.
           client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
             expect(userInfo).to.be.instanceOf Dropbox.UserInfo
             credentials = client.credentials()
+            authStateChanges = []
             client.signOut (error) ->
               expect(error).to.equal null
               expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
               expect(client.isAuthenticated()).to.equal false
+              expect(authStateChanges).to.deep.
+                  equal [Dropbox.Client.SIGNED_OFF]
               # Verify that we can't use the old token in API calls.
               client.setCredentials credentials
               client.getUserInfo (error, userInfo) ->

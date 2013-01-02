@@ -40,6 +40,9 @@ describe 'Dropbox.EventSource', ->
       expect(@source._listeners).to.deep.
           equal [@listener1, @listener2, @listener3]
 
+    it 'refuses to add non-functions', ->
+      expect(=> @source.addListener 42).to.throw(TypeError, /listener type/)
+
   describe '#removeListener', ->
     it 'does nothing for a non-existing listener', ->
       @source.removeListener @listener3

@@ -31,6 +31,7 @@ class Dropbox.Client
 
     @onXhr = new Dropbox.EventSource cancelable: true
     @onError = new Dropbox.EventSource
+    @onAuthStateChange = new Dropbox.EventSource
 
     @oauth = new Dropbox.Oauth options
     @driver = null
@@ -68,6 +69,11 @@ class Dropbox.Client
   #   in an error
   onError: null
 
+  # @property {Dropbox.EventSource<Dropbox.Client>} non-cancelable event fired
+  #   every time the authState property changes; this can be used to update UI
+  #   state
+  onAuthStateChange: null
+
   # The authenticated user's Dropbx user ID.
   #
   # This user ID is guaranteed to be consistent across API calls from the same
@@ -96,11 +102,16 @@ class Dropbox.Client
   authenticate: (callback) ->
     oldAuthState = null
 
+    unless @driver or @authState is DropboxClient.DONE
+      throw new Error "Call authDriver to set an authentication driver"
+
     # Advances the authentication FSM by one step.
     _fsmStep = =>
       if oldAuthState isnt @authState
+        if oldAuthState isnt null
+          @onAuthStateChange.dispatch @
         oldAuthState = @authState
-        if @driver.onAuthStateChange
+        if @driver and @driver.onAuthStateChange
           return @driver.onAuthStateChange(@, _fsmStep)
 
       switch @authState
@@ -141,6 +152,8 @@ class Dropbox.Client
           callback null, @
 
         when Dropbox.SIGNED_OFF  # The user signed off, restart the flow.
+          # The authState change makes reset() not trigger onAuthStateChange.
+          @authState = DropboxClient.RESET
           @reset()
           _fsmStep()
 
@@ -170,8 +183,11 @@ class Dropbox.Client
     @dispatchXhr xhr, (error) =>
       return callback(error) if error
 
+      # The authState change makes reset() not trigger onAuthStateChange.
+      @authState = DropboxClient.RESET
       @reset()
       @authState = DropboxClient.SIGNED_OFF
+      @onAuthStateChange.dispatch @
       if @driver.onAuthStateChange
         @driver.onAuthStateChange @, ->
           callback error
@@ -902,7 +918,10 @@ class Dropbox.Client
   reset: ->
     @uid = null
     @oauth.setToken null, ''
+    oldAuthState = @authState
     @authState = DropboxClient.RESET
+    if oldAuthState isnt @authState
+      @onAuthStateChange.dispatch @
     @authError = null
     @_credentials = null
     @
@@ -912,6 +931,7 @@ class Dropbox.Client
   # @param {?Object} the result of a prior call to credentials()
   # @return {Dropbox.Client} this, for easy call chaining
   setCredentials: (credentials) ->
+    oldAuthState = @authState
     @oauth.reset credentials
     @uid = credentials.uid or null
     if credentials.authState
@@ -923,6 +943,8 @@ class Dropbox.Client
         @authState = DropboxClient.RESET
     @authError = null
     @_credentials = null
+    if oldAuthState isnt @authState
+      @onAuthStateChange.dispatch @
     @
 
   # @return {String} a string that uniquely identifies the Dropbox application
