@@ -288,6 +288,10 @@ class Dropbox.Xhr
     if ieMode
       @xhr.onload = => @onLoad()
       @xhr.onerror = => @onError()
+      @xhr.ontimeout = => @onError()
+      # NOTE: there are reports that XHR somtimes fails if onprogress doesn't
+      #       have any handler
+      @xhr.onprogress = ->
     else
       @xhr.onreadystatechange = => @onReadyStateChange()
     @xhr.open @method, @url, true
