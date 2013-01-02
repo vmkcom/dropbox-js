@@ -1,5 +1,5 @@
 describe 'Dropbox.PulledChanges', ->
-  describe 'parse', ->
+  describe '.parse', ->
     describe 'on a sample response', ->
       beforeEach ->
         deltaInfo = {
@@ -64,7 +64,7 @@ describe 'Dropbox.PulledChanges', ->
 
 
 describe 'Dropbox.PullChange', ->
-  describe 'parse', ->
+  describe '.parse', ->
     describe 'on a modification change', ->
       beforeEach ->
         entry = [

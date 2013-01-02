@@ -1,5 +1,5 @@
 describe 'Dropbox.PublicUrl', ->
-  describe 'parse', ->
+  describe '.parse', ->
     describe 'on the /shares API example', ->
       beforeEach ->
         urlData = {
@@ -43,7 +43,7 @@ describe 'Dropbox.PublicUrl', ->
 
 
 describe 'Dropbox.CopyReference', ->
-  describe 'parse', ->
+  describe '.parse', ->
     assertRefEquality = (ref1, ref2) ->
       expect(ref1.tag).to.equal ref2.tag
       expect(ref1.expiresAt.toString()).to.equal ref2.expiresAt.toString()

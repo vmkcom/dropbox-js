@@ -29,6 +29,9 @@ class Dropbox.Client
     @fileServer = options.fileServer or @defaultFileServer()
     @downloadServer = options.downloadServer or @defaultDownloadServer()
 
+    @onXhr = new Dropbox.EventSource cancelable: true
+    @onError = new Dropbox.EventSource
+
     @oauth = new Dropbox.Oauth options
     @driver = null
     @filter = null
@@ -51,20 +54,19 @@ class Dropbox.Client
     @driver = driver
     @
 
-  # Plugs in a filter for all XMLHttpRequests issued by this client.
-  #
-  # Whenever possible, filter implementations should only use the native
-  # XMHttpRequest object received as the first argument. The Dropbox.Xhr API
-  # implemented by the second argument is not yet stabilized.
-  #
-  # @param {function(XMLHttpRequest, Dropbox.Xhr): boolean} filter called every
-  #     time the client is about to send a network request; the filter can
-  #     inspect and modify the XMLHttpRequest; if the filter returns a falsey
-  #     value, the XMLHttpRequest will not be sent
-  # @return {Drobpox.Client} this, for easy call chaining
-  xhrFilter: (filter) ->
-    @filter = filter
-    @
+  # @property {Dropbox.EventSource<Dropbox.Xhr>} cancelable event fired every
+  #   time when a network request to the Dropbox API server is about to be
+  #   sent; if the event is canceled by returning a falsey value from a
+  #   listener, the network request is silently discarded; whenever possible,
+  #   listeners should restrict themselves to using the xhr property of the
+  #   Dropbox.Xhr instance passed to them; everything else in the Dropbox.Xhr
+  #   API is in flux
+  onXhr: null
+
+  # @property {Dropbox.EventSource<Dropbox.ApiError>} non-cancelable event
+  #   fired every time when a network request to the Dropbox API server results
+  #   in an error
+  onError: null
 
   # The authenticated user's Dropbx user ID.
   #
@@ -1039,17 +1041,22 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr('POST', @urls.accessToken).signWithOauth(@oauth)
     @dispatchXhr xhr, callback
 
-  # Prepares an XHR before it is sent to the server.
+  # Prepares and sends an XHR to the Dropbox API server.
   #
   # @private
   # This is a low-level method called by other client methods.
+  #
+  # @param {Dropbox.Xhr} xhr wrapper for the XHR to be sent
+  # @param {function(?Dropbox.ApiError, ?Object)} callback called with the
+  #   outcome of the XHR
+  # @return {XMLHttpRequest} the native XHR object used to make the request
   dispatchXhr: (xhr, callback) ->
     xhr.setCallback callback
+    xhr.onError = @onError
     xhr.prepare()
     nativeXhr = xhr.xhr
-    if @filter
-      return nativeXhr unless @filter(nativeXhr, xhr)
-    xhr.send()
+    if @onXhr.dispatch xhr
+      xhr.send()
     nativeXhr
 
   # @private

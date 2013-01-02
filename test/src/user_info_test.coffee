@@ -1,5 +1,5 @@
 describe 'Dropbox.UserInfo', ->
-  describe 'parse', ->
+  describe '.parse', ->
     describe 'on the API example', ->
       beforeEach ->
         userData = {

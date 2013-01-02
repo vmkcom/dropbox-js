@@ -400,6 +400,23 @@ Content-Transfer-Encoding: binary\r
         expect(error.toString()).to.contain @url
         done()
 
+    it 'reports errors correctly when onError is set', (done) ->
+      @url = 'https://api.dropbox.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', @url
+      @xhr.onError = new Dropbox.EventSource
+      listenerError = null
+      @xhr.onError.addListener (error) -> listenerError = error
+      @xhr.prepare().send (error, data) =>
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal @url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        expect(listenerError).to.equal error
+        done()
+
+
     it 'processes data correctly', (done) ->
       xhr = new Dropbox.Xhr 'POST',
                             'https://api.dropbox.com/1/oauth/request_token',

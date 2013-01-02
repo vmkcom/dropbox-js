@@ -233,50 +233,49 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.equal @imageFileData
         done()
 
-  describe '#readFile with an XHR filter', ->
+  describe '#readFile with an onXhr listener', ->
     beforeEach ->
-      @filterCalled = false
+      @listenerXhr = null
       @callbackCalled = false
 
-    it 'calls the filter with the correct arguments', (done) ->
-      @client.xhrFilter (nativeXhr, xhr) =>
-        expect(nativeXhr).to.be.instanceOf Dropbox.Xhr.Request
+    it 'calls the listener with a Dropbox.Xhr argument', (done) ->
+      @client.onXhr.addListener (xhr) =>
         expect(xhr).to.be.instanceOf Dropbox.Xhr
-        @filterCalled = true
+        @listenerXhr = xhr
         true
 
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData
-        done() if @filterCalled
+        done() if @listenerXhr
 
-    it 'calls the filter before firing the XHR', (done) ->
-      @client.xhrFilter (nativeXhr, xhr) =>
+    it 'calls the listener before firing the XHR', (done) ->
+      @client.onXhr.addListener (xhr) =>
         unless Dropbox.Xhr.ieMode  # IE's XHR doesn't have readyState
-          expect(nativeXhr.readyState).to.equal 1
+          expect(xhr.xhr.readyState).to.equal 1
         expect(@callbackCalled).to.equal false
-        @filterCalled = true
+        @listenerXhr = xhr
         true
 
       @client.readFile @textFile, (error, data, stat) =>
         @callbackCalled = true
-        expect(@filterCalled).to.equal true
+        expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
         expect(error).to.equal null
         expect(data).to.equal @textFileData
-        done() if @filterCalled
+        done() if @listenerXhr
 
-    it 'does not send the XHR if the filter returns false', (done) ->
-      @client.xhrFilter (nativeXhr, xhr) =>
+    it 'does not send the XHR if the listener cancels the event', (done) ->
+      @client.onXhr.addListener (xhr) =>
         expect(@callbackCalled).to.equal false
-        @filterCalled = true
+        @listenerXhr = xhr
         # NOTE: if the client calls send(), a DOM error will fail the test
         xhr.send()
         false
 
       @client.readFile @textFile, (error, data, stat) =>
         @callbackCalled = true
-        expect(@filterCalled).to.equal true
-        done() if @filterCalled
+        expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
+        done() if @listenerXhr
 
   describe '#writeFile', ->
     afterEach (done) ->
@@ -487,10 +486,14 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'fails cleanly for a non-existing path', (done) ->
+      listenerError = null
+      @client.onError.addListener (error) -> listenerError = error
+
       @client.stat @testFolder + '/should_404.txt', (error, stat, entries) =>
         expect(stat).to.equal undefined
         expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(listenerError).to.equal error
         unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
           expect(error).to.have.property 'status'
           expect(error.status).to.equal 404
@@ -527,8 +530,12 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'returns 40x if the limit is set to 0', (done) ->
+      listenerError = null
+      @client.onError.addListener (error) -> listenerError = error
+
       @client.history @textFile, limit: 0, (error, versions) =>
         expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(listenerError).to.equal error
         unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
           expect(error.status).to.be.within 400, 499
         expect(versions).not.to.be.ok

@@ -14,7 +14,7 @@ describe 'Dropbox.Drivers.BrowserBase', ->
       return done() if @node_js
       @driver.forgetCredentials done
 
-    describe 'loadCredentials', ->
+    describe '#loadCredentials', ->
       it 'produces the credentials passed to storeCredentials', (done) ->
         return done() if @node_js
         goldCredentials = @client.credentials()
@@ -32,7 +32,7 @@ describe 'Dropbox.Drivers.BrowserBase', ->
               done()
 
 describe 'Dropbox.Drivers.Redirect', ->
-  describe 'url', ->
+  describe '#url', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
     afterEach ->
@@ -99,7 +99,7 @@ describe 'Dropbox.Drivers.Redirect', ->
       expect(driver.url()).to.
           equal 'http://test/file#?_dropboxjs_scope=not%20default'
 
-  describe 'locationToken', ->
+  describe '#locationToken', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
     afterEach ->
@@ -172,7 +172,7 @@ describe 'Dropbox.Drivers.Redirect', ->
           '/test/html/redirect_driver_test.html')
 
 describe 'Dropbox.Drivers.Popup', ->
-  describe 'url', ->
+  describe '#url', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
       @stub.returns 'http://test:123/a/path/file.htmx'

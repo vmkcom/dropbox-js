@@ -63,6 +63,17 @@ class Dropbox.Xhr
     @responseType = null
     @callback = null
     @xhr = null
+    @onError = null
+
+  # @property {?XMLHttpRequest} the raw XMLHttpRequest object used to make the
+  #   request; null until Dropbox.Xhr#prepare is called
+  xhr: null
+
+  # @property {?Dropbox.EventSource<Dropbox.ApiError>} if the XHR fails and
+  #   this property is set, the Dropbox.ApiError instance that will be passed
+  #   to the callback will be dispatched through the Dropbox.EventSource; the
+  #   EventSource should be configured for non-cancelable events
+  onError: null
 
   # Sets the parameters (form field values) that will be sent with the request.
   #
@@ -286,9 +297,9 @@ class Dropbox.Xhr
 
     @xhr = new Dropbox.Xhr.Request()
     if ieMode
-      @xhr.onload = => @onLoad()
-      @xhr.onerror = => @onError()
-      @xhr.ontimeout = => @onError()
+      @xhr.onload = => @onXdrLoad()
+      @xhr.onerror = => @onXdrError()
+      @xhr.ontimeout = => @onXdrError()
       # NOTE: there are reports that XHR somtimes fails if onprogress doesn't
       #       have any handler
       @xhr.onprogress = ->
@@ -385,6 +396,7 @@ class Dropbox.Xhr
 
     if @xhr.status < 200 or @xhr.status >= 300
       apiError = new Dropbox.ApiError @xhr, @method, @url
+      @onError.dispatch apiError if @onError
       @callback apiError
       return true
 
@@ -436,7 +448,7 @@ class Dropbox.Xhr
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
-  onLoad: ->
+  onXdrLoad: ->
     text = @xhr.responseText
     switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
@@ -448,7 +460,8 @@ class Dropbox.Xhr
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
-  onError: ->
+  onXdrError: ->
     apiError = new Dropbox.ApiError @xhr, @method, @url
+    @onError.dispatch apiError if @onError
     @callback apiError
     return true
