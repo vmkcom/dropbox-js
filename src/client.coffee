@@ -150,6 +150,10 @@ class Dropbox.Client
     _fsmStep()  # Start up the state machine.
     @
 
+  # @return {Boolean} true if this client is authenticated, false otherwise
+  isAuthenticated: ->
+    @authState is DropboxClient.DONE
+
   # Revokes the user's Dropbox credentials.
   #
   # This should be called when the user explictly signs off from your
@@ -963,6 +967,11 @@ class Dropbox.Client
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
       fileopsMove: "#{@apiServer}/1/fileops/move"
+
+  # @property {Number} the client's progress in the authentication process;
+  #   Dropbox.Client#isAuthenticated should be called instead whenever
+  #   possible; this attribute was intended to be used by OAuth drivers
+  authState: null
 
   # authState value for a client that experienced an authentication error.
   @ERROR: 0

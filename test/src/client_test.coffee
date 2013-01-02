@@ -980,6 +980,13 @@ buildClientTests = (clientKeys) ->
       expect(@client.appHash()).to.be.a 'string'
       expect(@client.appHash().length).to.be.greaterThan 4
 
+  describe '#isAuthenticated', ->
+    it 'is true for a client with full tokens', ->
+      expect(@client.isAuthenticated()).to.equal true
+
+    it 'is false for a freshly reset client', ->
+      @client.reset()
+      expect(@client.isAuthenticated()).to.equal false
 
 describe 'Dropbox.Client', ->
   describe 'with full Dropbox access', ->
@@ -1000,6 +1007,7 @@ describe 'Dropbox.Client', ->
           expect(error).to.equal null
           expect(client).to.equal @client
           expect(client.authState).to.equal Dropbox.Client.DONE
+          expect(client.isAuthenticated()).to.equal true
           # Verify that we can do API calls.
           client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
@@ -1008,6 +1016,7 @@ describe 'Dropbox.Client', ->
             client.signOut (error) ->
               expect(error).to.equal null
               expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
+              expect(client.isAuthenticated()).to.equal false
               # Verify that we can't use the old token in API calls.
               client.setCredentials credentials
               client.getUserInfo (error, userInfo) ->
