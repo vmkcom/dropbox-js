@@ -49,9 +49,9 @@ class Dropbox.Xhr
   # Sets up an AJAX request.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
-  #     'POST', 'PUT', etc.)
+  #   'POST', 'PUT', etc.)
   # @param {String} baseUrl the URL that receives the request; this URL might
-  #     be modified, e.g. by appending parameters for GET requests
+  #   be modified, e.g. by appending parameters for GET requests
   constructor: (@method, baseUrl) ->
     @isGet = @method is 'GET'
     @url = baseUrl
@@ -123,7 +123,7 @@ class Dropbox.Xhr
   # the signing process.
   #
   # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
-  #     used to sign the request
+  #   used to sign the request
   # @return {Dropbox.Xhr} this, for easy call chaining
   addOauthParams: (oauth) ->
     if @signed
@@ -140,7 +140,7 @@ class Dropbox.Xhr
   # the signing process.
   #
   # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
-  #     used to sign the request
+  #   used to sign the request
   # @return {Dropbox.Xhr} this, for easy call chaining
   addOauthHeader: (oauth) ->
     if @signed
@@ -153,7 +153,7 @@ class Dropbox.Xhr
   # Sets the body (piece of data) that will be sent with the request.
   #
   # @param {String, Blob, ArrayBuffer} body the body to be sent in a request;
-  #     GET requests cannot have a body
+  #   GET requests cannot have a body
   # @return {Dropbox.Xhr} this, for easy call chaining
   setBody: (body) ->
     if @isGet
@@ -202,12 +202,12 @@ class Dropbox.Xhr
   # Simulates having an <input type="file"> being sent with the request.
   #
   # @param {String} fieldName the name of the form field / parameter (not of
-  #     the uploaded file)
+  #   the uploaded file)
   # @param {String} fileName the name of the uploaded file (not the name of the
-  #     form field / parameter)
+  #   form field / parameter)
   # @param {String, Blob, File} fileData contents of the file to be uploaded
   # @param {?String} contentType the MIME type of the file to be uploaded; if
-  #     fileData is a Blob or File, its MIME type is used instead
+  #   fileData is a Blob or File, its MIME type is used instead
   setFileField: (fieldName, fileName, fileData, contentType) ->
     if @body isnt null
       throw new Error 'Request already has a body'
@@ -247,7 +247,7 @@ class Dropbox.Xhr
 
   # @private
   # @return {String} a nonce suitable for use as a part boundary in a multipart
-  #     MIME message
+  #   MIME message
   multipartBoundary: ->
     [Date.now().toString(36), Math.random().toString(36)].join '----'
 
