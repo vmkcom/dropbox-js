@@ -24,6 +24,12 @@ class WebFileServer
     @app.get '/diediedie', (request, response) =>
       process.exit 0
 
+    @app.use (req, res, next) ->
+      res.header 'Access-Control-Allow-Origin', '*'
+      res.header 'Access-Control-Allow-Methods', 'DELETE,GET,POST,PUT'
+      res.header 'Access-Control-Allow-Headers', 'Content-Type, Authorization'
+      next()
+
     @app.use express.static(fs.realpathSync(__dirname + '/../../'),
                             { hidden: true })
     options = key: fs.readFileSync 'test/ssl/cert.pem'

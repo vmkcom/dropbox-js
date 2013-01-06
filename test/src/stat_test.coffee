@@ -69,14 +69,18 @@ describe 'Dropbox.Stat', ->
       it 'parses modifiedAt correctly', ->
         expect(@stat).to.have.property 'modifiedAt'
         expect(@stat.modifiedAt).to.be.instanceOf Date
-        expect(@stat.modifiedAt.toUTCString()).to.
-            equal 'Tue, 19 Jul 2011 21:55:38 GMT'
+        expect([
+            'Tue, 19 Jul 2011 21:55:38 GMT',  # every sane JS platform
+            'Tue, 19 Jul 2011 21:55:38 UTC'    # Internet Explorer
+            ]).to.contain(@stat.modifiedAt.toUTCString())
 
       it 'parses clientModifiedAt correctly', ->
         expect(@stat).to.have.property 'clientModifiedAt'
         expect(@stat.clientModifiedAt).to.be.instanceOf Date
-        expect(@stat.clientModifiedAt.toUTCString()).to.
-            equal 'Mon, 18 Jul 2011 18:04:35 GMT'
+        expect([
+            'Mon, 18 Jul 2011 18:04:35 GMT',  # every sane JS platform
+            'Mon, 18 Jul 2011 18:04:35 UTC'    # Internet Explorer
+            ]).to.contain(@stat.clientModifiedAt.toUTCString())
 
       it 'round-trips through json / parse correctly', ->
         newStat = Dropbox.Stat.parse @stat.json()
@@ -152,8 +156,10 @@ describe 'Dropbox.Stat', ->
       it 'parses modifiedAt correctly', ->
         expect(@stat).to.have.property 'modifiedAt'
         expect(@stat.modifiedAt).to.be.instanceOf Date
-        expect(@stat.modifiedAt.toUTCString()).to.
-            equal 'Wed, 27 Apr 2011 22:18:51 GMT'
+        expect([
+            'Wed, 27 Apr 2011 22:18:51 GMT',  # every sane JS platform
+            'Wed, 27 Apr 2011 22:18:51 UTC'    # Internet Explorer
+            ]).to.contain(@stat.modifiedAt.toUTCString())
 
       it 'parses missing clientModifiedAt correctly', ->
         expect(@stat).to.have.property 'clientModifiedAt'

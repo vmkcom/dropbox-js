@@ -5,12 +5,12 @@ describe 'Dropbox.Xhr', ->
 
   describe 'with a GET', ->
     beforeEach ->
-      @xhr = new Dropbox.Xhr 'GET', 'http://request.url'
+      @xhr = new Dropbox.Xhr 'GET', 'https://request.url'
 
     it 'initializes correctly', ->
       expect(@xhr.isGet).to.equal true
       expect(@xhr.method).to.equal 'GET'
-      expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.url).to.equal 'https://request.url'
       expect(@xhr.preflight).to.equal false
 
     describe '#setHeader', ->
@@ -46,7 +46,7 @@ describe 'Dropbox.Xhr', ->
 
         it 'changes the url', ->
           expect(@xhr.url).to.
-              equal 'http://request.url?answer=42&param%201=true'
+              equal 'https://request.url?answer=42&param%201=true'
 
         it 'sets params to null', ->
           expect(@xhr.params).to.equal null
@@ -116,8 +116,12 @@ describe 'Dropbox.Xhr', ->
         @xhr.setHeader 'Range', 'bytes=0-1000'
         @xhr.signWithOauth @oauth
 
-      it 'uses addOauthHeader', ->
-        expect(@xhr.headers).to.have.property 'Authorization'
+      if Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP headers.
+        it 'uses addOauthParams in IE', ->
+          expect(@xhr.params).to.have.property 'oauth_signature'
+      else
+        it 'uses addOauthHeader', ->
+          expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#setFileField', ->
       it 'throws an error', ->
@@ -150,19 +154,20 @@ describe 'Dropbox.Xhr', ->
         expect(typeof @xhr.xhr).to.equal 'object'
 
       it 'opens the native xhr', ->
+        return if Dropbox.Xhr.ieMode  # IE's XDR doesn't do readyState.
         expect(@xhr.xhr.readyState).to.equal 1
 
       it 'pushes the params in the url', ->
-        expect(@xhr.url).to.equal 'http://request.url?answer=42'
+        expect(@xhr.url).to.equal 'https://request.url?answer=42'
 
   describe 'with a POST', ->
     beforeEach ->
-      @xhr = new Dropbox.Xhr 'POST', 'http://request.url'
+      @xhr = new Dropbox.Xhr 'POST', 'https://request.url'
 
     it 'initializes correctly', ->
       expect(@xhr.isGet).to.equal false
       expect(@xhr.method).to.equal 'POST'
-      expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.url).to.equal 'https://request.url'
       expect(@xhr.preflight).to.equal false
 
     describe '#setHeader', ->
@@ -198,7 +203,7 @@ describe 'Dropbox.Xhr', ->
 
         it 'changes the url', ->
           expect(@xhr.url).to.
-              equal 'http://request.url?answer=42&param%201=true'
+              equal 'https://request.url?answer=42&param%201=true'
 
         it 'sets params to null', ->
           expect(@xhr.params).to.equal null
@@ -219,7 +224,7 @@ describe 'Dropbox.Xhr', ->
               equal 'application/x-www-form-urlencoded'
 
         it 'does not change the url', ->
-          expect(@xhr.url).to.equal 'http://request.url'
+          expect(@xhr.url).to.equal 'https://request.url'
 
         it 'does not work twice', ->
           @xhr.setParams answer: 43
@@ -286,8 +291,12 @@ describe 'Dropbox.Xhr', ->
         @xhr.setBody 'binary data here'
         @xhr.signWithOauth @oauth
 
-      it 'uses addOauthHeader', ->
-        expect(@xhr.headers).to.have.property 'Authorization'
+      if Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP headers.
+        it 'uses addOauthParams in IE', ->
+          expect(@xhr.params).to.have.property 'oauth_signature'
+      else
+        it 'uses addOauthHeader', ->
+          expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#setFileField with a String', ->
       beforeEach ->
@@ -363,19 +372,25 @@ Content-Transfer-Encoding: binary\r
         expect(typeof @xhr.xhr).to.equal 'object'
 
       it 'opens the native xhr', ->
+        return if Dropbox.Xhr.ieMode  # IE's XDR doesn't do readyState.
         expect(@xhr.xhr.readyState).to.equal 1
 
-      it 'pushes the params in the body', ->
-        expect(@xhr.body).to.equal 'answer=42'
+      if Dropbox.Xhr.ieMode
+        it 'keeps the params in the URL in IE', ->
+          expect(@xhr.url).to.equal 'https://request.url?answer=42'
+          expect(@xhr.body).to.equal null
+      else
+        it 'pushes the params in the body', ->
+          expect(@xhr.body).to.equal 'answer=42'
 
   describe 'with a PUT', ->
     beforeEach ->
-      @xhr = new Dropbox.Xhr 'PUT', 'http://request.url'
+      @xhr = new Dropbox.Xhr 'PUT', 'https://request.url'
 
     it 'initializes correctly', ->
       expect(@xhr.isGet).to.equal false
       expect(@xhr.method).to.equal 'PUT'
-      expect(@xhr.url).to.equal 'http://request.url'
+      expect(@xhr.url).to.equal 'https://request.url'
       expect(@xhr.preflight).to.equal true
 
   describe '#send', ->
@@ -389,12 +404,14 @@ Content-Transfer-Encoding: binary\r
         expect(error.url).to.equal @url
         expect(error).to.have.property 'method'
         expect(error.method).to.equal 'POST'
-        expect(error).to.have.property 'status'
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal 401  # Bad OAuth request.
         expect(error).to.have.property 'responseText'
-        expect(error).to.have.property 'response'
-        expect(error.status).to.equal 401  # Bad OAuth request.
         expect(error.responseText).to.be.a 'string'
-        expect(error.response).to.be.an 'object'
+        unless Dropbox.Xhr.ieMode  # IE's XDR hides the HTTP body on error.
+          expect(error).to.have.property 'response'
+          expect(error.response).to.be.an 'object'
         expect(error.toString()).to.match /^Dropbox API error/
         expect(error.toString()).to.contain 'POST'
         expect(error.toString()).to.contain @url
@@ -415,7 +432,6 @@ Content-Transfer-Encoding: binary\r
         expect(error.method).to.equal 'POST'
         expect(listenerError).to.equal error
         done()
-
 
     it 'processes data correctly', (done) ->
       xhr = new Dropbox.Xhr 'POST',
@@ -474,7 +490,7 @@ Content-Transfer-Encoding: binary\r
           @xhr.setResponseType 'blob'
 
         it 'retrieves a well-formed Blob', (done) ->
-          # Skip this test on IE < 10 and node.js
+          # Skip this test on node.js and IE 9 and below
           return done() unless Blob?
 
           @xhr.prepare().send (error, blob) ->

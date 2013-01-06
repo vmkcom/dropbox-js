@@ -216,7 +216,7 @@ class Dropbox.Xhr
       throw new Error 'Request already has a body'
 
     if @isGet
-      throw new Error 'paramsToBody cannot be called on GET requests'
+      throw new Error 'setFileField cannot be called on GET requests'
 
     if typeof(fileData) is 'object' and typeof Blob isnt 'undefined'
       if ArrayBuffer? and fileData instanceof ArrayBuffer
