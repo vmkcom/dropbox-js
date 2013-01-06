@@ -116,7 +116,7 @@ describe 'Dropbox.Xhr', ->
         @xhr.setHeader 'Range', 'bytes=0-1000'
         @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP headers.
+      if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
         it 'uses addOauthParams in IE', ->
           expect(@xhr.params).to.have.property 'oauth_signature'
       else
@@ -154,7 +154,7 @@ describe 'Dropbox.Xhr', ->
         expect(typeof @xhr.xhr).to.equal 'object'
 
       it 'opens the native xhr', ->
-        return if Dropbox.Xhr.ieMode  # IE's XDR doesn't do readyState.
+        return if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do readyState.
         expect(@xhr.xhr.readyState).to.equal 1
 
       it 'pushes the params in the url', ->
@@ -291,7 +291,7 @@ describe 'Dropbox.Xhr', ->
         @xhr.setBody 'binary data here'
         @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP headers.
+      if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
         it 'uses addOauthParams in IE', ->
           expect(@xhr.params).to.have.property 'oauth_signature'
       else
@@ -372,10 +372,10 @@ Content-Transfer-Encoding: binary\r
         expect(typeof @xhr.xhr).to.equal 'object'
 
       it 'opens the native xhr', ->
-        return if Dropbox.Xhr.ieMode  # IE's XDR doesn't do readyState.
+        return if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do readyState.
         expect(@xhr.xhr.readyState).to.equal 1
 
-      if Dropbox.Xhr.ieMode
+      if Dropbox.Xhr.ieXdr
         it 'keeps the params in the URL in IE', ->
           expect(@xhr.url).to.equal 'https://request.url?answer=42'
           expect(@xhr.body).to.equal null
@@ -404,12 +404,12 @@ Content-Transfer-Encoding: binary\r
         expect(error.url).to.equal @url
         expect(error).to.have.property 'method'
         expect(error.method).to.equal 'POST'
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do HTTP status codes.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
           expect(error).to.have.property 'status'
           expect(error.status).to.equal 401  # Bad OAuth request.
         expect(error).to.have.property 'responseText'
         expect(error.responseText).to.be.a 'string'
-        unless Dropbox.Xhr.ieMode  # IE's XDR hides the HTTP body on error.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
           expect(error).to.have.property 'response'
           expect(error.response).to.be.an 'object'
         expect(error.toString()).to.match /^Dropbox API error/
@@ -455,7 +455,7 @@ Content-Transfer-Encoding: binary\r
       xhr.prepare().send()
 
     it 'sends Authorize headers correctly', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't set headers.
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't set headers.
 
       xhr = new Dropbox.Xhr 'POST',
                             'https://api.dropbox.com/1/oauth/request_token',
@@ -485,6 +485,24 @@ Content-Transfer-Encoding: binary\r
             expect(data).to.equal testImageBytes
             done()
 
+      describe 'with responseType arraybuffer', ->
+        beforeEach ->
+          @xhr.setResponseType 'arraybuffer'
+
+        it 'retrieves a well-formed ArrayBuffer', (done) ->
+          # Skip this test on node.js and IE 9 and below
+          return done() unless ArrayBuffer?
+
+          @xhr.prepare().send (error, buffer) ->
+            expect(error).to.not.be.ok
+            expect(buffer).to.be.instanceOf ArrayBuffer
+            view = new Uint8Array buffer
+            length = buffer.byteLength
+            bytes = (String.fromCharCode view[i] for i in [0...length]).
+                join('')
+            expect(bytes).to.equal testImageBytes
+            done()
+
       describe 'with responseType blob', ->
         beforeEach ->
           @xhr.setResponseType 'blob'
@@ -499,9 +517,14 @@ Content-Transfer-Encoding: binary\r
             reader = new FileReader
             reader.onloadend = ->
               return unless reader.readyState == FileReader.DONE
-              expect(reader.result).to.equal testImageBytes
+              buffer = reader.result
+              view = new Uint8Array buffer
+              length = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...length]).
+                  join('')
+              expect(bytes).to.equal testImageBytes
               done()
-            reader.readAsBinaryString blob
+            reader.readAsArrayBuffer blob
 
   describe '#urlEncode', ->
     it 'iterates properly', ->

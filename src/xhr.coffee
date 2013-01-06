@@ -31,15 +31,19 @@ else
 if typeof Uint8Array is 'undefined'
   DropboxXhrArrayBufferView = null
 else
-  DropboxXhrArrayBufferView =
-      (new Uint8Array(0)).__proto__.__proto__.constructor
+  if Object.getPrototypeOf
+    DropboxXhrArrayBufferView = Object.getPrototypeOf(
+        Object.getPrototypeOf(new Uint8Array(0))).constructor
+  else if Object.__proto__
+    DropboxXhrArrayBufferView =
+        (new Uint8Array(0)).__proto__.__proto__.constructor
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class Dropbox.Xhr
   # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
   # Set to true when using the XDomainRequest API.
-  @ieMode = DropboxXhrIeMode
+  @ieXdr = DropboxXhrIeMode
   # Set to true if the platform has proper support for FormData.
   @canSendForms = DropboxXhrCanSendForms
   # Set to true if the platform performs CORS preflight checks.
@@ -115,7 +119,7 @@ class Dropbox.Xhr
   #   used to sign the request
   # @return {Dropbox.Xhr} this, for easy call chaining
   signWithOauth: (oauth) ->
-    if Dropbox.Xhr.ieMode or (Dropbox.Xhr.doesPreflight and (not @preflight))
+    if Dropbox.Xhr.ieXdr or (Dropbox.Xhr.doesPreflight and (not @preflight))
       @addOauthParams oauth
     else
       @addOauthHeader oauth
@@ -290,8 +294,8 @@ class Dropbox.Xhr
   #
   # @return {Dropbox.Xhr} this, for easy call chaining
   prepare: ->
-    ieMode = Dropbox.Xhr.ieMode
-    if @isGet or @body isnt null or ieMode
+    ieXdr = Dropbox.Xhr.ieXdr
+    if @isGet or @body isnt null or ieXdr
       @paramsToUrl()
       if @body isnt null and typeof @body is 'string'
         @headers['Content-Type'] = 'text/plain; charset=utf8'
@@ -299,7 +303,7 @@ class Dropbox.Xhr
       @paramsToBody()
 
     @xhr = new Dropbox.Xhr.Request()
-    if ieMode
+    if ieXdr
       @xhr.onload = => @onXdrLoad()
       @xhr.onerror = => @onXdrError()
       @xhr.ontimeout = => @onXdrError()
@@ -310,7 +314,7 @@ class Dropbox.Xhr
       @xhr.onreadystatechange = => @onReadyStateChange()
     @xhr.open @method, @url, true
 
-    unless ieMode
+    unless ieXdr
       for own header, value of @headers
         @xhr.setRequestHeader header, value
 

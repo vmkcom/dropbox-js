@@ -21,16 +21,14 @@ buildClientTests = (clientKeys) ->
     test.imageFile = "#{test.testFolder}/test-binary-image.png"
     test.imageFileData = testImageBytes
 
-    # Firefox has a bug that makes writing binary files fail.
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=649150
-    if Blob? and (test.node_js or
-                  window.navigator.userAgent.indexOf('Gecko') isnt -1)
+    if Uint8Array? and (not test.node_js)
       testImageServerOn()
       xhr = new Dropbox.Xhr 'GET', testImageUrl
-      xhr.setResponseType('blob').prepare().send (error, blob) =>
+      xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
         testImageServerOff()
         expect(error).to.equal null
-        test.__client.writeFile test.imageFile, blob, (error, stat) ->
+        view = new Uint8Array buffer
+        test.__client.writeFile test.imageFile, view, (error, stat) ->
           expect(error).to.equal null
           test.imageFileTag = stat.versionTag
           done()
@@ -141,14 +139,14 @@ buildClientTests = (clientKeys) ->
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @textFile
           expect(stat.isFile).to.equal true
         done()
 
     it 'reads the beginning of a text file', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 0, length: 10, (error, data, stat) =>
         expect(error).to.equal null
@@ -159,7 +157,7 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'reads the middle of a text file', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 8, length: 10, (error, data, stat) =>
         expect(error).to.equal null
@@ -170,7 +168,7 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'reads the end of a text file via the start: option', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 10, (error, data, stat) =>
         expect(error).to.equal null
@@ -181,7 +179,7 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'reads the end of a text file via the length: option', (done) ->
-      return done() if Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, length: 10, (error, data, stat) =>
         expect(error).to.equal null
@@ -196,7 +194,7 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, binary: true, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @imageFileData
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
@@ -207,28 +205,34 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, blob: true, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         reader = new FileReader
         reader.onloadend = =>
           return unless reader.readyState == FileReader.DONE
-          expect(reader.result).to.equal @imageFileData
+          buffer = reader.result
+          view = new Uint8Array buffer
+          length = buffer.byteLength
+          bytes = (String.fromCharCode view[i] for i in [0...length]).
+              join('')
+          expect(bytes).to.equal @imageFileData
           done()
-        reader.readAsBinaryString blob
+        reader.readAsArrayBuffer blob
 
     it 'reads a binary file into an ArrayBuffer', (done) ->
       return done() unless ArrayBuffer?
       @client.readFile @imageFile, arrayBuffer: true, (error, buffer, stat) =>
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf ArrayBuffer
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
-        bytes = (String.fromCharCode view[i] for i in [0...buffer.byteLength]).
+        length = buffer.byteLength
+        bytes = (String.fromCharCode view[i] for i in [0...length]).
             join('')
         expect(bytes).to.equal @imageFileData
         done()
@@ -251,7 +255,7 @@ buildClientTests = (clientKeys) ->
 
       it 'calls the listener before firing the XHR', (done) ->
         @client.onXhr.addListener (xhr) =>
-          unless Dropbox.Xhr.ieMode  # IE's XHR doesn't have readyState
+          unless Dropbox.Xhr.ieXdr  # IE's XHR doesn't have readyState
             expect(xhr.xhr.readyState).to.equal 1
           expect(@callbackCalled).to.equal false
           @listenerXhr = xhr
@@ -293,7 +297,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
@@ -310,7 +314,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
@@ -463,10 +467,13 @@ buildClientTests = (clientKeys) ->
           @blob2 = new Blob [bufferBytes2], type: 'image/png'
 
     afterEach (done) ->
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
     it 'writes a text file in two stages', (done) ->
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
+
       @newFile = "#{@testFolder}/test resumable upload.txt"
       line1 = "This is the first fragment\n"
       line2 = "This is the second fragment\n"
@@ -487,7 +494,7 @@ buildClientTests = (clientKeys) ->
             @client.readFile @newFile, (error, data, stat) =>
               expect(error).to.equal null
               expect(data).to.equal line1 + line2
-              unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+              unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
                 expect(stat).to.be.instanceOf Dropbox.Stat
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
@@ -495,6 +502,7 @@ buildClientTests = (clientKeys) ->
 
     it 'writes a binary file using two ArrayBuffers', (done) ->
       return done() unless ArrayBuffer?
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
       @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
@@ -527,6 +535,7 @@ buildClientTests = (clientKeys) ->
 
     it 'writes a binary file using two Blobs', (done) ->
       return done() unless ArrayBuffer? and Blob?
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable blob upload.png"
       @client.resumableUploadStep @blob1, null, (error, cursor1) =>
@@ -559,7 +568,8 @@ buildClientTests = (clientKeys) ->
 
     it 'recovers from out-of-sync correctly', (done) ->
       # IE's XDR doesn't return anything on errors, so we can't do recovery.
-      return done() if Dropbox.Xhr.ieMode
+      return done() if Dropbox.Xhr.ieXdr
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable upload out of sync.txt"
       line1 = "This is the first fragment\n"
@@ -587,7 +597,7 @@ buildClientTests = (clientKeys) ->
               @client.readFile @newFile, (error, data, stat) =>
                 expect(error).to.equal null
                 expect(data).to.equal line1 + line2
-                unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+                unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
                   expect(stat).to.be.instanceOf Dropbox.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
@@ -600,7 +610,7 @@ buildClientTests = (clientKeys) ->
       @client.resumableUploadStep @textFileData, badCursor, (error, cursor) =>
         expect(cursor).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error.status).to.equal 404
         done()
 
@@ -655,7 +665,7 @@ buildClientTests = (clientKeys) ->
         expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(listenerError).to.equal error
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error).to.have.property 'status'
           expect(error.status).to.equal 404
         done()
@@ -697,7 +707,7 @@ buildClientTests = (clientKeys) ->
       @client.history @textFile, limit: 0, (error, versions) =>
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(listenerError).to.equal error
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error.status).to.be.within 400, 499
         expect(versions).not.to.be.ok
         done()
@@ -718,13 +728,13 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
           @client.readFile @textFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @textFile
               expect(stat.versionTag).to.equal @textFileTag
@@ -750,7 +760,7 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @newFile
             done()
@@ -779,16 +789,16 @@ buildClientTests = (clientKeys) ->
         @client.readFile @moveTo, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @moveTo
           @client.readFile @moveFrom, (error, data, stat) ->
             expect(error).to.be.ok
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
               expect(error).to.have.property 'status'
               expect(error.status).to.equal 404
             expect(data).to.equal undefined
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.equal undefined
             done()
 
@@ -857,7 +867,7 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.be.instanceOf Dropbox.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isRemoved).to.equal false
@@ -1016,7 +1026,7 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(data).to.be.a 'string'
         expect(data).to.contain 'PNG'
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
@@ -1029,16 +1039,21 @@ buildClientTests = (clientKeys) ->
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         reader = new FileReader
         reader.onloadend = =>
           return unless reader.readyState == FileReader.DONE
-          expect(reader.result).to.contain 'PNG'
+          buffer = reader.result
+          view = new Uint8Array buffer
+          length = buffer.byteLength
+          bytes = (String.fromCharCode view[i] for i in [0...length]).
+              join('')
+          expect(bytes).to.contain 'PNG'
           done()
-        reader.readAsBinaryString blob
+        reader.readAsArrayBuffer blob
 
   describe '#reset', ->
     beforeEach ->
