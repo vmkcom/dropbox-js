@@ -15,8 +15,10 @@ describe 'Dropbox.PublicUrl', ->
       it 'parses expiresAt correctly', ->
         expect(@url).to.have.property 'expiresAt'
         expect(@url.expiresAt).to.be.instanceOf Date
-        expect(@url.expiresAt.toUTCString()).to.
-            equal 'Tue, 01 Jan 2030 00:00:00 GMT'
+        expect([
+            'Tue, 01 Jan 2030 00:00:00 GMT',  # every sane JS platform
+            'Tue, 1 Jan 2030 00:00:00 UTC'    # Internet Explorer
+            ]).to.contain(@url.expiresAt.toUTCString())
 
       it 'parses isDirect correctly', ->
         expect(@url).to.have.property 'isDirect'
@@ -26,14 +28,10 @@ describe 'Dropbox.PublicUrl', ->
         expect(@url).to.have.property 'isPreview'
         expect(@url.isPreview).to.equal true
 
-      assertUrlEquality = (url1, url2) ->
-        expect(url1.url).to.equal url2.url
-        expect(url1.expiresAt.toString()).to.equal url2.expiresAt.toString()
-        expect(url1.isDirect).to.equal url2.isDirect
-
       it 'round-trips through json / parse correctly', ->
         newUrl = Dropbox.PublicUrl.parse @url.json()
-        assertUrlEquality newUrl, @url
+        newUrl.json()  # Get _json populated for newUrl.
+        expect(newUrl).to.deep.equal @url
 
     it 'passes null through', ->
       expect(Dropbox.PublicUrl.parse(null)).to.equal null
@@ -44,10 +42,6 @@ describe 'Dropbox.PublicUrl', ->
 
 describe 'Dropbox.CopyReference', ->
   describe '.parse', ->
-    assertRefEquality = (ref1, ref2) ->
-      expect(ref1.tag).to.equal ref2.tag
-      expect(ref1.expiresAt.toString()).to.equal ref2.expiresAt.toString()
-
     describe 'on the API example', ->
       beforeEach ->
         refData = {
@@ -63,12 +57,14 @@ describe 'Dropbox.CopyReference', ->
       it 'parses expiresAt correctly', ->
         expect(@ref).to.have.property 'expiresAt'
         expect(@ref.expiresAt).to.be.instanceOf Date
-        expect(@ref.expiresAt.toUTCString()).to.
-            equal 'Fri, 31 Jan 2042 21:01:05 GMT'
+        expect([
+            'Fri, 31 Jan 2042 21:01:05 GMT',  # every sane JS platform
+            'Fri, 31 Jan 2042 21:01:05 UTC'   # Internet Explorer
+            ]).to.contain(@ref.expiresAt.toUTCString())
 
       it 'round-trips through json / parse correctly', ->
         newRef = Dropbox.CopyReference.parse @ref.json()
-        assertRefEquality newRef, @ref
+        expect(newRef).to.deep.equal @ref
 
     describe 'on a reference string', ->
       beforeEach ->
@@ -86,7 +82,7 @@ describe 'Dropbox.CopyReference', ->
 
       it 'round-trips through json / parse correctly', ->
         newRef = Dropbox.CopyReference.parse @ref.json()
-        assertRefEquality newRef, @ref
+        expect(newRef).to.deep.equal @ref
 
     it 'passes null through', ->
       expect(Dropbox.CopyReference.parse(null)).to.equal null

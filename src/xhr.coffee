@@ -111,6 +111,9 @@ class Dropbox.Xhr
   # headers) might result in a valid signature that is applied in a sub-optimal
   # fashion. For best results, call this right before Dropbox.Xhr#prepare.
   #
+  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
+  #   used to sign the request
+  # @return {Dropbox.Xhr} this, for easy call chaining
   signWithOauth: (oauth) ->
     if Dropbox.Xhr.ieMode or (Dropbox.Xhr.doesPreflight and (not @preflight))
       @addOauthParams oauth

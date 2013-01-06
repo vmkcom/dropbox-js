@@ -32,11 +32,11 @@ class Dropbox.PublicUrl
   # JSON representation of this file / folder's metadata
   #
   # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.Stat#parse to obtain an identical UserInfo instance
+  #   Dropbox.PublicUrl#parse to obtain an identical PublicUrl instance
   json: ->
     # HACK: this can break if the Dropbox API ever decides to use 'direct' in
     #       its link info
-    @_json ||= { url: @url, expires: @expiresAt.toString(), direct: @isDirect }
+    @_json ||= url: @url, expires: @expiresAt.toString(), direct: @isDirect
 
   # Creates a PublicUrl instance from a raw API response.
   #
@@ -74,7 +74,7 @@ class Dropbox.PublicUrl
 class Dropbox.CopyReference
   # Creates a CopyReference instance from a raw reference or API response.
   #
-  # @param {?Object, ?String} refData the parsed JSON descring a copy
+  # @param {?Object, ?String} refData the parsed JSON describing a copy
   #   reference, or the reference string
   @parse: (refData) ->
     if refData and (typeof refData is 'object' or typeof refData is 'string')
@@ -91,10 +91,12 @@ class Dropbox.CopyReference
   # JSON representation of this file / folder's metadata
   #
   # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.Stat#parse to obtain an identical UserInfo instance
+  #   Dropbox.CopyReference#parse to obtain an identical CopyReference instance
   json: ->
-    # NOTE: the assignment only occurs if
-    @_json ||= { copy_ref: @tag, expires: @expiresAt.toString() }
+    # NOTE: the assignment only occurs if the CopyReference was built around a
+    #       string; CopyReferences parsed from API responses hold onto the
+    #       original JSON
+    @_json ||= copy_ref: @tag, expires: @expiresAt.toString()
 
   # Creates a CopyReference instance from a raw reference or API response.
   #
@@ -102,7 +104,7 @@ class Dropbox.CopyReference
   # This constructor is used by Dropbox.CopyReference.parse, and should not be
   # called directly.
   #
-  # @param {Object, String} refData the parsed JSON descring a copy
+  # @param {Object, String} refData the parsed JSON describing a copy
   #   reference, or the reference string
   constructor: (refData) ->
     if typeof refData is 'object'
@@ -111,7 +113,7 @@ class Dropbox.CopyReference
       @_json = refData
     else
       @tag = refData
-      @expiresAt = new Date()
+      @expiresAt = new Date Math.ceil(Date.now() / 1000) * 1000
       # The JSON representation is created on-demand, to avoid unnecessary
       # object creation.
       @_json = null

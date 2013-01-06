@@ -76,7 +76,7 @@ class Dropbox.Stat
   # JSON representation of this file / folder's metadata
   #
   # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.Stat#parse to obtain an identical UserInfo instance
+  #   Dropbox.Stat#parse to obtain an identical Stat instance
   json: ->
     @_json
 

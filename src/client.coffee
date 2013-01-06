@@ -381,6 +381,78 @@ class Dropbox.Client
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata)
 
+  # Atomic step in a resumable file upload.
+  #
+  # @param {String, ArrayBuffer, ArrayBufferView, Blob, File} data the file
+  #   contents fragment to be uploaded; if a File is passed, its name is
+  #   ignored
+  # @param {?Dropbox.UploadCursor} cursor the cursor that tracks the state of
+  #   the resumable file upload; the cursor information will not be updated
+  #   when the API call completes
+  # @param {function(?Dropbox.ApiError, ?Dropbox.UploadCursor)} callback called
+  #   with the result of the /chunked_upload HTTP request; the second paramter
+  #   is a Dropbox.UploadCursor instance describing the progress of the upload
+  #   operation, and the first parameter is null if things go well
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  resumableUploadStep: (data, cursor, callback) ->
+    if cursor
+      params = { offset: cursor.offset }
+      params.upload_id = cursor.tag if cursor.tag
+    else
+      params = { offset: 0 }
+
+    xhr = new Dropbox.Xhr 'POST', @urls.chunkedUpload
+    xhr.setBody(data).setParams(params).signWithOauth(@oauth)
+    @dispatchXhr xhr, (error, cursor) ->
+      if error and error.status is 400 and
+          error.response.upload_id and error.response.offset
+        callback null, Dropbox.UploadCursor.parse(error.response)
+      else
+        callback error, Dropbox.UploadCursor.parse(cursor)
+
+  # Finishes a resumable file upload.
+  #
+  # @param {String} path the path of the file to be created, relative to the
+  #   user's Dropbox or to the application's folder
+  # @param {?Object} options the advanced settings below; for the default
+  #   settings, skip the argument or pass null
+  # @option options {String} lastVersionTag the identifier string for the
+  #   version of the file's contents that was last read by this program, used
+  #   for conflict resolution; for best results, use the versionTag attribute
+  #   value from the Dropbox.Stat instance provided by readFile
+  # @option options {String} parentRev alias for "lastVersionTag" that matches
+  #   the HTTP API
+  # @option options {Boolean} noOverwrite if set, the write will not overwrite
+  #   a file with the same name that already exsits; instead the contents
+  #   will be written to a similarly named file (e.g. "notes (1).txt"
+  #   instead of "notes.txt")
+  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  #   the result of the /files (POST) HTTP request; the second paramter is a
+  #   Dropbox.Stat instance describing the newly created file, and the first
+  #   parameter is null
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  resumableUploadFinish: (path, cursor, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    params = { upload_id: cursor.tag }
+
+    if options
+      if options.lastVersionTag
+        params.parent_rev = options.lastVersionTag
+      else if options.parentRev or options.parent_rev
+        params.parent_rev = options.parentRev or options.parent_rev
+      if options.noOverwrite
+        params.autorename = true
+
+    # TODO: locale support would edit the params here
+    xhr = new Dropbox.Xhr 'POST',
+        "#{@urls.commitChunkedUpload}/#{@urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth(@oauth)
+    @dispatchXhr xhr, (error, metadata) ->
+      callback error, Dropbox.Stat.parse(metadata)
+
   # Reads the metadata of a file or folder in a user's Dropbox.
   #
   # @param {String} path the path to the file or folder whose metadata will be
@@ -775,10 +847,11 @@ class Dropbox.Client
   # to obtain all the changes that happened in the user's Dropbox (or
   # application directory) between the two calls.
   #
-  # @param {Dropbox.PulledChanges, String} cursorTag the result of a previous
+  # @param {Dropbox.PulledChanges, String} cursor the result of a previous
   #   call to pullChanges, or a string containing a tag representing the
   #   Dropbox state that is used as the baseline for the change list; this
-  #   should be obtained from a previous call to pullChanges, or be set to null
+  #   should either be the Dropbox.PulledChanges obtained from a previous call
+  #   to pullChanges, the return value of Dropbox.PulledChanges#cursor, or null
   #   / ommitted on the first call to pullChanges
   # @param {function(?Dropbox.ApiError, ?Dropbox.PulledChanges)} callback
   #   called with the result of the /delta HTTP request; if the call
@@ -983,6 +1056,9 @@ class Dropbox.Client
       media: "#{@apiServer}/1/media/#{@fileRoot}"
       copyRef: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
       thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
+      chunkedUpload: "#{@fileServer}/1/chunked_upload"
+      commitChunkedUpload:
+          "#{@fileServer}/1/commit_chunked_upload/#{@fileRoot}"
 
       # File operations.
       fileopsCopy: "#{@apiServer}/1/fileops/copy"
@@ -995,22 +1071,22 @@ class Dropbox.Client
   #   possible; this attribute was intended to be used by OAuth drivers
   authState: null
 
-  # authState value for a client that experienced an authentication error.
+  # authState value for a client that experienced an authentication error
   @ERROR: 0
 
-  # authState value for a properly initialized client with no user credentials.
+  # authState value for a properly initialized client with no user credentials
   @RESET: 1
 
-  # authState value for a client with a request token that must be authorized.
+  # authState value for a client with a request token that must be authorized
   @REQUEST: 2
 
-  # authState value for a client whose request token was authorized.
+  # authState value for a client whose request token was authorized
   @AUTHORIZED: 3
 
-  # authState value for a client that has an access token.
+  # authState value for a client that has an access token
   @DONE: 4
 
-  # authState value for a client that voluntarily invalidated its access token.
+  # authState value for a client that voluntarily invalidated its access token
   @SIGNED_OFF: 5
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.

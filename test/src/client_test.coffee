@@ -233,49 +233,49 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.equal @imageFileData
         done()
 
-  describe '#readFile with an onXhr listener', ->
-    beforeEach ->
-      @listenerXhr = null
-      @callbackCalled = false
+    describe 'with an onXhr listener', ->
+      beforeEach ->
+        @listenerXhr = null
+        @callbackCalled = false
 
-    it 'calls the listener with a Dropbox.Xhr argument', (done) ->
-      @client.onXhr.addListener (xhr) =>
-        expect(xhr).to.be.instanceOf Dropbox.Xhr
-        @listenerXhr = xhr
-        true
+      it 'calls the listener with a Dropbox.Xhr argument', (done) ->
+        @client.onXhr.addListener (xhr) =>
+          expect(xhr).to.be.instanceOf Dropbox.Xhr
+          @listenerXhr = xhr
+          true
 
-      @client.readFile @textFile, (error, data, stat) =>
-        expect(error).to.equal null
-        expect(data).to.equal @textFileData
-        done() if @listenerXhr
+        @client.readFile @textFile, (error, data, stat) =>
+          expect(error).to.equal null
+          expect(data).to.equal @textFileData
+          done() if @listenerXhr
 
-    it 'calls the listener before firing the XHR', (done) ->
-      @client.onXhr.addListener (xhr) =>
-        unless Dropbox.Xhr.ieMode  # IE's XHR doesn't have readyState
-          expect(xhr.xhr.readyState).to.equal 1
-        expect(@callbackCalled).to.equal false
-        @listenerXhr = xhr
-        true
+      it 'calls the listener before firing the XHR', (done) ->
+        @client.onXhr.addListener (xhr) =>
+          unless Dropbox.Xhr.ieMode  # IE's XHR doesn't have readyState
+            expect(xhr.xhr.readyState).to.equal 1
+          expect(@callbackCalled).to.equal false
+          @listenerXhr = xhr
+          true
 
-      @client.readFile @textFile, (error, data, stat) =>
-        @callbackCalled = true
-        expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
-        expect(error).to.equal null
-        expect(data).to.equal @textFileData
-        done() if @listenerXhr
+        @client.readFile @textFile, (error, data, stat) =>
+          @callbackCalled = true
+          expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
+          expect(error).to.equal null
+          expect(data).to.equal @textFileData
+          done() if @listenerXhr
 
-    it 'does not send the XHR if the listener cancels the event', (done) ->
-      @client.onXhr.addListener (xhr) =>
-        expect(@callbackCalled).to.equal false
-        @listenerXhr = xhr
-        # NOTE: if the client calls send(), a DOM error will fail the test
-        xhr.send()
-        false
+      it 'does not send the XHR if the listener cancels the event', (done) ->
+        @client.onXhr.addListener (xhr) =>
+          expect(@callbackCalled).to.equal false
+          @listenerXhr = xhr
+          # NOTE: if the client calls send(), a DOM error will fail the test
+          xhr.send()
+          false
 
-      @client.readFile @textFile, (error, data, stat) =>
-        @callbackCalled = true
-        expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
-        done() if @listenerXhr
+        @client.readFile @textFile, (error, data, stat) =>
+          @callbackCalled = true
+          expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
+          done() if @listenerXhr
 
   describe '#writeFile', ->
     afterEach (done) ->
@@ -338,8 +338,8 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              byteCount = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+              length = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...length]).
                   join('')
               expect(bytes).to.equal @imageFileData
               done()
@@ -370,8 +370,8 @@ buildClientTests = (clientKeys) ->
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
                 view = new Uint8Array buffer
-                byteCount = buffer.byteLength
-                bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+                length = buffer.byteLength
+                bytes = (String.fromCharCode view[i] for i in [0...length]).
                     join('')
                 expect(bytes).to.equal @imageFileData
                 done()
@@ -411,8 +411,8 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              byteCount = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+              length = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...length]).
                   join('')
               expect(bytes).to.equal @imageFileData
               done()
@@ -437,11 +437,172 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              byteCount = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...byteCount]).
+              length = buffer.byteLength
+              bytes = (String.fromCharCode view[i] for i in [0...length]).
                   join('')
               expect(bytes).to.equal @imageFileData
               done()
+
+  describe '#resumableUploadStep + #resumableUploadFinish', ->
+    beforeEach ->
+      if ArrayBuffer?  # IE9 and below doesn't have ArrayBuffer
+        @length1 = Math.ceil @imageFileData.length / 3
+        @length2 = @imageFileData.length - @length1
+        @buffer1 = new ArrayBuffer @length1
+
+        bufferBytes1 = new Uint8Array @buffer1
+        for i in [0...@length1]
+          bufferBytes1[i] = @imageFileData.charCodeAt i
+        @buffer2 = new ArrayBuffer @length2
+        bufferBytes2 = new Uint8Array @buffer2
+        for i in [0...@length2]
+          bufferBytes2[i] = @imageFileData.charCodeAt @length1 + i
+
+        if Blob?  # node.js and IE9 and below don't have Blob
+          @blob1 = new Blob [bufferBytes1], type: 'image/png'
+          @blob2 = new Blob [bufferBytes2], type: 'image/png'
+
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (error, stat) -> done()
+
+    it 'writes a text file in two stages', (done) ->
+      @newFile = "#{@testFolder}/test resumable upload.txt"
+      line1 = "This is the first fragment\n"
+      line2 = "This is the second fragment\n"
+      @client.resumableUploadStep line1, null, (error, cursor1) =>
+        expect(error).to.equal null
+        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1.offset).to.equal line1.length
+        @client.resumableUploadStep line2, cursor1, (error, cursor2) =>
+          expect(error).to.equal null
+          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2.offset).to.equal line1.length + line2.length
+          expect(cursor2.tag).to.equal cursor1.tag
+          @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
+            expect(error).to.equal null
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+            @client.readFile @newFile, (error, data, stat) =>
+              expect(error).to.equal null
+              expect(data).to.equal line1 + line2
+              unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+                expect(stat).to.be.instanceOf Dropbox.Stat
+                expect(stat.path).to.equal @newFile
+                expect(stat.isFile).to.equal true
+              done()
+
+    it 'writes a binary file using two ArrayBuffers', (done) ->
+      return done() unless ArrayBuffer?
+
+      @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
+      @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
+        expect(error).to.equal null
+        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1.offset).to.equal @length1
+        @client.resumableUploadStep @buffer2, cursor1, (error, cursor2) =>
+          expect(error).to.equal null
+          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2.offset).to.equal @length1 + @length2
+          expect(cursor2.tag).to.equal cursor1.tag
+          @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
+            expect(error).to.equal null
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+            @client.readFile @newFile, arrayBuffer: true,
+                (error, buffer, stat) =>
+                  expect(error).to.equal null
+                  expect(buffer).to.be.instanceOf ArrayBuffer
+                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat.path).to.equal @newFile
+                  expect(stat.isFile).to.equal true
+                  view = new Uint8Array buffer
+                  length = buffer.byteLength
+                  bytes = (String.fromCharCode view[i] for i in [0...length]).
+                      join('')
+                  expect(bytes).to.equal @imageFileData
+                  done()
+
+    it 'writes a binary file using two Blobs', (done) ->
+      return done() unless ArrayBuffer? and Blob?
+
+      @newFile = "#{@testFolder}/test resumable blob upload.png"
+      @client.resumableUploadStep @blob1, null, (error, cursor1) =>
+        expect(error).to.equal null
+        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1.offset).to.equal @length1
+        @client.resumableUploadStep @blob2, cursor1, (error, cursor2) =>
+          expect(error).to.equal null
+          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2.offset).to.equal @length1 + @length2
+          expect(cursor2.tag).to.equal cursor1.tag
+          @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
+            expect(error).to.equal null
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+            @client.readFile @newFile, arrayBuffer: true,
+                (error, buffer, stat) =>
+                  expect(error).to.equal null
+                  expect(buffer).to.be.instanceOf ArrayBuffer
+                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat.path).to.equal @newFile
+                  expect(stat.isFile).to.equal true
+                  view = new Uint8Array buffer
+                  length = buffer.byteLength
+                  bytes = (String.fromCharCode view[i] for i in [0...length]).
+                      join('')
+                  expect(bytes).to.equal @imageFileData
+                  done()
+
+    it 'recovers from out-of-sync correctly', (done) ->
+      # IE's XDR doesn't return anything on errors, so we can't do recovery.
+      return done() if Dropbox.Xhr.ieMode
+
+      @newFile = "#{@testFolder}/test resumable upload out of sync.txt"
+      line1 = "This is the first fragment\n"
+      line2 = "This is the second fragment\n"
+      @client.resumableUploadStep line1, null, (error, cursor1) =>
+        expect(error).to.equal null
+        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1.offset).to.equal line1.length
+        cursor1.offset += 10
+        @client.resumableUploadStep line2, cursor1, (error, cursor2) =>
+          expect(error).to.equal null
+          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2.offset).to.equal line1.length
+          expect(cursor2.tag).to.equal cursor1.tag
+          @client.resumableUploadStep line2, cursor2, (error, cursor3) =>
+            expect(error).to.equal null
+            expect(cursor3).to.be.instanceOf Dropbox.UploadCursor
+            expect(cursor3.offset).to.equal line1.length + line2.length
+            expect(cursor3.tag).to.equal cursor1.tag
+            @client.resumableUploadFinish @newFile, cursor3, (error, stat) =>
+              expect(error).to.equal null
+              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat.path).to.equal @newFile
+              expect(stat.isFile).to.equal true
+              @client.readFile @newFile, (error, data, stat) =>
+                expect(error).to.equal null
+                expect(data).to.equal line1 + line2
+                unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do headers.
+                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat.path).to.equal @newFile
+                  expect(stat.isFile).to.equal true
+                done()
+
+    it 'reports errors correctly', (done) ->
+      @newFile = "#{@testFolder}/test resumable upload error.txt"
+      badCursor = new Dropbox.UploadCursor 'trollcursor'
+      badCursor.offset = 42
+      @client.resumableUploadStep @textFileData, badCursor, (error, cursor) =>
+        expect(cursor).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        unless Dropbox.Xhr.ieMode  # IE's XDR doesn't do status codes.
+          expect(error.status).to.equal 404
+        done()
 
   describe '#stat', ->
     it 'retrieves a Stat for a file', (done) ->

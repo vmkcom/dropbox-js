@@ -37,6 +37,12 @@ class Dropbox.PulledChanges
   #   least 5 miuntes before issuing another pullChanges request
   shouldBackOff: undefined
 
+  # Serializable representation of the pull cursor inside this object.
+  #
+  # @return {String} an ASCII string that can be passed to pullChanges instead
+  #   of this PulledChanges instance
+  cursor: -> @cursorTag
+
   # Creates a new Dropbox.PulledChanges instance from a /delta API call result.
   #
   # @private
