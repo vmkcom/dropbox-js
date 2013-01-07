@@ -179,7 +179,7 @@ class Dropbox.Xhr
 
     if typeof body is 'string'
       # Content-Type will be set automatically.
-    else if typeof FormData isnt 'undefiend' and (body instanceof FormData)
+    else if (typeof FormData isnt 'undefined') and (body instanceof FormData)
       # Content-Type will be set automatically.
     else
       @headers['Content-Type'] = 'application/octet-stream'

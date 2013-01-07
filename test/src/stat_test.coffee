@@ -172,7 +172,7 @@ describe 'Dropbox.Stat', ->
     it 'passes null through', ->
       expect(Dropbox.Stat.parse(null)).to.equal null
 
-    it 'passes undefiend through', ->
+    it 'passes undefined through', ->
       expect(Dropbox.Stat.parse(undefined)).to.equal undefined
 
     describe 'on a contrived file/path example', ->
