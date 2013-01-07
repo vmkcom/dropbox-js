@@ -108,7 +108,7 @@ describe 'Dropbox.Xhr', ->
         it 'uses addOauthParams', ->
           expect(@xhr.params).to.have.property 'oauth_signature'
       else
-        it 'uses addOauthHeader', ->
+        it 'uses addOauthHeader in IE / node.js', ->
           expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#signWithOauth for a request that needs preflight', ->
@@ -283,12 +283,12 @@ describe 'Dropbox.Xhr', ->
         it 'uses addOauthParams', ->
           expect(@xhr.params).to.have.property 'oauth_signature'
       else
-        it 'uses addOauthHeader', ->
+        it 'uses addOauthHeader in node.js', ->
           expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#signWithOauth for a request that needs preflight', ->
       beforeEach ->
-        @xhr.setBody 'binary data here'
+        @xhr.setHeader 'Range', 'bytes=0-1000'
         @xhr.signWithOauth @oauth
 
       if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
@@ -340,18 +340,67 @@ Content-Transfer-Encoding: binary\r
       it 'does not work twice', ->
         expect(=> @xhr.setBody('body data')).to.throw Error
 
-      it 'flags the XHR as needing preflight', ->
-        expect(@xhr.preflight).to.equal true
+      it 'does not flag the XHR as needing preflight', ->
+        expect(@xhr.preflight).to.equal false
 
-    if FormData?
-      describe '#setBody with FormData', ->
-        beforeEach ->
+    describe '#setBody with FormData', ->
+      beforeEach ->
+        if FormData?
           formData = new FormData()
           formData.append 'name', 'value'
           @xhr.setBody formData
 
-        it 'does not flag the XHR as needing preflight', ->
-          expect(@xhr.preflight).to.equal false
+      it 'does not flag the XHR as needing preflight', ->
+        return unless FormData?
+        expect(@xhr.preflight).to.equal false
+
+    describe '#setBody with Blob', ->
+      beforeEach ->
+        if Blob?
+          blob = new Blob ["abcdef"], type: 'image/png'
+          @xhr.setBody blob
+
+      it 'flags the XHR as needing preflight', ->
+        return unless Blob?
+        expect(@xhr.preflight).to.equal true
+
+      it 'sets the Content-Type header', ->
+        return unless Blob?
+        expect(@xhr.headers).to.have.property 'Content-Type'
+        expect(@xhr.headers['Content-Type']).to.
+            equal 'application/octet-stream'
+
+    describe '#setBody with ArrayBuffer', ->
+      beforeEach ->
+        if ArrayBuffer?
+          buffer = new ArrayBuffer 5
+          @xhr.setBody buffer
+
+      it 'flags the XHR as needing preflight', ->
+        return unless ArrayBuffer?
+        expect(@xhr.preflight).to.equal true
+
+      it 'sets the Content-Type header', ->
+        return unless ArrayBuffer?
+        expect(@xhr.headers).to.have.property 'Content-Type'
+        expect(@xhr.headers['Content-Type']).to.
+            equal 'application/octet-stream'
+
+    describe '#setBody with ArrayBufferView', ->
+      beforeEach ->
+        if Uint8Array?
+          view = new Uint8Array 5
+          @xhr.setBody view
+
+      it 'flags the XHR as needing preflight', ->
+        return unless Uint8Array?
+        expect(@xhr.preflight).to.equal true
+
+      it 'sets the Content-Type header', ->
+        return unless Uint8Array?
+        expect(@xhr.headers).to.have.property 'Content-Type'
+        expect(@xhr.headers['Content-Type']).to.
+            equal 'application/octet-stream'
 
     describe '#setResponseType', ->
       beforeEach ->

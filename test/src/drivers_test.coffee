@@ -160,6 +160,7 @@ describe 'Dropbox.Drivers.Redirect', ->
       @timeout 30 * 1000  # Time-consuming because the user must click.
 
       listener = (event) ->
+        expect(event.data).to.match(/^\[.*\]$/)
         [error, credentials] = JSON.parse event.data
         expect(error).to.equal null
         expect(credentials).to.have.property 'uid'

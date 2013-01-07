@@ -30,6 +30,7 @@ else
 #     https://code.google.com/p/chromium/issues/detail?id=60449
 if typeof Uint8Array is 'undefined'
   DropboxXhrArrayBufferView = null
+  DropboxXhrSendArrayBufferView = false
 else
   if Object.getPrototypeOf
     DropboxXhrArrayBufferView = Object.getPrototypeOf(
@@ -37,6 +38,10 @@ else
   else if Object.__proto__
     DropboxXhrArrayBufferView =
         (new Uint8Array(0)).__proto__.__proto__.constructor
+
+  # Browsers that haven't implemented XHR#send(ArrayBufferView) also don't
+  # have a real ArrayBufferView prototype. (Safari, Firefox)
+  DropboxXhrSendArrayBufferView = DropboxXhrArrayBufferView isnt Object
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class Dropbox.Xhr
@@ -48,7 +53,11 @@ class Dropbox.Xhr
   @canSendForms = DropboxXhrCanSendForms
   # Set to true if the platform performs CORS preflight checks.
   @doesPreflight = DropboxXhrDoesPreflight
+  # Superclass for all ArrayBufferView objects.
   @ArrayBufferView = DropboxXhrArrayBufferView
+  # Set to true if we think we can send ArrayBufferView objects via XHR.
+  @sendArrayBufferView = DropboxXhrSendArrayBufferView
+
 
   # Sets up an AJAX request.
   #
@@ -168,9 +177,13 @@ class Dropbox.Xhr
     if @body isnt null
       throw new Error 'Request already has a body'
 
-    unless @preflight
-      unless (typeof FormData isnt 'undefined') and (body instanceof FormData)
-        @preflight = true
+    if typeof body is 'string'
+      # Content-Type will be set automatically.
+    else if typeof FormData isnt 'undefiend' and (body instanceof FormData)
+      # Content-Type will be set automatically.
+    else
+      @headers['Content-Type'] = 'application/octet-stream'
+      @preflight = true
 
     @body = body
     @
@@ -223,12 +236,23 @@ class Dropbox.Xhr
       throw new Error 'setFileField cannot be called on GET requests'
 
     if typeof(fileData) is 'object' and typeof Blob isnt 'undefined'
-      if ArrayBuffer? and fileData instanceof ArrayBuffer
-        fileData = new Uint8Array fileData
-      if Dropbox.Xhr.ArrayBufferView and
-          fileData instanceof Dropbox.Xhr.ArrayBufferView
-        contentType or= 'application/octet-stream'
-        fileData = new Blob [fileData], type: contentType
+      if typeof ArrayBuffer isnt 'undefined'
+        if fileData instanceof ArrayBuffer
+          # Convert ArrayBuffer -> ArrayBufferView on standard-compliant
+          # browsers, to avoid warnings from the Blob constructor.
+          if Dropbox.Xhr.sendArrayBufferView
+            fileData = new Uint8Array fileData
+        else
+          # Convert ArrayBufferView -> ArrayBuffer on older browsers, to avoid
+          # having a Blob that contains "[object Uint8Array]" instead of the
+          # actual data.
+          if !Dropbox.Xhr.sendArrayBufferView and fileData.byteOffset is 0 and
+             fileData.buffer instanceof ArrayBuffer
+            fileData = fileData.buffer
+
+      contentType or= 'application/octet-stream'
+      fileData = new Blob [fileData], type: contentType
+
       # Workaround for http://crbug.com/165095
       if typeof File isnt 'undefined' and fileData instanceof File
         fileData = new Blob [fileData], type: fileData.type
@@ -343,16 +367,15 @@ class Dropbox.Xhr
     if @body isnt null
       body = @body
       # send() in XHR doesn't like naked ArrayBuffers
-      if Dropbox.Xhr.ArrayBufferView and body instanceof ArrayBuffer
+      if Dropbox.Xhr.sendArrayBufferView and body instanceof ArrayBuffer
         body = new Uint8Array body
 
       try
         @xhr.send body
       catch e
-        # Firefox doesn't support sending ArrayBufferViews.
         # Node.js doesn't implement Blob.
-        if typeof Blob isnt 'undefined' and Dropbox.Xhr.ArrayBufferView and
-            body instanceof Dropbox.Xhr.ArrayBufferView
+        if !Dropbox.Xhr.sendArrayBufferView and typeof Blob isnt 'undefined'
+          # Firefox doesn't support sending ArrayBufferViews.
           body = new Blob [body], type: 'application/octet-stream'
           @xhr.send body
         else

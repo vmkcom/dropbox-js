@@ -75,11 +75,38 @@ The tests store all their data in folders named along the lines of
 folders yourself.
 
 
-## Testing Chrome Extension
+### Solving Browser Issues
 
-The test suite opens up a couple of Dropbox authorization pages, and a page
-that cannot close itself. dropbox.js ships with a Google Chrome extension that
-can fully automate the testing process on Chrome.
+An easy method to test a browser in a virtual machine is to skip the automated
+browser opening.
+
+```bash
+BROWSER=false cake webtest
+```
+
+A similar method can be used to launch a specific browser.
+
+```bash
+BROWSER=firefox cake webtest
+```
+
+When fighting a bug, it can be useful to keep the server process running after
+the test suite completes, so tests can be re-started with a browser refresh.
+
+```bash
+BROWSER=false NO_EXIT=1 cake webtest
+```
+
+[Mocha's exclusive tests](http://visionmedia.github.com/mocha/#exclusive-tests)
+(`it.only` and `describe.only`) are very useful for quickly iterating while
+figuring out a bug.
+
+
+### Fully Automated Tests
+
+The test suite opens up the Dropbox authorization page a few times, and also
+pops up a page that cannot close itself. dropbox.js ships with a Google Chrome
+extension that can fully automate the testing process on Chrome / Chromium.
 
 The extension is written in CoffeeScript, so you will have to compile it.
 
@@ -91,6 +118,69 @@ After compilation, have Chrome load the unpacked extension at
 `test/chrome_extension` and click on the scary-looking toolbar icon to activate
 the extension. The icon's color should turn red, to indicate that it is active.
 
-The extension performs some checks to prevent against attacks. However, for
-best results, you should disable the automation (by clicking on the extension
-icon) when you're not testing dropbox.js.
+The extension performs some checks to prevent against attacks. However, you
+should still disable the automation (by clicking on the extension icon) when
+you're not testing dropbox.js, just in case the extension code has bugs.
+
+
+## Release Process
+
+1. At the very least, test in node.js and in a browser before releasing.
+
+```bash
+cake test
+cake webtest
+```
+
+1. Bump the version in `package.json`.
+
+1. Publish a new npm package.
+
+```bash
+npm publish
+```
+
+1. Commit and tag the version bump on GitHub.
+
+```bash
+git add package.json
+git commit -m "Release X.Y.Z."
+git tag -a -m "Release X.Y.Z" vX.Y.Z
+git push
+git push --tags
+```
+
+1. If you haven't already, go to the
+   [cdnjs GitHub page](https://github.com/cdnjs/cdnjs) and fork it.
+
+1. If you haven't already, set up cdnjs on your machine.
+
+```bash
+cd ..
+git clone git@github.com:you/cdnjs.git
+cd cdnjs
+git remote add up git://github.com/cdnjs/cdnjs.git
+cd ../dropbox-js
+```
+
+1. Add the new release to your cdnjs fork.
+
+```bash
+cd ../cdnjs
+git checkout master
+git pull up master
+npm install
+git checkout -b dbXYZ
+mkdir ajax/libs/dropbox.js/X.Y.Z
+cp ../dropbox-js/lib/dropbox.min.js ajax/libs/dropbox.js/X.Y.Z/
+vim ajax/libs/dropbox.js/package.json  # Replace "version"'s value with "X.Y.Z"
+npm test
+git add -A
+git commit -m "Added dropbox.js X.Y.Z"
+git push origin dbXYZ
+```
+
+1. Go to your cdnjs for on GitHub and open a pull request. Use these examples
+of accepted
+[major release pull request](https://github.com/cdnjs/cdnjs/pull/580) and
+[minor release pull request](https://github.com/cdnjs/cdnjs/pull/592).

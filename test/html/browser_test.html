@@ -33,10 +33,12 @@
   <script src="/test/js/user_info_test.js"></script>
   <script src="/test/js/xhr_test.js"></script>
   <script>
-    window.addEventListener('load', function(){
-      mocha.run(function() {
+    window.addEventListener('load', function() {
+      var runner = mocha.run(function() {
+        var failures = (runner.failures || 0).toString();
+        var total = (runner.total || 0).toString();
         var image = new Image();
-        image.src = "/diediedie";
+        image.src = "/diediedie?failed=" + failures + "&total=" + total;
         image.onload = function() {
           return null;
         };

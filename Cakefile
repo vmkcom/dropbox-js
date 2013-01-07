@@ -27,8 +27,7 @@ task 'webtest', ->
     build ->
       ssl_cert ->
         tokens ->
-          webFileServer = require './test/js/web_file_server.js'
-          webFileServer.openBrowser()
+          webtest()
 
 task 'cert', ->
   remove.removeSync 'test/ssl', ignoreMissing: true
@@ -72,6 +71,18 @@ build = (callback) ->
                 '--compile test/src/*.coffee'
   async.forEachSeries commands, run, ->
     callback() if callback
+
+webtest = (callback) ->
+  webFileServer = require './test/js/web_file_server.js'
+  if 'BROWSER' of process.env
+    if process.env['BROWSER'] is 'false'
+      url = webFileServer.testUrl()
+      console.log "In your browser, go to\n    #{url}"
+    else
+      webFileServer.openBrowser process.env['BROWSER']
+  else
+    webFileServer.openBrowser()
+  callback() if callback?
 
 ssl_cert = (callback) ->
   fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'

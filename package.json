@@ -23,14 +23,15 @@
   "devDependencies": {
     "async": ">= 0.1.22",
     "chai": ">= 1.4.0",
-    "codo": ">= 1.5.2",
+    "codo": ">= 1.5.4",
     "coffee-script": ">= 1.4.0",
-    "express": ">= 3.0.4",
+    "express": ">= 3.0.6",
     "glob": ">= 3.1.14",
     "mocha": ">= 1.7.4",
+    "open": "https://github.com/pwnall/node-open/tarball/master",
     "remove": ">= 0.1.5",
     "sinon": ">= 1.5.2",
-    "sinon-chai": ">= 2.2.0",
+    "sinon-chai": ">= 2.3.0",
     "uglify-js": ">= 2.2.3"
   },
   "main": "lib/dropbox.js",
