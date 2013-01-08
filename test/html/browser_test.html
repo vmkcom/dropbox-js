@@ -14,7 +14,7 @@
   <script src="/test/vendor/chai.js"></script>
   <script src="/node_modules/sinon-chai/lib/sinon-chai.js"></script>
   <script src="/node_modules/mocha/mocha.js"></script>
-  <script>mocha.setup({ui: 'bdd', slow: 150, timeout: 10000});</script>
+  <script src="/test/js/browser_mocha_setup.js"></script>
 
   <script src="/test/.token/token.js"></script>
   <script src="/test/vendor/favicon.js"></script>
@@ -32,19 +32,7 @@
   <script src="/test/js/upload_cursor_test.js"></script>
   <script src="/test/js/user_info_test.js"></script>
   <script src="/test/js/xhr_test.js"></script>
-  <script>
-    window.addEventListener('load', function() {
-      var runner = mocha.run(function() {
-        var failures = (runner.failures || 0).toString();
-        var total = (runner.total || 0).toString();
-        var image = new Image();
-        image.src = "/diediedie?failed=" + failures + "&total=" + total;
-        image.onload = function() {
-          return null;
-        };
-      });
-    });
-  </script>
+  <script src="/test/js/browser_mocha_runner.js"></script>
 </head>
 <body>
   <div id="mocha"></div>

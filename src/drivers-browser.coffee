@@ -19,6 +19,7 @@ class Dropbox.Drivers.BrowserBase
   constructor: (options) ->
     @rememberUser = options?.rememberUser or false
     @scope = options?.scope or 'default'
+    @storageKey = null
 
   # The magic happens here.
   onAuthStateChange: (client, callback) ->
@@ -111,7 +112,7 @@ class Dropbox.Drivers.BrowserBase
       callback null
     @
 
-  # Deletes information previously stored by a call to storeToken.
+  # Deletes information previously stored by a call to storeCredentials.
   #
   # @private
   # onAuthStateChange calls this method during the authentication flow.
@@ -327,3 +328,15 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
         callback()
     window.addEventListener 'message', listener, false
 
+  # Communicates with the driver from the OAuth receiver page.
+  @oauthReceiver: ->
+    window.addEventListener 'load', ->
+      opener = window.opener
+      if window.parent isnt window.top
+        opener or= window.parent
+      if opener
+        try
+          opener.postMessage window.location.href, '*'
+        catch e
+          # IE 9 doesn't support opener.postMessage for popup windows.
+        window.close()

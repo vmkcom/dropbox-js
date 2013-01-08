@@ -24,6 +24,9 @@ samples
 test/js
 tmp/*.js
 
+# Test code that is not related to node.js.
+test/chrome_app
+
 # Documentation output.
 doc/*.html
 doc/assets

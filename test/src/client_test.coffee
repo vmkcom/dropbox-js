@@ -1286,7 +1286,6 @@ describe 'Dropbox.Client', ->
   describe 'with full Dropbox access', ->
     buildClientTests testFullDropboxKeys
 
-describe 'Dropbox.Client', ->
   describe 'with Folder access', ->
     buildClientTests testKeys
 

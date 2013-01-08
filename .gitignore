@@ -13,6 +13,10 @@ test/vendor
 # Build output.
 lib/dropbox.js
 lib/dropbox.min.js
+test/chrome_app/lib
+test/chrome_app/manifest.json
+test/chrome_app/node_modules
+test/chrome_app/test
 test/chrome_extension/*.js
 test/js
 tmp/*.js

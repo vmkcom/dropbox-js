@@ -3,11 +3,11 @@ async = require 'async'
 fs = require 'fs'
 glob = require 'glob'
 log = console.log
+path = require 'path'
 remove = require 'remove'
 
 # Node 0.6 compatibility hack.
 unless fs.existsSync
-  path = require 'path'
   fs.existsSync = (filePath) -> path.existsSync filePath
 
 
@@ -50,6 +50,12 @@ task 'extension', ->
   run 'node_modules/coffee-script/bin/coffee ' +
       '--compile test/chrome_extension/*.coffee'
 
+task 'chrome', ->
+  vendor ->
+    build ->
+      chromeApp 'app_v1'
+
+
 build = (callback) ->
   commands = []
 
@@ -77,7 +83,7 @@ webtest = (callback) ->
   if 'BROWSER' of process.env
     if process.env['BROWSER'] is 'false'
       url = webFileServer.testUrl()
-      console.log "In your browser, go to\n    #{url}"
+      console.log "Please open the URL below in your browser:\n    #{url}"
     else
       webFileServer.openBrowser process.env['BROWSER']
   else
@@ -118,6 +124,32 @@ vendor = (callback) ->
     ['http://sinonjs.org/releases/sinon-ie.js', 'test/vendor/sinon-ie.js']
   ]
   async.forEachSeries downloads, download, ->
+    callback() if callback
+
+chromeApp = (manifestFile, callback) ->
+  unless fs.existsSync 'test/chrome_app/test'
+    fs.mkdirSync 'test/chrome_app/test'
+  unless fs.existsSync 'test/chrome_app/node_modules'
+    fs.mkdirSync 'test/chrome_app/node_modules'
+
+  links = [
+    ['lib', 'test/chrome_app/lib'],
+    ['node_modules/mocha', 'test/chrome_app/node_modules/mocha'],
+    ['node_modules/sinon-chai', 'test/chrome_app/node_modules/sinon-chai'],
+    ['test/.token', 'test/chrome_app/test/.token'],
+    ['test/binary', 'test/chrome_app/test/binary'],
+    ['test/html', 'test/chrome_app/test/html'],
+    ['test/js', 'test/chrome_app/test/js'],
+    ['test/vendor', 'test/chrome_app/test/vendor'],
+  ]
+  commands = [
+    "cp test/chrome_app/manifests/#{manifestFile}.json " +
+        'test/chrome_app/manifest.json'
+  ]
+  for link in links
+  #   fs.symlinkSync(path.resolve(link[0]), link[1]) unless fs.existsSync link[1]
+    commands.push "cp -r #{link[0]} #{path.dirname(link[1])}"
+  async.forEachSeries commands, run, ->
     callback() if callback
 
 tokens = (callback) ->
