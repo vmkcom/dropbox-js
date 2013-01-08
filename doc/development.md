@@ -75,6 +75,23 @@ The tests store all their data in folders named along the lines of
 folders yourself.
 
 
+### Chrome Application / Extension Support
+
+The tests for Chrome apps / extensions require manual intervention right now.
+
+The following command builds the test suite, and must be run after every
+change.
+
+```bash
+cake chrome
+```
+
+The test suite is packaged as a Chrome application, and must be loaded into
+Chrome by going to `Tools` > `Extensions` in the Chrome menu, checking the
+`Developer mode` checkbox, and clicking the `Load unpacked extension...`. The
+extension is built in the `test/chrome_app` directory.
+
+
 ### Solving Browser Issues
 
 An easy method to test a browser in a virtual machine is to skip the automated
