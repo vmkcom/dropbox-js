@@ -163,9 +163,9 @@ class Dropbox.Drivers.Chrome
   # @param {function()} callback called when the storing operation is complete
   # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
   storeCredentials: (credentials, callback) ->
-    item = {}
-    item[@storageKey] = credentials
-    chrome.storage.local.set item, callback
+    items= {}
+    items[@storageKey] = credentials
+    chrome.storage.local.set items, callback
     @
 
   # Retrieves a token and secret from localStorage.

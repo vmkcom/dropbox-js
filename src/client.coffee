@@ -151,7 +151,7 @@ class Dropbox.Client
         when DropboxClient.DONE  # We have an access token.
           callback null, @
 
-        when Dropbox.SIGNED_OFF  # The user signed off, restart the flow.
+        when DropboxClient.SIGNED_OFF  # The user signed off, restart the flow.
           # The authState change makes reset() not trigger onAuthStateChange.
           @authState = DropboxClient.RESET
           @reset()

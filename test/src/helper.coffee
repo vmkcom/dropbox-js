@@ -37,6 +37,9 @@ else
     exports.authDriver = new Dropbox.Drivers.Chrome(
         receiverPath: 'test/html/chrome_oauth_receiver.html',
         scope: 'helper-chrome')
+    # Hack-implement "rememberUser: false" in the Chrome driver.
+    exports.authDriver.storeCredentials = (credentials, callback) -> callback()
+    exports.authDriver.loadCredentials = (callback) -> callback null
   else
     # Browser
     exports = window

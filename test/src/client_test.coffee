@@ -1296,7 +1296,7 @@ describe 'Dropbox.Client', ->
         @timeout 45 * 1000  # Time-consuming because the user must click.
         @client.reset()
         @client.authDriver authDriver
-        authStateChanges = []
+        authStateChanges = ['authorize']
         @client.onAuthStateChange.addListener (client) ->
           authStateChanges.push client.authState
         @client.authenticate (error, client) =>
@@ -1304,27 +1304,42 @@ describe 'Dropbox.Client', ->
           expect(client).to.equal @client
           expect(client.authState).to.equal Dropbox.Client.DONE
           expect(client.isAuthenticated()).to.equal true
-          expect(authStateChanges).to.deep.
-              equal [Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
-                     Dropbox.Client.DONE]
+          expect(authStateChanges).to.deep.equal(['authorize',
+              Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
+              Dropbox.Client.DONE])
           # Verify that we can do API calls.
           client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
             expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-            credentials = client.credentials()
-            authStateChanges = []
+            invalidCredentials = client.credentials()
+            authStateChanges = ['signOff']
             client.signOut (error) ->
               expect(error).to.equal null
               expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
               expect(client.isAuthenticated()).to.equal false
-              expect(authStateChanges).to.deep.
-                  equal [Dropbox.Client.SIGNED_OFF]
+              expect(authStateChanges).to.deep.equal(['signOff',
+                  Dropbox.Client.SIGNED_OFF])
               # Verify that we can't use the old token in API calls.
-              client.setCredentials credentials
-              client.getUserInfo (error, userInfo) ->
+              invalidClient = new Dropbox.Client invalidCredentials
+              invalidClient.getUserInfo (error, userInfo) ->
                 expect(error).to.be.ok
-                expect(error.status).to.equal 401
-                done()
+                unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do error codes.
+                  expect(error.status).to.equal 401
+                # Verify that the same client can be used for a 2nd signin.
+                authStateChanges = ['authorize2']
+                client.authenticate (error, client) ->
+                  expect(error).to.equal null
+                  expect(client.authState).to.equal Dropbox.Client.DONE
+                  expect(client.isAuthenticated()).to.equal true
+                  expect(authStateChanges).to.deep.equal(['authorize2',
+                      Dropbox.Client.RESET, Dropbox.Client.REQUEST,
+                      Dropbox.Client.AUTHORIZED, Dropbox.Client.DONE])
+                  # Verify that we can do API calls after the 2nd signin.
+                  client.getUserInfo (error, userInfo) ->
+                    expect(error).to.equal null
+                    expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+                    done()
+
 
     describe '#appHash', ->
       it 'depends on the app key', ->
