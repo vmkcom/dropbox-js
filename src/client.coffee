@@ -227,17 +227,17 @@ class Dropbox.Client
   # @option options {String} rev alias for "versionTag" that matches the HTTP
   #   API
   # @option options {Boolean} arrayBuffer if true, the file's contents  will be
-  #   passed to the callback in an ArrayBuffer; this is a good method of
-  #   reading non-UTF8 data, such as images; requires XHR Level 2 support,
-  #   which is not available in IE <= 9
+  #   passed to the callback in an ArrayBuffer; this is the recommended method
+  #   of reading non-UTF8 data such as images, as it is well supported across
+  #   modern browsers; requires XHR Level 2 support, which is not available in
+  #   IE <= 9
   # @option options {Boolean} blob if true, the file's contents  will be
   #   passed to the callback in a Blob; this is a good method of reading
   #   non-UTF8 data, such as images; requires XHR Level 2 support, which is not
   #   available in IE <= 9
   # @option options {Boolean} binary if true, the file will be retrieved as a
   #   binary string; the default is an UTF-8 encoded string; this relies on
-  #   browser hacks and should not be used if the environment supports the Blob
-  #   API
+  #   hacks and should not be used if the environment supports XHR Level 2 API
   # @option options {Number} length the number of bytes to be retrieved from
   #   the file; if the start option is not present, the last "length" bytes
   #   will be read (after issue #30 is closed); by default, the entire file is
