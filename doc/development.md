@@ -58,12 +58,13 @@ cake tokens
 
 Re-run the command above if the tests fail due to authentication errors.
 
-Once you have Dropbox tokens, you can run the test suite in node.js or in your
-default browser.
+Once you have Dropbox tokens, you can run the test suite in node.js, in your
+default browser, or as a Chrome application.
 
 ```bash
 cake test
 cake webtest
+cake chrometest
 ```
 
 The library is automatically re-built when running tests, so you don't need to
@@ -73,23 +74,6 @@ submitting pull requests.
 The tests store all their data in folders named along the lines of
 `js tests.0.ac1n6lgs0e3lerk9`. If tests fail, you might have to clean up these
 folders yourself.
-
-
-### Chrome Application / Extension Support
-
-The tests for Chrome apps / extensions require manual intervention right now.
-
-The following command builds the test suite, and must be run after every
-change.
-
-```bash
-cake chrome
-```
-
-The test suite is packaged as a Chrome application, and must be loaded into
-Chrome by going to `Tools` > `Extensions` in the Chrome menu, checking the
-`Developer mode` checkbox, and clicking the `Load unpacked extension...`. The
-extension is built in the `test/chrome_app` directory.
 
 
 ### Solving Browser Issues
@@ -117,6 +101,14 @@ BROWSER=false NO_EXIT=1 cake webtest
 [Mocha's exclusive tests](http://visionmedia.github.com/mocha/#exclusive-tests)
 (`it.only` and `describe.only`) are very useful for quickly iterating while
 figuring out a bug.
+
+
+### Chrome Application / Extension Testing
+
+The tests for Chrome apps / extensions require manual intervention right now.
+
+The `cake chrometest` command will open a Google Chrome instance. The
+`dropbox.js Test Suite` application must be clicked.
 
 
 ### Fully Automated Tests

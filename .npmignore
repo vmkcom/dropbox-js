@@ -21,6 +21,7 @@ lib/dropbox.min.js
 samples
 
 # Test build output.
+test/chrome_profile
 test/js
 tmp/*.js
 

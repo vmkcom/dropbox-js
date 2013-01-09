@@ -18,6 +18,7 @@ test/chrome_app/manifest.json
 test/chrome_app/node_modules
 test/chrome_app/test
 test/chrome_extension/*.js
+test/chrome_profile
 test/js
 tmp/*.js
 

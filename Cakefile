@@ -53,8 +53,15 @@ task 'extension', ->
 task 'chrome', ->
   vendor ->
     build ->
-      chromeApp 'app_v1'
+      # The v2 Chrome App API isn't supported yet.
+      buildChromeApp 'app_v1'
 
+task 'chrometest', ->
+  vendor ->
+    build ->
+      # The v2 Chrome App API isn't supported yet.
+      buildChromeApp 'app_v1', ->
+        testChromeApp()
 
 build = (callback) ->
   commands = []
@@ -126,7 +133,19 @@ vendor = (callback) ->
   async.forEachSeries downloads, download, ->
     callback() if callback
 
-chromeApp = (manifestFile, callback) ->
+testChromeApp = (callback) ->
+  # Clean up the profile.
+  fs.mkdirSync 'test/chrome_profile' unless fs.existsSync 'test/chrome_profile'
+
+  command = "\"#{chromeCommand()}\" --load-extension=test/chrome_app " +
+      '--user-data-dir=test/chrome_profile --no-default-browser-check ' +
+      '--no-first-run --no-service-autorun --disable-default-apps ' +
+      '--homepage=about:blank --v=-1'
+
+  run command, ->
+    callback() if callback
+
+buildChromeApp = (manifestFile, callback) ->
   unless fs.existsSync 'test/chrome_app/test'
     fs.mkdirSync 'test/chrome_app/test'
   unless fs.existsSync 'test/chrome_app/node_modules'
@@ -151,6 +170,20 @@ chromeApp = (manifestFile, callback) ->
     commands.push "cp -r #{link[0]} #{path.dirname(link[1])}"
   async.forEachSeries commands, run, ->
     callback() if callback
+
+chromeCommand = ->
+  paths = [
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+    '/Applications/Chromium.app/MacOS/Contents/Chromium',
+  ]
+  for path in paths
+    return path if fs.existsSync path
+
+  if 'process.platform' is 'win32'
+    'chrome'
+  else
+    'google-chrome'
 
 tokens = (callback) ->
   TokenStash = require './test/js/token_stash.js'
