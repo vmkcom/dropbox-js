@@ -126,12 +126,20 @@ class Dropbox.Xhr
   #
   # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
   #   used to sign the request
+  # @param {Boolean} cacheFriendly if true, the signing process choice will be
+  #   biased towards allowing the HTTP cache to work; by default, the choice
+  #   attempts to avoid the CORS preflight request whenever possible
   # @return {Dropbox.Xhr} this, for easy call chaining
-  signWithOauth: (oauth) ->
-    if Dropbox.Xhr.ieXdr or (Dropbox.Xhr.doesPreflight and (not @preflight))
+  signWithOauth: (oauth, cacheFriendly) ->
+    if Dropbox.Xhr.ieXdr
       @addOauthParams oauth
-    else
+    else if @preflight or !Dropbox.Xhr.doesPreflight
       @addOauthHeader oauth
+    else
+      if @isGet and cacheFriendly
+        @addOauthHeader oauth
+      else
+        @addOauthParams oauth
 
   # Ammends the request parameters to include an OAuth signature.
   #

@@ -154,6 +154,26 @@ buildClientTests = (clientKeys) ->
         expect(rawUserInfo).to.have.property 'uid'
         done()
 
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'uses Authorization headers', (done) ->
+        @client.getUserInfo httpCache: true, (error, userInfo, rawUserInfo) =>
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+            expect(@xhr.url).to.contain 'oauth_nonce'
+          else
+            expect(@xhr.headers).to.have.key 'Authorization'
+
+          expect(error).to.equal null
+          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+          expect(userInfo.uid).to.equal clientKeys.uid
+          expect(rawUserInfo).not.to.be.instanceOf Dropbox.UserInfo
+          expect(rawUserInfo).to.have.property 'uid'
+          done()
+
   describe '#mkdir', ->
     afterEach (done) ->
       return done() unless @newFolder
@@ -317,6 +337,27 @@ buildClientTests = (clientKeys) ->
           @callbackCalled = true
           expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
           done() if @listenerXhr
+
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'reads a text file using Authorization headers', (done) ->
+        @client.readFile @textFile, httpCache: true, (error, data, stat) =>
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+            expect(@xhr.url).to.contain 'oauth_nonce'
+          else
+            expect(@xhr.headers).to.have.key 'Authorization'
+
+          expect(error).to.equal null
+          expect(data).to.equal @textFileData
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @textFile
+            expect(stat.isFile).to.equal true
+          done()
 
   describe '#writeFile', ->
     afterEach (done) ->
@@ -747,6 +788,31 @@ buildClientTests = (clientKeys) ->
           expect(error.status).to.equal 404
         done()
 
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'retrieves a Stat for a file using Authorization headers', (done) ->
+        @client.stat @textFile, httpCache: true, (error, stat) =>
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+            expect(@xhr.url).to.contain 'oauth_nonce'
+          else
+            expect(@xhr.headers).to.have.key 'Authorization'
+
+          expect(error).to.equal null
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @textFile
+          expect(stat.isFile).to.equal true
+          expect(stat.versionTag).to.equal @textFileTag
+          expect(stat.size).to.equal @textFileData.length
+          if clientKeys.sandbox
+            expect(stat.inAppFolder).to.equal true
+          else
+            expect(stat.inAppFolder).to.equal false
+          done()
+
   describe '#readdir', ->
     it 'retrieves a Stat and entries for a folder', (done) ->
       @client.readdir @testFolder, (error, entries, dir_stat, entry_stats) =>
@@ -765,6 +831,37 @@ buildClientTests = (clientKeys) ->
         expect(entry_stats[0].path).not.to.equal @testFolder
         expect(entry_stats[0].path).to.have.string @testFolder
         done()
+
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'retrieves a folder Stat and entries using Authorization', (done) ->
+        @client.readdir @testFolder, httpCache: true,
+            (error, entries, dir_stat, entry_stats) =>
+              if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+                expect(@xhr.url).to.contain 'oauth_nonce'
+              else
+                expect(@xhr.headers).to.have.key 'Authorization'
+
+              expect(error).to.equal null
+              expect(entries).to.be.ok
+              expect(entries).to.have.length 2
+              expect(entries[0]).to.be.a 'string'
+              expect(entries[0]).not.to.have.string '/'
+              expect(entries[0]).to.match(
+                  /^(test-binary-image.png)|(test-file.txt)$/)
+              expect(dir_stat).to.be.instanceOf Dropbox.Stat
+              expect(dir_stat.path).to.equal @testFolder
+              expect(dir_stat.isFolder).to.equal true
+              expect(entry_stats).to.be.ok
+              expect(entry_stats).to.have.length 2
+              expect(entry_stats[0]).to.be.instanceOf Dropbox.Stat
+              expect(entry_stats[0].path).not.to.equal @testFolder
+              expect(entry_stats[0].path).to.have.string @testFolder
+              done()
 
   describe '#history', ->
     it 'gets a list of revisions', (done) ->
@@ -788,6 +885,27 @@ buildClientTests = (clientKeys) ->
           expect(error.status).to.be.within 400, 499
         expect(versions).not.to.be.ok
         done()
+
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'gets a list of revisions using Authorization headers', (done) ->
+        @client.history @textFile, httpCache: true, (error, versions) =>
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+            expect(@xhr.url).to.contain 'oauth_nonce'
+          else
+            expect(@xhr.headers).to.have.key 'Authorization'
+
+          expect(error).to.equal null
+          expect(versions).to.have.length 1
+          expect(versions[0]).to.be.instanceOf Dropbox.Stat
+          expect(versions[0].path).to.equal @textFile
+          expect(versions[0].size).to.equal @textFileData.length
+          expect(versions[0].versionTag).to.equal @textFileTag
+          done()
 
   describe '#copy', ->
     afterEach (done) ->
@@ -972,6 +1090,27 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(matches).to.have.length 1
         done()
+
+    describe 'with httpCache', ->
+      beforeEach ->
+        @xhr = null
+        @client.onXhr.addListener (xhr) =>
+          @xhr = xhr
+
+      it 'locates the test folder using Authorize headers', (done) ->
+        namePattern = @testFolder.substring 5
+        @client.search '/', namePattern, httpCache: true, (error, matches) =>
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+            expect(@xhr.url).to.contain 'oauth_nonce'
+          else
+            expect(@xhr.headers).to.have.key 'Authorization'
+
+          expect(error).to.equal null
+          expect(matches).to.have.length 1
+          expect(matches[0]).to.be.instanceOf Dropbox.Stat
+          expect(matches[0].path).to.equal @testFolder
+          expect(matches[0].isFolder).to.equal true
+          done()
 
   describe '#makeUrl', ->
     describe 'for a short Web URL', ->

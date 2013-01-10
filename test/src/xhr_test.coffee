@@ -100,28 +100,53 @@ describe 'Dropbox.Xhr', ->
       it 'adds an Authorization header', ->
         expect(@xhr.headers).to.have.property 'Authorization'
 
-    describe '#signWithOauth for a request that does not need preflight', ->
-      beforeEach ->
-        @xhr.signWithOauth @oauth
+    describe '#signWithOauth', ->
+      describe 'for a request that does not need preflight', ->
+        beforeEach ->
+          @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.doesPreflight
-        it 'uses addOauthParams', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
-      else
-        it 'uses addOauthHeader in IE / node.js', ->
-          expect(@xhr.headers).to.have.property 'Authorization'
+        if Dropbox.Xhr.doesPreflight
+          it 'uses addOauthParams', ->
+            expect(@xhr.params).to.have.property 'oauth_signature'
+        else
+          it 'uses addOauthHeader in node.js', ->
+            expect(@xhr.headers).to.have.property 'Authorization'
 
-    describe '#signWithOauth for a request that needs preflight', ->
-      beforeEach ->
-        @xhr.setHeader 'Range', 'bytes=0-1000'
-        @xhr.signWithOauth @oauth
+      describe 'for a request that needs preflight', ->
+        beforeEach ->
+          @xhr.setHeader 'Range', 'bytes=0-1000'
+          @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
-        it 'uses addOauthParams in IE', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
-      else
-        it 'uses addOauthHeader', ->
-          expect(@xhr.headers).to.have.property 'Authorization'
+        if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
+          it 'uses addOauthParams in IE', ->
+            expect(@xhr.params).to.have.property 'oauth_signature'
+        else
+          it 'uses addOauthHeader', ->
+            expect(@xhr.headers).to.have.property 'Authorization'
+
+      describe 'with cacheFriendly: true', ->
+        describe 'for a request that does not need preflight', ->
+          beforeEach ->
+            @xhr.signWithOauth @oauth, true
+
+          if Dropbox.Xhr.ieXdr
+            it 'uses addOauthParams in IE', ->
+              expect(@xhr.params).to.have.property 'oauth_signature'
+          else
+            it 'uses addOauthHeader', ->
+              expect(@xhr.headers).to.have.property 'Authorization'
+
+        describe 'for a request that needs preflight', ->
+          beforeEach ->
+            @xhr.setHeader 'Range', 'bytes=0-1000'
+            @xhr.signWithOauth @oauth, true
+
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
+            it 'uses addOauthParams in IE', ->
+              expect(@xhr.params).to.have.property 'oauth_signature'
+          else
+            it 'uses addOauthHeader', ->
+              expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#setFileField', ->
       it 'throws an error', ->
@@ -275,28 +300,53 @@ describe 'Dropbox.Xhr', ->
       it 'adds an Authorization header', ->
         expect(@xhr.headers).to.have.property 'Authorization'
 
-    describe '#signWithOauth for a request that does not need preflight', ->
-      beforeEach ->
-        @xhr.signWithOauth @oauth
+    describe '#signWithOauth', ->
+      describe 'for a request that does not need preflight', ->
+        beforeEach ->
+          @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.doesPreflight
-        it 'uses addOauthParams', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
-      else
-        it 'uses addOauthHeader in node.js', ->
-          expect(@xhr.headers).to.have.property 'Authorization'
+        if Dropbox.Xhr.doesPreflight
+          it 'uses addOauthParams', ->
+            expect(@xhr.params).to.have.property 'oauth_signature'
+        else
+          it 'uses addOauthHeader in node.js', ->
+            expect(@xhr.headers).to.have.property 'Authorization'
 
-    describe '#signWithOauth for a request that needs preflight', ->
-      beforeEach ->
-        @xhr.setHeader 'Range', 'bytes=0-1000'
-        @xhr.signWithOauth @oauth
+      describe 'for a request that needs preflight', ->
+        beforeEach ->
+          @xhr.setHeader 'Range', 'bytes=0-1000'
+          @xhr.signWithOauth @oauth
 
-      if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
-        it 'uses addOauthParams in IE', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
-      else
-        it 'uses addOauthHeader', ->
-          expect(@xhr.headers).to.have.property 'Authorization'
+        if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
+          it 'uses addOauthParams in IE', ->
+            expect(@xhr.params).to.have.property 'oauth_signature'
+        else
+          it 'uses addOauthHeader', ->
+            expect(@xhr.headers).to.have.property 'Authorization'
+
+      describe 'with cacheFriendly: true', ->
+        describe 'for a request that does not need preflight', ->
+          beforeEach ->
+            @xhr.signWithOauth @oauth, true
+
+          if Dropbox.Xhr.doesPreflight
+            it 'uses addOauthParams', ->
+              expect(@xhr.params).to.have.property 'oauth_signature'
+          else
+            it 'uses addOauthHeader in node.js', ->
+              expect(@xhr.headers).to.have.property 'Authorization'
+
+        describe 'for a request that needs preflight', ->
+          beforeEach ->
+            @xhr.setHeader 'Range', 'bytes=0-1000'
+            @xhr.signWithOauth @oauth, true
+
+          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
+            it 'uses addOauthParams in IE', ->
+              expect(@xhr.params).to.have.property 'oauth_signature'
+          else
+            it 'uses addOauthHeader', ->
+              expect(@xhr.headers).to.have.property 'Authorization'
 
     describe '#setFileField with a String', ->
       beforeEach ->

@@ -200,15 +200,29 @@ class Dropbox.Client
 
   # Retrieves information about the logged in user.
   #
+  # @param {?Object} options the advanced settings below; for the default
+  #   settings, skip the argument or pass null
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?Dropbox.UserInfo, ?Object)} callback
   #   called with the result of the /account/info HTTP request; if the call
   #   succeeds, the second parameter is a Dropbox.UserInfo instance, the
   #   third parameter is the parsed JSON data behind the Dropbox.UserInfo
   #   instance, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
-  getUserInfo: (callback) ->
+  getUserInfo: (options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    httpCache = false
+    if options and options.httpCache
+      httpCache = true
+
     xhr = new Dropbox.Xhr 'GET', @urls.accountInfo
-    xhr.signWithOauth @oauth
+    xhr.signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, userData) ->
       callback error, Dropbox.UserInfo.parse(userData), userData
 
@@ -246,6 +260,10 @@ class Dropbox.Client
   #   retrieved; if the length option is not present, the bytes between
   #   "start" and the file's end will be read; by default, the entire
   #   file is read
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat)} callback
   #   called with the result of the /files (GET) HTTP request; the second
   #   parameter is the contents of the file, the third parameter is a
@@ -260,6 +278,7 @@ class Dropbox.Client
     params = {}
     responseType = null
     rangeHeader = null
+    httpCache = false
     if options
       if options.versionTag
         params.rev = options.versionTag
@@ -284,8 +303,11 @@ class Dropbox.Client
       else if options.start?
         rangeHeader = "bytes=#{options.start}-"
 
+      httpCache = true if options.httpCache
+
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth).setResponseType(responseType)
+    xhr.setParams(params).signWithOauth(@oauth, httpCache)
+    xhr.setResponseType(responseType)
     xhr.setHeader 'Range', rangeHeader if rangeHeader
     @dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.Stat.parse(metadata)
@@ -478,6 +500,10 @@ class Dropbox.Client
   #   folder's contents, the call will fail with a 304 (Contents not changed)
   #   error code; a folder's version identifier can be obtained from the
   #   versionTag attribute of a Dropbox.Stat instance describing it
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?Dropbox.Stat, ?Array<Dropbox.Stat>)}
   #   callback called with the result of the /metadata HTTP request; if the
   #   call succeeds, the second parameter is a Dropbox.Stat instance
@@ -492,6 +518,7 @@ class Dropbox.Client
       options = null
 
     params = {}
+    httpCache = false
     if options
       if options.version?
         params.rev = options.version
@@ -503,11 +530,13 @@ class Dropbox.Client
           params.file_limit = options.readDir.toString()
       if options.cacheHash
         params.hash = options.cacheHash
+      if options.httpCache
+        httpCache = true
     params.include_deleted ||= 'false'
     params.list ||= 'false'
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Xhr 'GET', "#{@urls.metadata}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth @oauth
+    xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, metadata) ->
       stat = Dropbox.Stat.parse metadata
       if metadata?.contents
@@ -537,6 +566,10 @@ class Dropbox.Client
   #   instead of returning the contents; a folder's version identifier can be
   #   obtained from the versionTag attribute of a Dropbox.Stat instance
   #   describing it
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?Array<String>, ?Dropbox.Stat,
   #   ?Array<Dropbox.Stat>)} callback called with the result of the /metadata
   #   HTTP request; if the call succeeds, the second parameter is an array
@@ -556,6 +589,10 @@ class Dropbox.Client
         statOptions.readDir = options.limit
       if options.versionTag
         statOptions.versionTag = options.versionTag
+      if options.removed or options.deleted
+        statOptions.removed = options.removed or options.deleted
+      if options.httpCache
+        statOptions.httpCache = options.httpCache
     @stat path, statOptions, (error, stat, entry_stats) ->
       if entry_stats
         entries = (entry_stat.name for entry_stat in entry_stats)
@@ -635,6 +672,10 @@ class Dropbox.Client
   #   settings, skip the argument or pass null
   # @option options {Number} limit if specified, the call will return at most
   #   this many versions
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
   #   with the result of the /revisions HTTP request; if the call succeeds,
   #   the second parameter is an array with one Dropbox.Stat instance per
@@ -646,11 +687,15 @@ class Dropbox.Client
       options = null
 
     params = {}
-    if options and options.limit?
-      params.rev_limit = options.limit
+    httpCache = false
+    if options
+      if options.limit?
+        params.rev_limit = options.limit
+      if options.httpCache
+        httpCache = true
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.revisions}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth)
+    xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, versions) ->
       if versions
         stats = (Dropbox.Stat.parse(metadata) for metadata in versions)
@@ -790,6 +835,10 @@ class Dropbox.Client
   # @option options {Boolean} deleted alias for "removed" that matches the HTTP
   #   API; using this alias is not recommended, because it may cause confusion
   #   with JavaScript's delete operation
+  # @option options {Boolean} httpCache if true, the API request will be set to
+  #   allow HTTP caching to work; by default, requests are set up to avoid
+  #   CORS preflights; setting this option can make sense when making the same
+  #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
   #   with the result of the /search HTTP request; if the call succeeds, the
   #   second parameter is an array with one Dropbox.Stat instance per search
@@ -801,14 +850,17 @@ class Dropbox.Client
       options = null
 
     params = { query: namePattern }
+    httpCache = false
     if options
       if options.limit?
         params.file_limit = options.limit
       if options.removed or options.deleted
         params.include_deleted = true
+      if options.httpCache
+        httpCache = true
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.search}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth)
+    xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, results) ->
       if results
         stats = (Dropbox.Stat.parse(metadata) for metadata in results)
