@@ -12,7 +12,7 @@ This section describes how to get the library hooked up into your application.
 To get started right away, place this snippet in your page's `<head>`.
 
 ```html
-<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.8.0/dropbox.min.js">
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.8.1/dropbox.min.js">
 </script>
 ```
 

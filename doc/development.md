@@ -191,5 +191,5 @@ git push origin dbXYZ
 
 1. Go to your cdnjs for on GitHub and open a pull request. Use these examples
 of accepted
-[major release pull request](https://github.com/cdnjs/cdnjs/pull/580) and
-[minor release pull request](https://github.com/cdnjs/cdnjs/pull/592).
+[major release pull request](https://github.com/cdnjs/cdnjs/pull/735) and
+[minor release pull request](https://github.com/cdnjs/cdnjs/pull/753).
