@@ -38,7 +38,7 @@ Implementations should call the `credentials` and `setCredentials` methods on
 the client to control the OAuth process.
 
 See the
-[Dropbox.Drivers.Redirect source](https://github.com/dropbox/dropbox-js/blob/master/src/drivers.coffee)
+[Dropbox.Drivers.Chrome source](https://github.com/dropbox/dropbox-js/blob/master/src/drivers/chrome.coffee)
 for a sample implementation of `onAuthStateChange`.
 
 
@@ -159,7 +159,7 @@ authorization.
 
 To use this driver, first add the following files to your extension.
 
-* the [receiver script](https://github.com/dropbox/dropbox-js/blob/master/test/src/chrome_oauth_receiver.coffee);
+* the [receiver script](https://github.com/dropbox/dropbox-js/blob/master/test/src/helpers/chrome_oauth_receiver.coffee);
 the file is both valid JavaScript and valid CoffeeScript
 * the [receiver page](https://github.com/dropbox/dropbox-js/blob/master/test/html/chrome_oauth_receiver.html);
 change the page to reflect the paths to `dropbox.js` and to the receiver script

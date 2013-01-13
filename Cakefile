@@ -19,8 +19,11 @@ task 'test', ->
     build ->
       ssl_cert ->
         tokens ->
+          test_cases = glob.async 'test/js/**/*_test.js'
+          test_cases.sort()  # Consistent test case order.
           run 'node_modules/mocha/bin/mocha --colors --slow 200 ' +
-              '--timeout 10000 --require test/js/helper.js test/js/*test.js'
+              "--timeout 10000 --require test/js/helpers/setup.js " +
+              test_cases.join(' ')
 
 task 'webtest', ->
   vendor ->
@@ -68,7 +71,7 @@ build = (callback) ->
 
   # Ignoring ".coffee" when sorting.
   # We want "driver.coffee" to sort before "driver-browser.coffee"
-  source_files = glob.sync 'src/*.coffee'
+  source_files = glob.sync 'src/**/*.coffee'
   source_files.sort (a, b) ->
     a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
 
@@ -80,13 +83,19 @@ build = (callback) ->
   # Minify the javascript, for browser distribution.
   commands.push 'node_modules/uglify-js/bin/uglifyjs --compress --mangle ' +
                 '--output lib/dropbox.min.js lib/dropbox.js'
-  commands.push 'node_modules/coffee-script/bin/coffee --output test/js ' +
-                '--compile test/src/*.coffee'
+
+  # Tests are supposed to be independent, so the build order doesn't matter.
+  test_dirs = glob.sync 'test/src/**/'
+  for test_dir in test_dirs
+    out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
+    test_files = glob.sync path.join(test_dir, '*.coffee')
+    commands.push 'node_modules/coffee-script/bin/coffee ' +
+                  "--output #{out_dir} --compile #{test_files.join(' ')}"
   async.forEachSeries commands, run, ->
     callback() if callback
 
 webtest = (callback) ->
-  webFileServer = require './test/js/web_file_server.js'
+  webFileServer = require './test/js/helpers/web_file_server.js'
   if 'BROWSER' of process.env
     if process.env['BROWSER'] is 'false'
       url = webFileServer.testUrl()

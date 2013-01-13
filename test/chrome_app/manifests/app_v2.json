@@ -15,7 +15,7 @@
   "app": {
     "background": {
       "scripts": [
-        "test/js/chrome_app_background.js"
+        "test/js/helpers/chrome_app_background.js"
       ]
     }
   }
