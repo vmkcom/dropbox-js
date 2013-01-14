@@ -55,7 +55,7 @@ class Dropbox.Client
     @driver = driver
     @
 
-  # @property {Dropbox.EventSource<Dropbox.Xhr>} cancelable event fired every
+  # @property {Dropbox.EventSource<Dropbox.Xhr>} fires cancelable events every
   #   time when a network request to the Dropbox API server is about to be
   #   sent; if the event is canceled by returning a falsey value from a
   #   listener, the network request is silently discarded; whenever possible,
@@ -64,14 +64,14 @@ class Dropbox.Client
   #   API is in flux
   onXhr: null
 
-  # @property {Dropbox.EventSource<Dropbox.ApiError>} non-cancelable event
-  #   fired every time when a network request to the Dropbox API server results
-  #   in an error
+  # @property {Dropbox.EventSource<Dropbox.ApiError>} fires non-cancelable
+  #   events every time when a network request to the Dropbox API server
+  #   results in an error
   onError: null
 
-  # @property {Dropbox.EventSource<Dropbox.Client>} non-cancelable event fired
-  #   every time the authState property changes; this can be used to update UI
-  #   state
+  # @property {Dropbox.EventSource<Dropbox.Client>} fires non-cancelable events
+  #   every time this client's authState property changes; this can be used to
+  #   update UI state
   onAuthStateChange: null
 
   # The authenticated user's Dropbx user ID.

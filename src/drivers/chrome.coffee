@@ -40,15 +40,18 @@ if chrome?
 
 # OAuth driver specialized for Chrome apps and extensions.
 class Dropbox.Drivers.Chrome
-  # @property {Chrome.Event<>, Dropbox.EventSource<>} fires non-cancelable
-  #   events when Dropbox.Drivers.Chrome#sendMessage is called
+  # @property {Chrome.Event<Object>, Dropbox.EventSource<Object>} fires
+  #   non-cancelable events when Dropbox.Drivers.Chrome#sendMessage is called;
+  #   the message is a parsed JSON object
   onMessage: DropboxChromeOnMessage
 
   # Sends a message across the Chrome extension / application.
   #
-  # When a message is sent, the listeners registered to
+  # This causes Dropbox.Drivers.Chrome#onMessage to fire an event containing
+  # the message
   #
-  # @param {Object} message the message to be sent
+  # @param {Object} message an object that can be serialized to JSON
+  # @return unspecified; may vary across platforms and dropbox.js versions
   sendMessage: DropboxChromeSendMessage
 
   # Expans an URL relative to the Chrome extension / application root.
