@@ -19,7 +19,7 @@ task 'test', ->
     build ->
       ssl_cert ->
         tokens ->
-          test_cases = glob.async 'test/js/**/*_test.js'
+          test_cases = glob.sync 'test/js/**/*_test.js'
           test_cases.sort()  # Consistent test case order.
           run 'node_modules/mocha/bin/mocha --colors --slow 200 ' +
               "--timeout 10000 --require test/js/helpers/setup.js " +
