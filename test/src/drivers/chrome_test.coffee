@@ -71,10 +71,10 @@ describe 'Dropbox.Drivers.Chrome', ->
             expect(userInfo).to.be.instanceOf Dropbox.UserInfo
             # Follow-up authenticate() should use stored credentials.
             client.reset()
-            authDriver.doAuthorize = (authUrl, token, tokenSecret, callback) ->
-              assert false,
-                     'Stored credentials not used in second authenticate()'
-            client.authenticate (error, client) ->
+            client.authenticate interactive: false, (error, client) ->
+              expect(error).to.equal null
+              expect(client.authState).to.equal Dropbox.Client.DONE
+              expect(client.isAuthenticated()).to.equal true
               # Verify that we can do API calls.
               client.getUserInfo (error, userInfo) ->
                 expect(error).to.equal null

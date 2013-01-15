@@ -324,11 +324,11 @@ describe 'Dropbox.Drivers.Popup', ->
 
           # Follow-up authenticate() should restart the process.
           client.reset()
-          authDriver.doAuthorize = (authUrl, token, tokenSecret, callback) ->
-            client.reset()
+          client.authenticate interactive: false, (error, client) ->
+            expect(error).to.equal null
+            expect(client.authState).to.equal Dropbox.Client.RESET
+            expect(client.isAuthenticated()).to.equal false
             done()
-          client.authenticate ->
-            assert false, 'The second authenticate() should not complete.'
 
     it 'should work with a URL fragment and rememberUser: true', (done) ->
       return done() if @node_js or @chrome_app
@@ -352,10 +352,10 @@ describe 'Dropbox.Drivers.Popup', ->
 
             # Follow-up authenticate() should use stored credentials.
             client.reset()
-            authDriver.doAuthorize = (authUrl, token, tokenSecret, callback) ->
-              assert false,
-                     'Stored credentials not used in second authenticate()'
-            client.authenticate (error, client) ->
+            client.authenticate interactive: false, (error, client) ->
+              expect(error).to.equal null
+              expect(client.authState).to.equal Dropbox.Client.DONE
+              expect(client.isAuthenticated()).to.equal true
               # Verify that we can do API calls.
               client.getUserInfo (error, userInfo) ->
                 expect(error).to.equal null
