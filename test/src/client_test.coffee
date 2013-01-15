@@ -1421,6 +1421,39 @@ buildClientTests = (clientKeys) ->
         expect(client).to.equal @client
         done()
 
+    describe 'with interactive: false', ->
+      beforeEach ->
+        @client.authDriver authenticate: ->
+          assert false, 'The OAuth driver should not be invoked'
+
+      it 'stops at RESET with interactive: false', (done) ->
+        @client.reset()
+        @client.authenticate interactive: false, (error, client) ->
+          expect(error).to.equal null
+          expect(client.authState).to.equal Dropbox.Client.RESET
+          done()
+
+      it 'stops at REQUEST with interactive: false', (done) ->
+        credentials = @client.credentials()
+        credentials.token = 'should_not_be_used'
+        credentials.authState = Dropbox.Client.REQUEST
+        @client.setCredentials credentials
+        @client.authenticate interactive: false, (error, client) ->
+          expect(error).to.equal null
+          expect(client.authState).to.equal Dropbox.Client.REQUEST
+          done()
+
+      it 'stops at AUTHORIZED with interactive: false', (done) ->
+        credentials = @client.credentials()
+        credentials.token = 'should_not_be_used'
+        credentials.authState = Dropbox.Client.AUTHORIZED
+        @client.setCredentials credentials
+        @client.authenticate interactive: false, (error, client) ->
+          expect(error).to.equal null
+          expect(client.authState).to.equal Dropbox.Client.AUTHORIZED
+          done()
+
+
 describe 'Dropbox.Client', ->
   describe 'with full Dropbox access', ->
     buildClientTests testFullDropboxKeys
