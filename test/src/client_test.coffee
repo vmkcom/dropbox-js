@@ -1459,11 +1459,29 @@ describe 'Dropbox.Client', ->
               expect(authStateChanges).to.deep.equal(['signOff',
                   Dropbox.Client.SIGNED_OFF])
               # Verify that we can't use the old token in API calls.
+              # We have an invalid token, so we also test 401 handling.
               invalidClient = new Dropbox.Client invalidCredentials
+              invalidClient.onAuthStateChange.addListener (client) ->
+                authStateChanges.push client.authState
+              authStateChanges = ['invalidClient']
+              invalidClient.authDriver onAuthStateChange: (client, callback) ->
+                expect(authStateChanges).to.deep.equal(['invalidClient',
+                    Dropbox.Client.ERROR])
+                authStateChanges.push 'driver-' + client.authState
+                callback()
+              invalidClient.onError.addListener (client) ->
+                expect(authStateChanges).to.deep.equal(['invalidClient',
+                    Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR])
+                authStateChanges.push 'onError'
               invalidClient.getUserInfo (error, userInfo) ->
                 expect(error).to.be.ok
                 unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do error codes.
                   expect(error.status).to.equal 401
+                  expect(invalidClient.authError).to.equal error
+                  expect(invalidClient.isAuthenticated()).to.equal false
+                  expect(authStateChanges).to.deep.equal(['invalidClient',
+                      Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR,
+                      'onError'])
                 # Verify that the same client can be used for a 2nd signin.
                 authStateChanges = ['authorize2']
                 client.authenticate (error, client) ->

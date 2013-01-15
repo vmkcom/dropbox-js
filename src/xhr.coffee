@@ -82,8 +82,11 @@ class Dropbox.Xhr
   #   request; null until Dropbox.Xhr#prepare is called
   xhr: null
 
-  # @property {?function(Dropbox.ApiError)} if the XHR fails and this
-  #   is non-null, it will be called with the Xhr object as an argument
+  # @property {?function(Dropbox.ApiError, function(Dropbox.ApiError))} if the
+  #   XHR fails and this is non-null, it will be called with the error as its
+  #   first argument; the function is responsible for calling its 2nd argument
+  #   and passing it the ApiError, otherwise the Xhr's callback will not be
+  #   called
   onError: null
 
   # Sets the parameters (form field values) that will be sent with the request.
@@ -432,8 +435,10 @@ class Dropbox.Xhr
 
     if @xhr.status < 200 or @xhr.status >= 300
       apiError = new Dropbox.ApiError @xhr, @method, @url
-      @onError apiError, @onErrorContext if @onError
-      @callback apiError
+      if @onError
+        @onError apiError, @callback
+      else
+        @callback apiError
       return true
 
     metadataJson = @xhr.getResponseHeader 'x-dropbox-metadata'

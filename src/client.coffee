@@ -32,7 +32,7 @@ class Dropbox.Client
     @onXhr = new Dropbox.EventSource cancelable: true
     @onError = new Dropbox.EventSource
     @onAuthStateChange = new Dropbox.EventSource
-    @xhrOnErrorHandler = (error) => @handleXhrError error
+    @xhrOnErrorHandler = (error, callback) => @handleXhrError error, callback
 
     @oauth = new Dropbox.Oauth options
     @driver = null
@@ -189,7 +189,7 @@ class Dropbox.Client
       @reset()
       @authState = DropboxClient.SIGNED_OFF
       @onAuthStateChange.dispatch @
-      if @driver.onAuthStateChange
+      if @driver and @driver.onAuthStateChange
         @driver.onAuthStateChange @, ->
           callback error
       else
@@ -1226,9 +1226,21 @@ class Dropbox.Client
   # instances set up by this client.
   #
   # @param {Dropbox.ApiError} error the XHR error
+  # @param {function()} callback called when this error handler is done
   # @return {null}
-  handleXhrError: (error) ->
+  handleXhrError: (error, callback) ->
+    if error.status is 401 and @authState is DropboxClient.DONE
+      # The user's token became invalid.
+      @authError = error
+      @authState = DropboxClient.ERROR
+      @onAuthStateChange.dispatch @
+      if @driver and @driver.onAuthStateChange
+        @driver.onAuthStateChange @, =>
+          @onError.dispatch error
+          callback error
+        return null
     @onError.dispatch error
+    callback error
     null
 
   # @private

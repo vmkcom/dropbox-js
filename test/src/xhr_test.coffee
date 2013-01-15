@@ -520,8 +520,14 @@ Content-Transfer-Encoding: binary\r
       @url = 'https://api.dropbox.com/1/oauth/request_token'
       @xhr = new Dropbox.Xhr 'POST', @url
       listenerError = null
-      @xhr.onError = (error) -> listenerError = error
+      xhrCallbackCalled = false
+      @xhr.onError = (error, callback) ->
+        expect(listenerError).to.equal null
+        expect(xhrCallbackCalled).to.equal false
+        listenerError = error
+        callback error
       @xhr.prepare().send (error, data) =>
+        xhrCallbackCalled = true
         expect(data).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'url'

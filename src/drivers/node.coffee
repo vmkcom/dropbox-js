@@ -76,7 +76,7 @@ class Dropbox.Drivers.NodeServer
     response.writeHead(200,
       {'Content-Length': closeHtml.length, 'Content-Type': 'text/html' })
     response.write closeHtml
-    response.end
+    response.end()
 
   # Renders the favicon file.
   sendFavicon: (response) ->
@@ -84,4 +84,4 @@ class Dropbox.Drivers.NodeServer
       response.writeHead(200,
         { 'Content-Length': data.length, 'Content-Type': 'image/x-icon' })
       response.write data
-      response.end
+      response.end()
