@@ -32,6 +32,7 @@ class Dropbox.Client
     @onXhr = new Dropbox.EventSource cancelable: true
     @onError = new Dropbox.EventSource
     @onAuthStateChange = new Dropbox.EventSource
+    @xhrOnErrorHandler = (error) => @handleXhrError error
 
     @oauth = new Dropbox.Oauth options
     @driver = null
@@ -1211,12 +1212,24 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the native XHR object used to make the request
   dispatchXhr: (xhr, callback) ->
     xhr.setCallback callback
-    xhr.onError = @onError
+    xhr.onError = @xhrOnErrorHandler
     xhr.prepare()
     nativeXhr = xhr.xhr
     if @onXhr.dispatch xhr
       xhr.send()
     nativeXhr
+
+  # Called when an XHR issued by this client fails.
+  #
+  # @private
+  # This is a low-level method set as the onError handler for Dropbox.Xhr
+  # instances set up by this client.
+  #
+  # @param {Dropbox.ApiError} error the XHR error
+  # @return {null}
+  handleXhrError: (error) ->
+    @onError.dispatch error
+    null
 
   # @private
   # @return {String} the URL to the default value for the "server" option

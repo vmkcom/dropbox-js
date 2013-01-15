@@ -519,9 +519,8 @@ Content-Transfer-Encoding: binary\r
     it 'reports errors correctly when onError is set', (done) ->
       @url = 'https://api.dropbox.com/1/oauth/request_token'
       @xhr = new Dropbox.Xhr 'POST', @url
-      @xhr.onError = new Dropbox.EventSource
       listenerError = null
-      @xhr.onError.addListener (error) -> listenerError = error
+      @xhr.onError = (error) -> listenerError = error
       @xhr.prepare().send (error, data) =>
         expect(data).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError

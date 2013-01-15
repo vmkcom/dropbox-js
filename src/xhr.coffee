@@ -82,10 +82,8 @@ class Dropbox.Xhr
   #   request; null until Dropbox.Xhr#prepare is called
   xhr: null
 
-  # @property {?Dropbox.EventSource<Dropbox.ApiError>} if the XHR fails and
-  #   this property is set, the Dropbox.ApiError instance that will be passed
-  #   to the callback will be dispatched through the Dropbox.EventSource; the
-  #   EventSource should be configured for non-cancelable events
+  # @property {?function(Dropbox.ApiError)} if the XHR fails and this
+  #   is non-null, it will be called with the Xhr object as an argument
   onError: null
 
   # Sets the parameters (form field values) that will be sent with the request.
@@ -434,7 +432,7 @@ class Dropbox.Xhr
 
     if @xhr.status < 200 or @xhr.status >= 300
       apiError = new Dropbox.ApiError @xhr, @method, @url
-      @onError.dispatch apiError if @onError
+      @onError apiError, @onErrorContext if @onError
       @callback apiError
       return true
 
