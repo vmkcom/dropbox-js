@@ -1421,9 +1421,15 @@ buildClientTests = (clientKeys) ->
         expect(client).to.equal @client
         done()
 
+    it 'complains if called when the client is in ERROR', ->
+      @client.authDriver doAuthorize: ->
+        assert false, 'The OAuth driver should not be invoked'
+      @client.authState = Dropbox.Client.ERROR
+      expect(=> @client.authenticate null).to.throw Error, /error.*reset/i
+
     describe 'with interactive: false', ->
       beforeEach ->
-        @client.authDriver authenticate: ->
+        @client.authDriver doAuthorize: ->
           assert false, 'The OAuth driver should not be invoked'
 
       it 'stops at RESET with interactive: false', (done) ->

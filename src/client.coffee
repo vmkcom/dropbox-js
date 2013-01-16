@@ -116,7 +116,10 @@ class Dropbox.Client
       interactive = true
 
     unless @driver or @authState is DropboxClient.DONE
-      throw new Error "Call authDriver to set an authentication driver"
+      throw new Error 'Call authDriver to set an authentication driver'
+
+    if @authState is DropboxClient.ERROR
+      throw new Error 'Client got in an error state. Call reset() to reuse it!'
 
     oldAuthState = null
     # Advances the authentication FSM by one step.
