@@ -1,1 +1,1 @@
-mocha.setup ui: 'bdd', slow: 150, timeout: 10000
+mocha.setup ui: 'bdd', slow: 150, timeout: 10000, bail: false

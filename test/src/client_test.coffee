@@ -308,7 +308,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @textFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          done() if @listenerXhr
+          done()
 
       it 'calls the listener before firing the XHR', (done) ->
         @client.onXhr.addListener (xhr) =>
@@ -323,7 +323,7 @@ buildClientTests = (clientKeys) ->
           expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          done() if @listenerXhr
+          done()
 
       it 'does not send the XHR if the listener cancels the event', (done) ->
         @client.onXhr.addListener (xhr) =>
@@ -336,7 +336,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @textFile, (error, data, stat) =>
           @callbackCalled = true
           expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
-          done() if @listenerXhr
+          done()
 
     describe 'with httpCache', ->
       beforeEach ->

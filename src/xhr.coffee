@@ -555,18 +555,25 @@ class Dropbox.Xhr
   # Handles the XDomainRequest onload event. (IE 8, 9)
   onXdrLoad: ->
     text = @xhr.responseText
+    if @wantHeaders
+      headers = 'content-type': @xhr.contentType
+    else
+      headers = undefined
+
     switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
-       @callback null, Dropbox.Xhr.urlDecode(text)
+       @callback null, Dropbox.Xhr.urlDecode(text), undefined, headers
      when 'application/json', 'text/javascript'
-       @callback null, JSON.parse(text)
+       @callback null, JSON.parse(text), undefined, headers
      else
-        @callback null, text
+        @callback null, text, undefined, headers
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   onXdrError: ->
     apiError = new Dropbox.ApiError @xhr, @method, @url
-    @onError.dispatch apiError if @onError
-    @callback apiError
+    if @onError
+      @onError apiError, @callback
+    else
+      @callback apiError
     return true
