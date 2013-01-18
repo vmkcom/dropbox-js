@@ -73,6 +73,7 @@ class Dropbox.Xhr
     @body = null
     @preflight = not (@isGet or (@method is 'POST'))
     @signed = false
+    @completed = false
     @responseType = null
     @callback = null
     @xhr = null
@@ -444,6 +445,11 @@ class Dropbox.Xhr
   onReadyStateChange: ->
     return true if @xhr.readyState isnt 4  # XMLHttpRequest.DONE is 4
 
+    # WebKit might fire this multiple times.
+    #   http://crbug.com/159827
+    return true if @completed
+    @completed = true
+
     if @xhr.status < 200 or @xhr.status >= 300
       apiError = new Dropbox.ApiError @xhr, @method, @url
       if @onError
@@ -554,6 +560,11 @@ class Dropbox.Xhr
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   onXdrLoad: ->
+    # WebKit fires onreadystatechange multiple times, might as well include the
+    # same fix in IE-specific code.
+    return true if @completed
+    @completed = true
+
     text = @xhr.responseText
     if @wantHeaders
       headers = 'content-type': @xhr.contentType
@@ -571,6 +582,11 @@ class Dropbox.Xhr
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   onXdrError: ->
+    # WebKit fires onreadystatechange multiple times, might as well include the
+    # same fix in IE-specific code.
+    return true if @completed
+    @completed = true
+
     apiError = new Dropbox.ApiError @xhr, @method, @url
     if @onError
       @onError apiError, @callback

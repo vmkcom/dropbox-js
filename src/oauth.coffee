@@ -132,7 +132,9 @@ class Dropbox.Oauth
   #
   # @return {String} the nonce to be used as the oauth_nonce parameter
   nonce: ->
-    Date.now().toString(36) + Math.random().toString(36)
+    # Nonces have to be unique for requests with the same timestamp.
+    #     http://tools.ietf.org/html/rfc5849#section-3.3
+    Math.random().toString(36)
 
   # Computes the signature for an OAuth request.
   #
