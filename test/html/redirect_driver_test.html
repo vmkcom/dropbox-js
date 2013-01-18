@@ -22,6 +22,10 @@
             } catch(e) {
               // IE doesn't support opener.postMessage for popups.
             }
+            try {
+              opener.Dropbox.Drivers.Popup.onMessage.dispatch(json);
+            } catch(e) {
+            }
             window.close();
           });
         }

@@ -322,11 +322,20 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
   # @param {function()} called when the received message matches the token
   listenForMessage: (token, callback) ->
     listener = (event) =>
-      match = @tokenRe.exec event.data.toString()
+      if event.data
+        # Message coming from postMessage.
+        data = event.data
+      else
+        # Message coming from Dropbox.EventSource.
+        data = event
+      match = @tokenRe.exec data
       if match and decodeURIComponent(match[2]) is token
+        token = null  # Avoid having this matched in the future.
         window.removeEventListener 'message', listener
+        Dropbox.Drivers.Popup.onMessage.removeListener listener
         callback()
     window.addEventListener 'message', listener, false
+    Dropbox.Drivers.Popup.onMessage.addListener listener
 
   # Communicates with the driver from the OAuth receiver page.
   @oauthReceiver: ->
@@ -339,4 +348,13 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
           opener.postMessage window.location.href, '*'
         catch e
           # IE 9 doesn't support opener.postMessage for popup windows.
-        window.close()
+        try
+          # postMessage doesn't work in IE, but direct object access does.
+          opener.Dropbox.Drivers.Popup.onMessage.dispatch(
+              window.location.href)
+        catch e
+          # Hopefully postMessage worked.
+      window.close()
+
+  # Works around postMessage failures on Internet Explorer.
+  @onMessage = new Dropbox.EventSource

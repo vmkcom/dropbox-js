@@ -210,16 +210,22 @@ describe 'Dropbox.Drivers.Redirect', ->
       return done() if @node_js or @chrome_app
       @timeout 30 * 1000  # Time-consuming because the user must click.
 
+      listenerCalled = false
       listener = (event) ->
-        expect(event.data).to.match(/^\[.*\]$/)
-        [error, credentials] = JSON.parse event.data
+        return if listenerCalled is true
+        listenerCalled = true
+        data = event.data or event
+        expect(data).to.match(/^\[.*\]$/)
+        [error, credentials] = JSON.parse data
         expect(error).to.equal null
         expect(credentials).to.have.property 'uid'
         expect(credentials.uid).to.be.a 'string'
         window.removeEventListener 'message', listener
+        Dropbox.Drivers.Popup.onMessage.removeListener listener
         done()
 
       window.addEventListener 'message', listener
+      Dropbox.Drivers.Popup.onMessage.addListener listener
       (new Dropbox.Drivers.Popup()).openWindow(
           '/test/html/redirect_driver_test.html')
 
