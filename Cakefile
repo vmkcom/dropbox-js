@@ -189,7 +189,7 @@ chromeCommand = ->
   for path in paths
     return path if fs.existsSync path
 
-  if 'process.platform' is 'win32'
+  if process.platform is 'win32'
     'chrome'
   else
     'google-chrome'

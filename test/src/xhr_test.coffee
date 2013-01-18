@@ -558,6 +558,20 @@ Content-Transfer-Encoding: binary\r
         done()
       xhr.prepare().send()
 
+    it 'processes data and headers correctly', (done) ->
+      xhr = new Dropbox.Xhr 'POST',
+                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr.addOauthParams @oauth
+      xhr.reportResponseHeaders()
+      xhr.prepare().send (error, data, metadata, headers) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+        expect(headers).to.have.property 'content-type'
+        expect(headers['content-type']).to.
+            equal 'application/x-www-form-urlencoded'
+        done()
+
     it 'sends Authorize headers correctly', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't set headers.
 
@@ -647,3 +661,20 @@ Content-Transfer-Encoding: binary\r
       decoded = Dropbox.Xhr.urlDecode('a%20%2Bx%28%29=%2Ab%27')
       expect(decoded['a +x()']).to.equal "*b'"
 
+  describe '#parseResponseHeaders', ->
+    it 'parses one header correctly', ->
+      headers = "Content-Type: 35225"
+      decoded = Dropbox.Xhr.parseResponseHeaders headers
+      expect(decoded).to.deep.equal 'content-type': '35225'
+
+    it 'parses multiple headers correctly', ->
+      headers =
+          """
+          Content-Type: 35225
+           s : t
+          diffic ULT: Random: value: with: colons
+          """
+      decoded = Dropbox.Xhr.parseResponseHeaders headers
+      expect(decoded).to.deep.equal(
+          'content-type': '35225', 's': 't',
+          'diffic ult': 'Random: value: with: colons')

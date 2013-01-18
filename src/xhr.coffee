@@ -58,7 +58,6 @@ class Dropbox.Xhr
   # Set to true if we think we can send ArrayBufferView objects via XHR.
   @sendArrayBufferView = DropboxXhrSendArrayBufferView
 
-
   # Sets up an AJAX request.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
@@ -68,6 +67,7 @@ class Dropbox.Xhr
   constructor: (@method, baseUrl) ->
     @isGet = @method is 'GET'
     @url = baseUrl
+    @wantHeaders = false
     @headers = {}
     @params = null
     @body = null
@@ -227,6 +227,17 @@ class Dropbox.Xhr
     @preflight = true
     @headers[headerName] = value
     @
+
+  # Requests that the response headers be reported to the callback.
+  #
+  # Response headers are not returned by default because the parsing is
+  # non-trivial and produces many intermediate strings.
+  #
+  # Response headers are not available on Internet Explorer 9 and below.
+  #
+  # @return {Dropbox.Xhr} this, for easy call chaining
+  reportResponseHeaders: ->
+    @wantHeaders = true
 
   # Simulates having an <input type="file"> being sent with the request.
   #
@@ -441,7 +452,17 @@ class Dropbox.Xhr
         @callback apiError
       return true
 
-    metadataJson = @xhr.getResponseHeader 'x-dropbox-metadata'
+    if @wantHeaders
+      allHeaders = @xhr.getAllResponseHeaders()
+      if allHeaders
+        headers = Dropbox.Xhr.parseResponseHeaders allHeaders
+      else
+        # Work around https://bugzilla.mozilla.org/show_bug.cgi?id=608735
+        headers = @guessResponseHeaders()
+      metadataJson = headers['x-dropbox-metadata']
+    else
+      headers = undefined
+      metadataJson = @xhr.getResponseHeader 'x-dropbox-metadata'
     if metadataJson?.length
       try
         metadata = JSON.parse metadataJson
@@ -481,23 +502,66 @@ class Dropbox.Xhr
     text = if @xhr.responseText? then @xhr.responseText else @xhr.response
     switch @xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         @callback null, Dropbox.Xhr.urlDecode(text), metadata
+         @callback null, Dropbox.Xhr.urlDecode(text), metadata, headers
        when 'application/json', 'text/javascript'
-         @callback null, JSON.parse(text), metadata
+         @callback null, JSON.parse(text), metadata, headers
        else
-          @callback null, text, metadata
+          @callback null, text, metadata, headers
     true
+
+  # Parses a block of raw HTTP headers.
+  #
+  # @private
+  # Called by XHR's response processing code.
+  #
+  # @param {String} allHeaders the return value of an getAllResponseHeaders()
+  #   call on a XMLHttpRequest object
+  # @return {Object<String, String>} object whose keys are the lowercased HTTP
+  #   header names, and whose values are the corresponding HTTP header values
+  @parseResponseHeaders: (allHeaders) ->
+    headers = {}
+    headerLines = allHeaders.split "\n"
+    for line in headerLines
+      # NOTE: IE8 doesn't support trim(); we don't implement a fallback because
+      #       XDR (used on IE < 10) doesn't support headers, so this won't get
+      #       called anyway
+      colonIndex = line.indexOf ':'
+      name = line.substring(0, colonIndex).trim().toLowerCase()
+      value = line.substring(colonIndex + 1).trim()
+      headers[name] = value
+    headers
+
+  # Emulates getAllResponseHeaders()+parseResponseHeaders() on buggy browsers.
+  #
+  # @private
+  # Called by XHR's response processing code.
+  #
+  # @return {Object<String, String>} object whose keys are the lowercased HTTP
+  #   header names, and whose values are the corresponding HTTP header values
+  guessResponseHeaders: ->
+    # TODO(pwnall): investigate removing this when Firefox 21 gets released.
+    headers = {}
+    # Using ther header names listed at
+    #     http://www.w3.org/TR/cors/#simple-response-header
+    # and the names used by the Dropbox API server in
+    # access-control-expose-headers.
+    for name in ['cache-control', 'content-language', 'content-range',
+                 'content-type', 'expires', 'last-modified', 'pragma',
+                 'x-dropbox-metadata']
+      value = @xhr.getResponseHeader name
+      headers[name] = value if value
+    headers
 
   # Handles the XDomainRequest onload event. (IE 8, 9)
   onXdrLoad: ->
     text = @xhr.responseText
     switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
-       @callback null, Dropbox.Xhr.urlDecode(text), undefined
+       @callback null, Dropbox.Xhr.urlDecode(text)
      when 'application/json', 'text/javascript'
-       @callback null, JSON.parse(text), undefined
+       @callback null, JSON.parse(text)
      else
-        @callback null, text, undefined
+        @callback null, text
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)

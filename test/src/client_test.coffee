@@ -1115,64 +1115,67 @@ buildClientTests = (clientKeys) ->
   describe '#makeUrl', ->
     describe 'for a short Web URL', ->
       it 'returns a shortened Dropbox URL', (done) ->
-        @client.makeUrl @textFile, (error, publicUrl) ->
+        @client.makeUrl @textFile, (error, urlInfo) ->
           expect(error).to.equal null
-          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-          expect(publicUrl.isDirect).to.equal false
-          expect(publicUrl.url).to.contain '//db.tt/'
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal false
+          expect(urlInfo.url).to.contain '//db.tt/'
           done()
 
     describe 'for a Web URL created with long: true', ->
       it 'returns an URL to a preview page', (done) ->
-        @client.makeUrl @textFile, { long: true }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { long: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-          expect(publicUrl.isDirect).to.equal false
-          expect(publicUrl.url).not.to.contain '//db.tt/'
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal false
+          expect(urlInfo.url).not.to.contain '//db.tt/'
 
           # The cont/ents server does not return CORS headers.
-          return done() unless @nodejs
-          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) ->
+          return done() unless @node_js
+          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.contain '<!DOCTYPE html>'
             done()
 
     describe 'for a Web URL created with longUrl: true', ->
       it 'returns an URL to a preview page', (done) ->
-        @client.makeUrl @textFile, { longUrl: true }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { longUrl: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-          expect(publicUrl.isDirect).to.equal false
-          expect(publicUrl.url).not.to.contain '//db.tt/'
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal false
+          expect(urlInfo.url).not.to.contain '//db.tt/'
           done()
 
     describe 'for a direct download URL', ->
       it 'gets a direct download URL', (done) ->
-        @client.makeUrl @textFile, { download: true }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { download: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-          expect(publicUrl.isDirect).to.equal true
-          expect(publicUrl.url).not.to.contain '//db.tt/'
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal true
+          expect(urlInfo.url).not.to.contain '//db.tt/'
 
           # The contents server does not return CORS headers.
-          return done() unless @nodejs
-          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
+          return done() unless @node_js
+          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
             done()
 
     describe 'for a direct download URL created with downloadHack: true', ->
       it 'gets a direct long-lived download URL', (done) ->
-        @client.makeUrl @textFile, { downloadHack: true }, (error, publicUrl) =>
+        @client.makeUrl @textFile, { downloadHack: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(publicUrl).to.be.instanceOf Dropbox.PublicUrl
-          expect(publicUrl.isDirect).to.equal true
-          expect(publicUrl.url).not.to.contain '//db.tt/'
-          expect(publicUrl.expiresAt - Date.now()).to.be.above 86400000
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal true
+          expect(urlInfo.url).not.to.contain '//db.tt/'
+          expect(urlInfo.expiresAt - Date.now()).to.be.above 86400000
 
           # The download server does not return CORS headers.
-          return done() unless @nodejs
-          Dropbox.Xhr.request 'GET', publicUrl.url, {}, null, (error, data) =>
+          return done() unless @node_js
+          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
             done()

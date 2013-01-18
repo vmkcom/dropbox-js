@@ -51,6 +51,7 @@ copy of the sample that you can hack on.
 1. [Encode your API key](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/api_keys.js/public/index.html).
 1. Copy the source code to `/Apps/Static Web Apps/powered_by.js` in your Dropbox
 
+
 ## Dependencies
 
 The application uses the following JavaScript libraries.
@@ -65,3 +66,8 @@ The icons used in the application are all from
 
 The application follows a good practice of packaging its dependencies, and not
 hot-linking them.
+
+
+## Credits
+
+This sample's UI design and graphical assets were contributed by Jon Ying.

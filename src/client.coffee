@@ -96,12 +96,12 @@ class Dropbox.Client
 
   # Authenticates the app's user to Dropbox' API server.
   #
-  # @param {Object} options one or more of the advanced settings below
+  # @param {?Object} options one or more of the advanced settings below
   # @option options {Boolean} interactive if false, the authentication process
   #   will stop and call the callback whenever it would have to make a server
   #   request or wait for an authorization; true by default; this is useful for
   #   determining if the authDriver has cached credentials available
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Client)} callback called when
+  # @param {?function(?Dropbox.ApiError, Dropbox.Client)} callback called when
   #   the authentication completes; if successful, the second parameter is
   #   this client and the first parameter is null
   # @return {Dropbox.Client} this, for easy call chaining
@@ -129,12 +129,14 @@ class Dropbox.Client
           @onAuthStateChange.dispatch @
         oldAuthState = @authState
         if @driver and @driver.onAuthStateChange
-          return @driver.onAuthStateChange(@, _fsmStep)
+          @driver.onAuthStateChange(@, _fsmStep)
+          return
 
       switch @authState
         when DropboxClient.RESET  # No user credentials -> request token.
           unless interactive
-            return callback null, @
+            callback null, @ if callback
+            return
           @requestToken (error, data) =>
             if error
               @authError = error
@@ -149,7 +151,8 @@ class Dropbox.Client
 
         when DropboxClient.REQUEST  # Have request token, get it authorized.
           unless interactive
-            return callback null, @
+            callback null, @ if callback
+            return
           authUrl = @authorizeUrl @oauth.token
           @driver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
             @authState = DropboxClient.AUTHORIZED
@@ -159,7 +162,8 @@ class Dropbox.Client
         when DropboxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
           unless interactive
-            return callback null, @
+            callback null, @ if callback
+            return
           @getAccessToken (error, data) =>
             if error
               @authError = error
@@ -172,7 +176,8 @@ class Dropbox.Client
             _fsmStep()
 
         when DropboxClient.DONE  # We have an access token.
-          callback null, @
+            callback null, @ if callback
+            return
 
         when DropboxClient.SIGNED_OFF  # The user signed off, restart the flow.
           # The authState change makes reset() not trigger onAuthStateChange.
@@ -181,7 +186,8 @@ class Dropbox.Client
           _fsmStep()
 
         when DropboxClient.ERROR  # An error occurred during authentication.
-          callback @authError
+          callback @authError, @ if callback
+          return
 
     _fsmStep()  # Start up the state machine.
     @
@@ -196,7 +202,7 @@ class Dropbox.Client
   # application, to meet the users' expectation that after they sign off, their
   # access tokens will be persisted on the machine.
   #
-  # @param {function(?Dropbox.ApiError)} callback called when
+  # @param {?function(?Dropbox.ApiError)} callback called when
   #   the authentication completes; if successful, the error parameter is
   #   null
   # @return {XMLHttpRequest} the XHR object used for this API call
@@ -204,7 +210,9 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', @urls.signOut
     xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error) =>
-      return callback(error) if error
+      if error
+        callback error if callback
+        return
 
       # The authState change makes reset() not trigger onAuthStateChange.
       @authState = DropboxClient.RESET
@@ -213,9 +221,9 @@ class Dropbox.Client
       @onAuthStateChange.dispatch @
       if @driver and @driver.onAuthStateChange
         @driver.onAuthStateChange @, ->
-          callback error
+          callback error if callback
       else
-        callback error
+        callback error if callback
 
   # Alias for signOut.
   signOff: (callback) ->
@@ -489,7 +497,7 @@ class Dropbox.Client
       else if options.parentRev or options.parent_rev
         params.parent_rev = options.parentRev or options.parent_rev
       if options.noOverwrite
-        params.autorename = true
+        params.overwrite = 'false'
 
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Xhr 'POST',
@@ -680,10 +688,10 @@ class Dropbox.Client
         url = "#{@urls.media}/#{path}"
 
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr('POST', url).setParams(params).signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, urlData) ->
-      if useDownloadHack and urlData and urlData.url
-        urlData.url = urlData.url.replace(@authServer, @downloadServer)
+    xhr = new Dropbox.Xhr('POST', url).setParams(params).signWithOauth @oauth
+    @dispatchXhr xhr, (error, urlData) =>
+      if useDownloadHack and urlData?.url
+        urlData.url = urlData.url.replace @authServer, @downloadServer
       callback error, Dropbox.PublicUrl.parse(urlData, isDirect)
 
   # Retrieves the revision history of a file in a user's Dropbox.
