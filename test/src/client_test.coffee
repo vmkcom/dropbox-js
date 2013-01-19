@@ -205,46 +205,72 @@ buildClientTests = (clientKeys) ->
     it 'reads the beginning of a text file', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
-      @client.readFile @textFile, start: 0, length: 10, (error, data, stat) =>
-        expect(error).to.equal null
-        expect(data).to.equal @textFileData.substring(0, 10)
-        expect(stat).to.be.instanceOf Dropbox.Stat
-        expect(stat.path).to.equal @textFile
-        expect(stat.isFile).to.equal true
-        done()
+      @client.readFile @textFile, start: 0, length: 10,
+          (error, data, stat, rangeInfo) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData.substring(0, 10)
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @textFile
+            expect(stat.isFile).to.equal true
+            if @node_js
+              # The Dropbox server doesn't whitelist Content-Range for CORS.
+              expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+              expect(rangeInfo.start).to.equal 0
+              expect(rangeInfo.end).to.equal 9
+              expect(rangeInfo.size).to.equal @textFileData.length
+            done()
 
     it 'reads the middle of a text file', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
-      @client.readFile @textFile, start: 8, length: 10, (error, data, stat) =>
-        expect(error).to.equal null
-        expect(data).to.equal @textFileData.substring(8, 18)
-        expect(stat).to.be.instanceOf Dropbox.Stat
-        expect(stat.path).to.equal @textFile
-        expect(stat.isFile).to.equal true
-        done()
+      @client.readFile @textFile, start: 8, length: 10,
+          (error, data, stat, rangeInfo) =>
+            expect(error).to.equal null
+            expect(data).to.equal @textFileData.substring(8, 18)
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @textFile
+            expect(stat.isFile).to.equal true
+            if @node_js
+              # The Dropbox server doesn't whitelist Content-Range for CORS.
+              expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+              expect(rangeInfo.start).to.equal 8
+              expect(rangeInfo.end).to.equal 17
+              expect(rangeInfo.size).to.equal @textFileData.length
+            done()
 
     it 'reads the end of a text file via the start: option', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
-      @client.readFile @textFile, start: 10, (error, data, stat) =>
+      @client.readFile @textFile, start: 10, (error, data, stat, rangeInfo) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData.substring(10)
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
+        if @node_js
+          # The Dropbox API server doesn't whitelist Content-Range for CORS.
+          expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+          expect(rangeInfo.start).to.equal 10
+          expect(rangeInfo.end).to.equal @textFileData.length - 1
+          expect(rangeInfo.size).to.equal @textFileData.length
         done()
 
     it 'reads the end of a text file via the length: option', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
-      @client.readFile @textFile, length: 10, (error, data, stat) =>
+      @client.readFile @textFile, length: 10, (error, data, stat, rangeInfo) =>
         expect(error).to.equal null
         expect(data).to.
             equal @textFileData.substring(@textFileData.length - 10)
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
+        if @node_js
+          # The Dropbox API server doesn't whitelist Content-Range for CORS.
+          expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+          expect(rangeInfo.start).to.equal @textFileData.length - 10
+          expect(rangeInfo.end).to.equal @textFileData.length - 1
+          expect(rangeInfo.size).to.equal @textFileData.length
         done()
 
     it 'reads a binary file into a string', (done) ->

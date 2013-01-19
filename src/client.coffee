@@ -285,8 +285,7 @@ class Dropbox.Client
   #   hacks and should not be used if the environment supports XHR Level 2 API
   # @option options {Number} length the number of bytes to be retrieved from
   #   the file; if the start option is not present, the last "length" bytes
-  #   will be read (after issue #30 is closed); by default, the entire file is
-  #   read
+  #   will be read; by default, the entire file is read
   # @option options {Number} start the 0-based offset of the first byte to be
   #   retrieved; if the length option is not present, the bytes between
   #   "start" and the file's end will be read; by default, the entire
@@ -295,11 +294,13 @@ class Dropbox.Client
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat)} callback
-  #   called with the result of the /files (GET) HTTP request; the second
-  #   parameter is the contents of the file, the third parameter is a
-  #   Dropbox.Stat instance describing the file, and the first parameter is
-  #   null
+  # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat,
+  #                  ?Dropbox.RangeInfo)} callback called with the result of
+  #   the /files (GET) HTTP request; the second parameter is the contents of
+  #   the file, the third parameter is a Dropbox.Stat instance describing the
+  #   file, and the first parameter is null; if the start and/or length options
+  #   are specified, the fourth parameter describes the subset of bytes read
+  #   from the file
   # @return {XMLHttpRequest} the XHR object used for this API call
   readFile: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -337,11 +338,17 @@ class Dropbox.Client
       httpCache = true if options.httpCache
 
     xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth, httpCache)
-    xhr.setResponseType(responseType)
-    xhr.setHeader 'Range', rangeHeader if rangeHeader
-    @dispatchXhr xhr, (error, data, metadata) ->
-      callback error, data, Dropbox.Stat.parse(metadata)
+    xhr.setParams(params).signWithOauth @oauth, httpCache
+    xhr.setResponseType responseType
+    if rangeHeader
+      xhr.setHeader 'Range', rangeHeader if rangeHeader
+      xhr.reportResponseHeaders()
+    @dispatchXhr xhr, (error, data, metadata, headers) ->
+      if headers
+        rangeInfo = Dropbox.RangeInfo.parse headers['content-range']
+      else
+        rangeInfo = null
+      callback error, data, Dropbox.Stat.parse(metadata), rangeInfo
 
   # Store a file into a user's Dropbox.
   #
