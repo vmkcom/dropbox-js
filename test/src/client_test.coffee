@@ -413,6 +413,7 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
+        expect(stat.size).to.equal @newBlob.size
 
         @client.readFile @newFile, arrayBuffer: true,
             (error, buffer, stat) =>
@@ -445,6 +446,7 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
+          expect(stat.size).to.equal @newFileObject.size
 
           @client.readFile @newFile, arrayBuffer: true,
               (error, buffer, stat) =>
@@ -486,6 +488,7 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
+        expect(stat.size).to.equal @newBuffer.byteLength
 
         @client.readFile @newFile, arrayBuffer: true,
             (error, buffer, stat) =>
@@ -512,6 +515,7 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
+        expect(stat.size).to.equal @newBytes.byteLength
 
         @client.readFile @newFile, arrayBuffer: true,
             (error, buffer, stat) =>
