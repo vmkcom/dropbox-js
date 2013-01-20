@@ -1224,7 +1224,7 @@ class Dropbox.Client
   # @return {String} the URL that the user's browser should be redirected to in
   #   order to perform an /oauth/authorize request
   authorizeUrl: (token) ->
-    params = { oauth_token: token, oauth_callback: @driver.url() }
+    params = { oauth_token: token, oauth_callback: @driver.url(token) }
     "#{@urls.authorize}?" + Dropbox.Xhr.urlEncode(params)
 
   # Exchanges an OAuth request token with an access token.

@@ -11,12 +11,13 @@ describe 'Dropbox.Drivers.Chrome', ->
 
     it 'produces a chrome-extension:// url', ->
       return unless @chrome_app
-      expect(@driver.url()).to.match(/^chrome-extension:\/\//)
+      expect(@driver.url('oauth token')).to.match(/^chrome-extension:\/\//)
 
-    it 'produces an URL ending in redirectPath', ->
+    it 'produces an URL with the correct suffix', ->
       return unless @chrome_app
-      url = @driver.url()
-      expect(url.substring(url.length - @path.length)).to.equal @path
+      url = @driver.url 'oauth token'
+      suffix = @path + '?_dropboxjs_scope=default&dboauth_token=oauth%20token'
+      expect(url.substring(url.length - suffix.length)).to.equal suffix
 
   describe '#loadCredentials', ->
     beforeEach ->

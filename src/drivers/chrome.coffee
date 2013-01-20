@@ -39,7 +39,7 @@ if chrome?
         return chrome.runtime.getBackgroundPage (page) -> pageHack page
 
 # OAuth driver specialized for Chrome apps and extensions.
-class Dropbox.Drivers.Chrome
+class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # @property {Chrome.Event<Object>, Dropbox.EventSource<Object>} fires
   #   non-cancelable events when Dropbox.Drivers.Chrome#sendMessage is called;
   #   the message is a parsed JSON object
@@ -70,12 +70,13 @@ class Dropbox.Drivers.Chrome
   #   redirect and performs the postMessage; the path should be relative to the
   #   extension folder; by default, is 'chrome_oauth_receiver.html'
   constructor: (options) ->
+    super options
     receiverPath = (options and options.receiverPath) or
         'chrome_oauth_receiver.html'
-    @receiverUrl = @expandUrl receiverPath
-    @tokenRe = new RegExp "(#|\\?|&)oauth_token=([^&#]+)(&|#|$)"
-    scope = (options and options.scope) or 'default'
-    @storageKey = "dropbox_js_#{scope}_credentials"
+    @rememberUser = true
+    @useQuery = true
+    [@receiverUrl, @receiverUrl2] = @computeUrl @expandUrl(receiverPath)
+    @storageKey = "dropbox_js_#{@scope}_credentials"
 
   # Saves token information when appropriate.
   onAuthStateChange: (client, callback) ->
@@ -133,8 +134,8 @@ class Dropbox.Drivers.Chrome
     @
 
   # URL of the redirect receiver page that messages the app / extension.
-  url: ->
-    @receiverUrl
+  url: (token) ->
+    @receiverUrl + encodeURIComponent(token)
 
   # Listens for a postMessage from a previously opened tab.
   #
@@ -150,8 +151,10 @@ class Dropbox.Drivers.Chrome
         unless sender.tab.url.substring(0, @receiverUrl.length) is @receiverUrl
           return
 
-      match = @tokenRe.exec message.dropbox_oauth_receiver_href or ''
-      if match and decodeURIComponent(match[2]) is token
+      # Reject improperly formatted messages.
+      return unless message.dropbox_oauth_receiver_href
+
+      if @locationToken(message.dropbox_oauth_receiver_href) is token
         @closeWindow window.handle if window.handle
         @onMessage.removeListener listener
         callback()

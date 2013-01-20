@@ -137,12 +137,12 @@ to ensure that the user's Dropbox uid and OAuth token are passed to the
 receiver in a URL fragment. This measure may improve your users' privacy, as it
 reduces the chance that their uid or token ends up in a server log.
 
-If you have a good reason to disable the behavior above, set the `noFragment`
+If you have a good reason to disable the behavior above, set the `useQuery`
 option to true.
 
 ```javascript
 client.authDriver(new Dropbox.Drivers.Popup({
-    receiverUrl: "https://url.to/receiver.html", noFragment: true}));
+    receiverUrl: "https://url.to/receiver.html", useQuery: true}));
 ```
 
 The popup driver implements the `rememberUser` option with the same semantics

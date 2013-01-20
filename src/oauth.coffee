@@ -121,7 +121,7 @@ class Dropbox.Oauth
   # @return {Object} params
   boilerplateParams: (params) ->
     params.oauth_consumer_key = @k
-    params.oauth_nonce = @nonce()
+    params.oauth_nonce = Dropbox.Oauth.nonce()
     params.oauth_signature_method = 'HMAC-SHA1'
     params.oauth_token = @token if @token
     params.oauth_timestamp = Math.floor(Date.now() / 1000)
@@ -131,7 +131,7 @@ class Dropbox.Oauth
   # Generates a nonce for an OAuth request.
   #
   # @return {String} the nonce to be used as the oauth_nonce parameter
-  nonce: ->
+  @nonce: ->
     # Nonces have to be unique for requests with the same timestamp.
     #     http://tools.ietf.org/html/rfc5849#section-3.3
     Math.random().toString(36)
