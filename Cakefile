@@ -21,9 +21,8 @@ task 'test', ->
         tokens ->
           test_cases = glob.sync 'test/js/**/*_test.js'
           test_cases.sort()  # Consistent test case order.
-          run 'node_modules/mocha/bin/mocha --colors --slow 200 ' +
-              "--timeout 10000 --require test/js/helpers/setup.js " +
-              test_cases.join(' ')
+          run 'node_modules/.bin/mocha --colors --slow 200 --timeout 10000 ' +
+              "--require test/js/helpers/setup.js #{test_cases.join(' ')}"
 
 task 'webtest', ->
   vendor ->
@@ -47,11 +46,10 @@ task 'tokens', ->
       process.exit 0
 
 task 'doc', ->
-  run 'node_modules/codo/bin/codo src'
+  run 'node_modules/.bin/codo src'
 
 task 'extension', ->
-  run 'node_modules/coffee-script/bin/coffee ' +
-      '--compile test/chrome_extension/*.coffee'
+  run 'node_modules/.bin/coffee --compile test/chrome_extension/*.coffee'
 
 task 'chrome', ->
   vendor ->
@@ -76,21 +74,22 @@ build = (callback) ->
     a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
 
   # Compile without --join for decent error messages.
-  commands.push 'node_modules/coffee-script/bin/coffee --output tmp ' +
-                "--compile #{source_files.join(' ')}"
-  commands.push 'node_modules/coffee-script/bin/coffee --output lib ' +
-                "--compile --join dropbox.js #{source_files.join(' ')}"
+  commands.push 'node_modules/.bin/coffee --output tmp --compile ' +
+                source_files.join(' ')
+  commands.push 'node_modules/.bin/coffee --output lib --compile ' +
+                "--join dropbox.js #{source_files.join(' ')}"
   # Minify the javascript, for browser distribution.
-  commands.push 'node_modules/uglify-js/bin/uglifyjs --compress --mangle ' +
-                '--output lib/dropbox.min.js lib/dropbox.js'
+  commands.push 'cd lib && ../node_modules/.bin/uglifyjs --compress ' +
+      '--mangle --output dropbox.min.js --source-map dropbox.min.map ' +
+      'dropbox.js'
 
   # Tests are supposed to be independent, so the build order doesn't matter.
   test_dirs = glob.sync 'test/src/**/'
   for test_dir in test_dirs
     out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
     test_files = glob.sync path.join(test_dir, '*.coffee')
-    commands.push 'node_modules/coffee-script/bin/coffee ' +
-                  "--output #{out_dir} --compile #{test_files.join(' ')}"
+    commands.push "node_modules/.bin/coffee --output #{out_dir} " +
+                  "--compile #{test_files.join(' ')}"
   async.forEachSeries commands, run, ->
     callback() if callback
 
