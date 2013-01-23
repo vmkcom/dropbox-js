@@ -54,14 +54,23 @@ task 'extension', ->
 task 'chrome', ->
   vendor ->
     build ->
-      # The v2 Chrome App API isn't supported yet.
       buildChromeApp 'app_v1'
+
+task 'chrome2', ->
+  vendor ->
+    build ->
+      buildChromeApp 'app_v2'
 
 task 'chrometest', ->
   vendor ->
     build ->
-      # The v2 Chrome App API isn't supported yet.
       buildChromeApp 'app_v1', ->
+        testChromeApp()
+
+task 'chrometest2', ->
+  vendor ->
+    build ->
+      buildChromeApp 'app_v2', ->
         testChromeApp()
 
 build = (callback) ->
@@ -145,7 +154,9 @@ testChromeApp = (callback) ->
   # Clean up the profile.
   fs.mkdirSync 'test/chrome_profile' unless fs.existsSync 'test/chrome_profile'
 
+  # TODO(pwnall): remove experimental flag when the identity API gets stable
   command = "\"#{chromeCommand()}\" --load-extension=test/chrome_app " +
+      '--enable-experimental-extension-apis ' +
       '--user-data-dir=test/chrome_profile --no-default-browser-check ' +
       '--no-first-run --no-service-autorun --disable-default-apps ' +
       '--homepage=about:blank --v=-1'

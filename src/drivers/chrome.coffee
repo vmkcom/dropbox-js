@@ -100,9 +100,23 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   doAuthorize: (authUrl, token, tokenSecret, callback) ->
-    window = handle: null
-    @listenForMessage token, window, callback
-    @openWindow authUrl, (handle) -> window.handle = handle
+    if chrome.identity?.launchWebAuthFlow
+      # Apps V2 after the identity API hits stable?
+      chrome.identity.launchWebAuthFlow url: authUrl, interactive: true,
+          (redirectUrl) =>
+            if @locationToken(redirectUrl) is token
+              callback()
+    else if chrome.experimental?.identity?.launchWebAuthFlow
+      # Apps V2 with identity in experimental
+      chrome.experimental.identity.launchWebAuthFlow
+          url: authUrl, interactive: true, (redirectUrl) =>
+            if @locationToken(redirectUrl) is token
+              callback()
+    else
+      # Extensions and Apps V1.
+      window = handle: null
+      @listenForMessage token, window, callback
+      @openWindow authUrl, (handle) -> window.handle = handle
 
   # Creates a popup window.
   #
