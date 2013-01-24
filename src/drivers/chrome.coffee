@@ -129,10 +129,6 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
       chrome.tabs.create url: url, active: true, pinned: false, (tab) ->
         callback tab
       return @
-    if chrome.app and chrome.app.window and chrome.app.window.create
-      chrome.app.window.create url, frame: 'none', id: 'dropbox-auth',
-          (window) -> callback window
-      return @
     @
 
   # Closes a window that was previously opened with openWindow.
