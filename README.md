@@ -72,13 +72,6 @@ Reading and writing binary files is currently broken.
 [This issue](https://github.com/dropbox/dropbox-js/issues/28) will be fixed in
 a future release.
 
-### Chrome Applications
-
-The current version of the built-in Chrome authentication driver doesn't work
-on new-style Chrome Applications.
-[This issue](https://github.com/dropbox/dropbox-js/issues/38) will be fixed in
-a future release.
-
 ### Internet Explorer 9
 
 The library only works when used from `https://` pages, due to
