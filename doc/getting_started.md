@@ -12,12 +12,16 @@ This section describes how to get the library hooked up into your application.
 To get started right away, place this snippet in your page's `<head>`.
 
 ```html
-<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.8.1/dropbox.min.js">
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.9.0/dropbox.min.js">
 </script>
 ```
 
 The snippet is not a typo. [cdnjs](https://cdnjs.com) recommends using
 [protocol-relative URLs](http://paulirish.com/2010/the-protocol-relative-url/).
+
+The cdnjs build of dropbox.js includes
+[source maps](http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/),
+which can greatly help with debugging.
 
 To get the latest development build of dropbox.js, follow the steps in the
 [development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md).
