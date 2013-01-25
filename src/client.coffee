@@ -368,7 +368,7 @@ class Dropbox.Client
   #   a file with the same name that already exsits; instead the contents
   #   will be written to a similarly named file (e.g. "notes (1).txt"
   #   instead of "notes.txt")
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /files (POST) HTTP request; the second paramter is a
   #   Dropbox.Stat instance describing the newly created file, and the first
   #   parameter is null
@@ -418,7 +418,7 @@ class Dropbox.Client
     delete params.file
 
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # writeFile implementation that uses the /files_put API.
   #
@@ -439,7 +439,7 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', "#{@urls.putFile}/#{@urlEncodePath(path)}"
     xhr.setBody(data).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Atomic step in a resumable file upload.
   #
@@ -486,7 +486,7 @@ class Dropbox.Client
   #   a file with the same name that already exsits; instead the contents
   #   will be written to a similarly named file (e.g. "notes (1).txt"
   #   instead of "notes.txt")
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /files (POST) HTTP request; the second paramter is a
   #   Dropbox.Stat instance describing the newly created file, and the first
   #   parameter is null
@@ -511,7 +511,7 @@ class Dropbox.Client
         "#{@urls.commitChunkedUpload}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Reads the metadata of a file or folder in a user's Dropbox.
   #
@@ -841,7 +841,7 @@ class Dropbox.Client
   #   application's folder
   # @param {String} versionTag the tag of the version that the file will be
   #   reverted to; maps to the "rev" parameter in the HTTP API
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /restore HTTP request; if the call succeeds, the
   #   second parameter is a Dropbox.Stat instance describing the file after
   #   the revert operation, and the first parameter is null
@@ -850,7 +850,7 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', "#{@urls.restore}/#{@urlEncodePath(path)}"
     xhr.setParams(rev: versionTag).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Alias for "revertFile" that matches the HTTP API.
   restore: (path, versionTag, callback) ->
@@ -975,7 +975,7 @@ class Dropbox.Client
   #
   # @param {String} path the path of the folder that will be created, relative
   #   to the user's Dropbox or to the application's folder
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /fileops/create_folder HTTP request; if the call
   #   succeeds, the second parameter is a Dropbox.Stat instance describing
   #   the newly created folder, and the first parameter is null
@@ -985,13 +985,13 @@ class Dropbox.Client
     xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Removes a file or diretory from a user's Dropbox.
   #
   # @param {String} path the path of the file to be read, relative to the
   #   user's Dropbox or to the application's folder
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /fileops/delete HTTP request; if the call succeeds,
   #   the second parameter is a Dropbox.Stat instance describing the removed
   #   file or folder, and the first parameter is null
@@ -1001,7 +1001,7 @@ class Dropbox.Client
     xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # node.js-friendly alias for "remove".
   unlink: (path, callback) ->
@@ -1028,7 +1028,7 @@ class Dropbox.Client
   # @param {String} toPath the path that the file or folder will have after the
   #   method call; the path is relative to the user's Dropbox or to the
   #   application folder
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /fileops/copy HTTP request; if the call succeeds, the
   #   second parameter is a Dropbox.Stat instance describing the file or folder
   #   created by the copy operation, and the first parameter is null
@@ -1048,7 +1048,7 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsCopy
     xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Moves a file or folder to a different location in a user's Dropbox.
   #
@@ -1057,7 +1057,7 @@ class Dropbox.Client
   # @param {String} toPath the path that the file or folder will have after
   #   the method call; the path is relative to the user's Dropbox or to the
   #   application's folder
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
   #   the result of the /fileops/move HTTP request; if the call succeeds, the
   #   second parameter is a Dropbox.Stat instance describing the moved
   #   file or folder at its new location, and the first parameter is
@@ -1073,7 +1073,7 @@ class Dropbox.Client
         root: @fileRoot, from_path: @normalizePath(fromPath),
         to_path: @normalizePath(toPath)).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata)
+      callback error, Dropbox.Stat.parse(metadata) if callback
 
   # Removes all login information.
   #
