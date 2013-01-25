@@ -117,7 +117,7 @@ class Dropbox.Drivers.BrowserBase
 
     try
       callback JSON.parse(jsonString)
-    catch e
+    catch jsonError
       # Parse errors.
       callback null
     @
@@ -375,13 +375,13 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
       if opener
         try
           opener.postMessage window.location.href, '*'
-        catch e
+        catch ieError
           # IE 9 doesn't support opener.postMessage for popup windows.
         try
           # postMessage doesn't work in IE, but direct object access does.
           opener.Dropbox.Drivers.Popup.onMessage.dispatch(
               window.location.href)
-        catch e
+        catch frameError
           # Hopefully postMessage worked.
       window.close()
 

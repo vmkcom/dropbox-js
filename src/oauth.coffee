@@ -37,7 +37,7 @@ class Dropbox.Oauth
       @_appHash = null
     else
       unless @k
-        throw new Error('No API key supplied')
+        throw new Error 'No API key supplied'
 
     if options.token
       @setToken options.token, options.tokenSecret
@@ -47,7 +47,7 @@ class Dropbox.Oauth
   # Sets the OAuth token to be used for future requests.
   setToken: (token, tokenSecret) ->
     if token and (not tokenSecret)
-        throw new Error('No secret supplied with the user token')
+        throw new Error 'No secret supplied with the user token'
 
     @token = token
     @tokenSecret = tokenSecret || ''

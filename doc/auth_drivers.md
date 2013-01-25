@@ -114,15 +114,13 @@ redirections peformed by `Dropbox.Drivers.Redirect`. This driver avoids
 changing the location of the application's browser window by popping up a
 separate window, and loading the Dropbox authorization page in that window.
 
-The popup method has a couple of serious drawbacks. Most browsers will not
-display the popup window by default, and instead will show a hard-to-notice
-warning that the user must interact with to display the popup. The driver's
-code for communicating between the popup and the main application window does
-not work on IE9 and below, so applications that use it will only work on
-Chrome, Firefox and IE10+.
+Most browsers will only display the popup window if `client.authorize()` is
+called in response to a user action, such as click on a "Sign into Dropbox"
+button. Browsers have different heuristics for deciding whether the condition
+is met, so the safest bet is to make the `client.authorize()` call in a `click`
+event listener.
 
-If the drawbacks above are more acceptable than restructuring your application
-to handle redirects, create a page on your site that contains the
+To use the popup driver, create a page on your site that contains the
 [receiver code](https://github.com/dropbox/dropbox-js/blob/master/test/html/oauth_receiver.html),
 change the code to reflect the location of `dropbox.js` on your site, and point
 the `Dropbox.Drivers.Popup` constructor to it.
@@ -131,6 +129,9 @@ the `Dropbox.Drivers.Popup` constructor to it.
 client.authDriver(new Dropbox.Drivers.Popup({
     receiverUrl: "https://url.to/oauth_receiver.html"}));
 ```
+
+If your application supports Internet Explorer, the receiver code must be
+served from the same origin (protocol, host, port) as your application.
 
 The popup driver adds a `#` (fragment hash) to the receiver URL if necessary,
 to ensure that the user's Dropbox uid and OAuth token are passed to the

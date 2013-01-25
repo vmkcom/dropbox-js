@@ -49,7 +49,7 @@ describe 'Dropbox.Oauth', ->
 
     it 'works with an encoded key', ->
       @oauth = new Dropbox.Oauth
-        key: Dropbox.encodeKey(@oauth.key, @oauth.secret),
+        key: Dropbox.Util.encodeKey(@oauth.key, @oauth.secret),
         token: @oauth.token, tokenSecret: @oauth.tokenSecret
 
       @oauth.boilerplateParams(@request.params)

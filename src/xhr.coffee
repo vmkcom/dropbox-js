@@ -393,14 +393,14 @@ class Dropbox.Xhr
 
       try
         @xhr.send body
-      catch e
+      catch xhrError
         # Node.js doesn't implement Blob.
         if !Dropbox.Xhr.sendArrayBufferView and typeof Blob isnt 'undefined'
           # Firefox doesn't support sending ArrayBufferViews.
           body = new Blob [body], type: 'application/octet-stream'
           @xhr.send body
         else
-          throw e
+          throw xhrError
     else
       @xhr.send()
     @
@@ -472,7 +472,7 @@ class Dropbox.Xhr
     if metadataJson?.length
       try
         metadata = JSON.parse metadataJson
-      catch e
+      catch jsonError
         # Make sure the app doesn't crash if the server goes crazy.
         metadata = undefined
     else
@@ -484,18 +484,6 @@ class Dropbox.Xhr
           @xhr.responseText
         else
           @xhr.response
-        ###
-        jsString = ['["']
-        for i in [0...dirtyText.length]
-          hexByte = (dirtyText.charCodeAt(i) & 0xFF).toString(16)
-          if hexByte.length is 2
-            jsString.push "\\u00#{hexByte}"
-          else
-            jsString.push "\\u000#{hexByte}"
-        jsString.push '"]'
-        console.log jsString
-        text = JSON.parse(jsString.join(''))[0]
-        ###
         bytes = []
         for i in [0...dirtyText.length]
           bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
