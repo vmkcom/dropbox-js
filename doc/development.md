@@ -181,7 +181,7 @@ git pull up master
 npm install
 git checkout -b dbXYZ
 mkdir ajax/libs/dropbox.js/X.Y.Z
-cp ../dropbox-js/lib/dropbox.min.js ajax/libs/dropbox.js/X.Y.Z/
+cp ../dropbox-js/lib/dropbox.* ajax/libs/dropbox.js/X.Y.Z/
 vim ajax/libs/dropbox.js/package.json  # Replace "version"'s value with "X.Y.Z"
 npm test
 git add -A
