@@ -6,7 +6,7 @@ class Checkbox
   # @param {DOMElement} root the app's main UI element
   constructor: (@dbClient, root) ->
     @$root = $ root
-    @taskTemplate = $('#task-template').text()
+    @taskTemplate = $('#task-template').text().trim()
     @$activeList = $('#active-task-list')
     @$doneList = $('#done-task-list')
     $('#signout-button').click (event) => @onSignOut event

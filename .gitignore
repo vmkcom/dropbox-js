@@ -14,6 +14,7 @@ test/vendor
 lib/dropbox.js
 lib/dropbox.min.js
 lib/dropbox.min.map
+samples/checkbox.js/public/lib
 test/chrome_app/lib
 test/chrome_app/manifest.json
 test/chrome_app/node_modules
