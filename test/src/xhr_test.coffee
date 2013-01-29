@@ -452,6 +452,22 @@ Content-Transfer-Encoding: binary\r
         expect(@xhr.headers['Content-Type']).to.
             equal 'application/octet-stream'
 
+    describe '#setBody with node.js Buffer', ->
+      beforeEach ->
+        if Buffer?
+          @xhr.setBody new Buffer(5)
+
+      it 'flags the XHR as needing preflight', ->
+        return unless Buffer?
+        expect(@xhr.preflight).to.equal true
+
+      it 'sets the Content-Type header', ->
+        return unless Buffer?
+        expect(@xhr.headers).to.have.property 'Content-Type'
+        expect(@xhr.headers['Content-Type']).to.
+            equal 'application/octet-stream'
+
+
     describe '#setResponseType', ->
       beforeEach ->
         @xhr.setResponseType 'b'
@@ -643,6 +659,22 @@ Content-Transfer-Encoding: binary\r
               expect(bytes).to.equal testImageBytes
               done()
             reader.readAsArrayBuffer blob
+
+      describe 'with responseType buffer', ->
+        beforeEach ->
+          if Buffer?
+            @xhr.setResponseType 'buffer'
+
+        it 'retrieves a well-formed Buffer on node.js', (done) ->
+          return done() unless Buffer?
+
+          @xhr.prepare().send (error, buffer) ->
+            expect(error).to.not.be.ok
+            expect(buffer).to.be.instanceOf Buffer
+            stringChars = for i in [0...buffer.length]
+              String.fromCharCode buffer.readUInt8(i)
+            expect(stringChars.join('')).to.equal testImageBytes
+            done()
 
   describe '#urlEncode', ->
     it 'iterates properly', ->

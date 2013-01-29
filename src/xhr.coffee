@@ -15,7 +15,7 @@ if window?
   DropboxXhrDoesPreflight = true
 else
   # Node.js needs an adapter for the XHR API.
-  DropboxXhrRequest = require('xmlhttprequest').XMLHttpRequest
+  DropboxXhrRequest = require('xhr2')
   DropboxXhrIeMode = false
   # Node.js doesn't have FormData. We wouldn't want to bother putting together
   # upload forms in node.js anyway, because it doesn't do CORS preflight

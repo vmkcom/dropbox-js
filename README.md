@@ -66,12 +66,6 @@ This lists the most serious problems that you might run into while using
 [the GitHub issue list](https://github.com/dropbox/dropbox-js/issues) for a
 full list of outstanding problems.
 
-### node.js
-
-Reading and writing binary files is currently broken.
-[This issue](https://github.com/dropbox/dropbox-js/issues/28) will be fixed in
-a future release.
-
 ### Internet Explorer 9
 
 The library only works when used from `https://` pages, due to

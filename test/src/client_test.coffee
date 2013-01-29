@@ -31,7 +31,7 @@ buildClientTests = (clientKeys) ->
 
   # Standard-compliant browsers write via XHR#send(ArrayBufferView).
   setupImageFileUsingArrayBuffer = (test, done) ->
-    if Uint8Array? and (not test.node_js)
+    if Uint8Array?
       testImageServerOn()
       xhr = new Dropbox.Xhr 'GET', testImageUrl
       xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
@@ -51,7 +51,7 @@ buildClientTests = (clientKeys) ->
 
   # Fallback to XHR#send(Blob).
   setupImageFileUsingBlob = (test, done) ->
-    if Blob? and (not test.node_js)
+    if Blob?
       testImageServerOn()
       xhr = new Dropbox.Xhr 'GET', testImageUrl
       xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
@@ -314,6 +314,19 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.equal @imageFileData
         done()
 
+    it 'reads a binary file into a nodde.js Buffer', (done) ->
+      return done() unless Buffer?
+      @client.readFile @imageFile, buffer: true, (error, buffer, stat) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf Buffer
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @imageFile
+        expect(stat.isFile).to.equal true
+        stringChars = for i in [0...buffer.length]
+          String.fromCharCode buffer.readUInt8(i)
+        expect(stringChars.join('')).to.equal @imageFileData
+        done()
+
     describe 'with an onXhr listener', ->
       beforeEach ->
         @listenerXhr = null
@@ -551,28 +564,58 @@ buildClientTests = (clientKeys) ->
               expect(bytes).to.equal @imageFileData
               done()
 
+    it 'writes a node.js Buffer to a binary file', (done) ->
+      return done() unless Buffer?
+      @newFile = "#{@testFolder}/test image from node buffer.png"
+      @newBuffer = new Buffer @imageFileData.length
+      for i in [0...@imageFileData.length]
+        @newBuffer.writeUInt8  @imageFileData.charCodeAt(i), i
+      @client.writeFile @newFile, @newBuffer, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
+        expect(stat.size).to.equal @newBuffer.length
+
+        @client.readFile @newFile, buffer: true, (error, buffer, stat) =>
+          expect(error).to.equal null
+          expect(buffer).to.be.instanceOf Buffer
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @newFile
+          expect(stat.isFile).to.equal true
+          stringChars = for i in [0...buffer.length]
+            String.fromCharCode buffer.readUInt8(i)
+          expect(stringChars.join('')).to.equal @imageFileData
+          done()
+
   describe '#resumableUploadStep + #resumableUploadFinish', ->
     beforeEach ->
       if ArrayBuffer?  # IE9 and below doesn't have ArrayBuffer
         @length1 = Math.ceil @imageFileData.length / 3
         @length2 = @imageFileData.length - @length1
-        @buffer1 = new ArrayBuffer @length1
+        @arrayBuffer1 = new ArrayBuffer @length1
+        @buffer1 = new Buffer @length1 if Buffer?
 
-        @view1 = new Uint8Array @buffer1
+        @view1 = new Uint8Array @arrayBuffer1
         for i in [0...@length1]
           @view1[i] = @imageFileData.charCodeAt i
-        @buffer2 = new ArrayBuffer @length2
-        @view2 = new Uint8Array @buffer2
+          if @buffer1
+            @buffer1.writeUInt8 @imageFileData.charCodeAt(i), i
+        @arrayBuffer2 = new ArrayBuffer @length2
+        @buffer2 = new Buffer @length2 if Buffer?
+        @view2 = new Uint8Array @arrayBuffer2
         for i in [0...@length2]
           @view2[i] = @imageFileData.charCodeAt @length1 + i
+          if @buffer2
+            @buffer2.writeUInt8 @imageFileData.charCodeAt(@length1 + i), i
 
         if Blob?  # node.js and IE9 and below don't have Blob
           @blob1 = new Blob [@view1], type: 'image/png'
-          if @blob1.size isnt @buffer1.byteLength
-            @blob1 = new Blob [@buffer1], type: 'image/png'
+          if @blob1.size isnt @arrayBuffer1.byteLength
+            @blob1 = new Blob [@arrayBuffer1], type: 'image/png'
           @blob2 = new Blob [@view2], type: 'image/png'
-          if @blob2.size isnt @buffer2.byteLength
-            @blob2 = new Blob [@buffer2], type: 'image/png'
+          if @blob2.size isnt @arrayBuffer2.byteLength
+            @blob2 = new Blob [@arrayBuffer2], type: 'image/png'
 
     afterEach (done) ->
       @timeout 20 * 1000  # This sequence is slow on the current API server.
@@ -609,15 +652,15 @@ buildClientTests = (clientKeys) ->
               done()
 
     it 'writes a binary file using two ArrayBuffers', (done) ->
-      return done() unless @buffer1
+      return done() unless @arrayBuffer1
       @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
-      @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
+      @client.resumableUploadStep @arrayBuffer1, null, (error, cursor1) =>
         expect(error).to.equal null
         expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
         expect(cursor1.offset).to.equal @length1
-        @client.resumableUploadStep @buffer2, cursor1, (error, cursor2) =>
+        @client.resumableUploadStep @arrayBuffer2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
           expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
@@ -646,11 +689,11 @@ buildClientTests = (clientKeys) ->
       @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
-      @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
+      @client.resumableUploadStep @arrayBuffer1, null, (error, cursor1) =>
         expect(error).to.equal null
         expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
         expect(cursor1.offset).to.equal @length1
-        @client.resumableUploadStep @buffer2, cursor1, (error, cursor2) =>
+        @client.resumableUploadStep @arrayBuffer2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
           expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
@@ -674,6 +717,36 @@ buildClientTests = (clientKeys) ->
                   expect(bytes).to.equal @imageFileData
                   done()
 
+    it 'writes a binary file using two node.js Buffers', (done) ->
+      return done() unless @buffer1
+      @timeout 20 * 1000  # This sequence is slow on the current API server.
+
+      @newFile = "#{@testFolder}/test resumable node buffer upload.png"
+      @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
+        expect(error).to.equal null
+        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1.offset).to.equal @length1
+        @client.resumableUploadStep @buffer2, cursor1, (error, cursor2) =>
+          expect(error).to.equal null
+          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2.offset).to.equal @length1 + @length2
+          expect(cursor2.tag).to.equal cursor1.tag
+          @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
+            expect(error).to.equal null
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+            @client.readFile @newFile, buffer: true,
+                (error, buffer, stat) =>
+                  expect(error).to.equal null
+                  expect(buffer).to.be.instanceOf Buffer
+                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat.path).to.equal @newFile
+                  expect(stat.isFile).to.equal true
+                  stringChars = for i in [0...buffer.length]
+                    String.fromCharCode buffer.readUInt8(i)
+                  expect(stringChars.join('')).to.equal @imageFileData
+                  done()
 
     it 'writes a binary file using two Blobs', (done) ->
       return done() unless @blob1
