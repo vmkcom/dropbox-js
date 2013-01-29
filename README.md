@@ -8,7 +8,7 @@ suitable for use in both modern browsers and in server-side code running under
 
 ## Supported Platforms
 
-This library is tested against the following JavaScript platforms
+This library is tested against the following JavaScript platforms.
 
 * [node.js](http://nodejs.org/) 0.6 and 0.8
 * [Chrome](https://www.google.com/chrome) 23
