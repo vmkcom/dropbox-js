@@ -553,6 +553,23 @@ Content-Transfer-Encoding: binary\r
         expect(listenerError).to.equal error
         done()
 
+    it 'reports network errors correctly', (done) ->
+      @url = 'https://broken.to.causeanetworkerror.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', @url
+      @xhr.prepare().send (error, data) =>
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal @url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        expect(error).to.have.property 'responseText'
+        expect(error.responseText).to.equal '(no response)'
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal 0  # Network error.
+        done()
+
     it 'processes data correctly', (done) ->
       xhr = new Dropbox.Xhr 'POST',
                             'https://api.dropbox.com/1/oauth/request_token',
