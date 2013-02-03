@@ -488,9 +488,9 @@ class Dropbox.Xhr
         for i in [0...dirtyText.length]
           bytes.push String.fromCharCode(dirtyText.charCodeAt(i) & 0xFF)
         text = bytes.join ''
-        @callback null, text, metadata
+        @callback null, text, metadata, headers
       else
-        @callback null, @xhr.response, metadata
+        @callback null, @xhr.response, metadata, headers
       return true
 
     text = if @xhr.responseText? then @xhr.responseText else @xhr.response
@@ -559,13 +559,19 @@ class Dropbox.Xhr
     else
       headers = undefined
 
+    metadata = undefined
+
+    if @responseType
+      @callback null, text, metadata, headers
+      return true
+
     switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
-       @callback null, Dropbox.Xhr.urlDecode(text), undefined, headers
+       @callback null, Dropbox.Xhr.urlDecode(text), metadata, headers
      when 'application/json', 'text/javascript'
-       @callback null, JSON.parse(text), undefined, headers
+       @callback null, JSON.parse(text), metadata, headers
      else
-        @callback null, text, undefined, headers
+        @callback null, text, metadata, headers
     true
 
   # Handles the XDomainRequest onload event. (IE 8, 9)

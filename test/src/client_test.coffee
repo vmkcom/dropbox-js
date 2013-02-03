@@ -192,6 +192,12 @@ buildClientTests = (clientKeys) ->
           done()
 
   describe '#readFile', ->
+    beforeEach ->
+      @newFile = null
+    afterEach (done) ->
+      return done() unless @newFile
+      @client.remove @newFile, (error, stat) -> done()
+
     it 'reads a text file', (done) ->
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
@@ -277,6 +283,20 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFile).to.equal true
         done()
 
+    it 'reads a JSON file into a string', (done) ->
+      jsonString = '{"answer":42,"autoParse":false}'
+      @newFile = "#{@testFolder}/json test file.json"
+      @client.writeFile @newFile, jsonString, (error, stat) =>
+        expect(error).to.equal null
+        @client.readFile @newFile, (error, data, stat) =>
+          expect(error).to.equal null
+          expect(data).to.equal jsonString
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+          done()
+
     it 'reads a binary file into a Blob', (done) ->
       return done() unless Blob?
       @client.readFile @imageFile, blob: true, (error, blob, stat) =>
@@ -314,7 +334,7 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.equal @imageFileData
         done()
 
-    it 'reads a binary file into a nodde.js Buffer', (done) ->
+    it 'reads a binary file into a node.js Buffer', (done) ->
       return done() unless Buffer?
       @client.readFile @imageFile, buffer: true, (error, buffer, stat) =>
         expect(error).to.equal null
@@ -393,6 +413,8 @@ buildClientTests = (clientKeys) ->
           done()
 
   describe '#writeFile', ->
+    beforeEach ->
+      @newFile = null
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -464,7 +486,7 @@ buildClientTests = (clientKeys) ->
 
     it 'writes a File to a binary file', (done) ->
       return done() unless File? and Blob? and ArrayBuffer?
-      @newFile = "#{@testFolder}/test image from blob.png"
+      @newFile = "#{@testFolder}/test image from file.png"
       newBuffer = new ArrayBuffer @imageFileData.length
       newBytes = new Uint8Array newBuffer
       for i in [0...@imageFileData.length]
@@ -1005,6 +1027,8 @@ buildClientTests = (clientKeys) ->
           done()
 
   describe '#copy', ->
+    beforeEach ->
+      @newFile = null
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -1033,6 +1057,8 @@ buildClientTests = (clientKeys) ->
             done()
 
   describe '#makeCopyReference', ->
+    beforeEach ->
+      @newFile = null
     afterEach (done) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
@@ -1059,8 +1085,9 @@ buildClientTests = (clientKeys) ->
 
   describe '#move', ->
     beforeEach (done) ->
-      @timeout 10 * 1000  # This sequence is slow on the current API server.
+      @timeout 12 * 1000  # This sequence is slow on the current API server.
       @moveFrom = "#{@testFolder}/move source of test-file.txt"
+      @moveTo = null
       @client.copy @textFile, @moveFrom, (error, stat) ->
         expect(error).to.equal null
         done()

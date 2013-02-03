@@ -310,7 +310,7 @@ class Dropbox.Client
       options = null
 
     params = {}
-    responseType = null
+    responseType = 'text'
     rangeHeader = null
     httpCache = false
     if options
@@ -326,7 +326,7 @@ class Dropbox.Client
       else if options.buffer
         responseType = 'buffer'
       else if options.binary
-        responseType = 'b'  # See the Dropbox.Xhr.request2 docs
+        responseType = 'b'  # See the Dropbox.Xhr.setResponseType docs
 
       if options.length
         if options.start?
