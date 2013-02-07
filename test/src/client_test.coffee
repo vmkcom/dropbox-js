@@ -1576,14 +1576,17 @@ buildClientTests = (clientKeys) ->
           expect(client.authState).to.equal Dropbox.Client.REQUEST
           done()
 
-      it 'stops at AUTHORIZED with interactive: false', (done) ->
+      it 'proceeds from AUTHORIZED with interactive: false', (done) ->
         credentials = @client.credentials()
-        credentials.token = 'should_not_be_used'
+        credentials.token = 'invalid_token'
         credentials.authState = Dropbox.Client.AUTHORIZED
         @client.setCredentials credentials
         @client.authenticate interactive: false, (error, client) ->
-          expect(error).to.equal null
-          expect(client.authState).to.equal Dropbox.Client.AUTHORIZED
+          expect(error).to.be.ok
+          unless Dropbox.Xhr.ieXdr
+            expect(error.status).to.equal 401
+            expect(error.response).to.have.property 'error'
+            expect(error.response.error).to.match(/token not found/i)
           done()
 
 

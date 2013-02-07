@@ -98,9 +98,9 @@ class Dropbox.Client
   #
   # @param {?Object} options one or more of the advanced settings below
   # @option options {Boolean} interactive if false, the authentication process
-  #   will stop and call the callback whenever it would have to make a server
-  #   request or wait for an authorization; true by default; this is useful for
-  #   determining if the authDriver has cached credentials available
+  #   will stop and call the callback whenever it would have to wait for an
+  #   authorization; true by default; this is useful for determining if the
+  #   authDriver has cached credentials available
   # @param {?function(?Dropbox.ApiError, Dropbox.Client)} callback called when
   #   the authentication completes; if successful, the second parameter is
   #   this client and the first parameter is null
@@ -135,6 +135,8 @@ class Dropbox.Client
       switch @authState
         when DropboxClient.RESET  # No user credentials -> request token.
           unless interactive
+            # NOTE: requestToken isn't really interactive, but it will lead to
+            #       /authorize, which is interactive; might as well stop here
             callback null, @ if callback
             return
           @requestToken (error, data) =>
@@ -161,9 +163,6 @@ class Dropbox.Client
 
         when DropboxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
-          unless interactive
-            callback null, @ if callback
-            return
           @getAccessToken (error, data) =>
             if error
               @authError = error
