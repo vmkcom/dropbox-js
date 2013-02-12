@@ -1,5 +1,7 @@
 describe 'Dropbox.Util.hmac', ->
   it 'works for an empty message with an empty key', ->
+    # Source:
+    #     http://en.wikipedia.org/wiki/Hash-based_message_authentication_code#Examples_of_HMAC_.28MD5.2C_SHA1.2C_SHA256.29
     expect(Dropbox.Util.hmac('', '')).to.equal '+9sdGxiqbAgyS31ktx+3Y3BpDh0='
 
   it 'works for the non-empty Wikipedia example', ->

@@ -521,7 +521,7 @@ Content-Transfer-Encoding: binary\r
         expect(error.method).to.equal 'POST'
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
           expect(error).to.have.property 'status'
-          expect(error.status).to.equal 401  # Bad OAuth request.
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
         expect(error).to.have.property 'responseText'
         expect(error.responseText).to.be.a 'string'
         unless Dropbox.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
@@ -567,7 +567,7 @@ Content-Transfer-Encoding: binary\r
         expect(error.responseText).to.equal '(no response)'
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
           expect(error).to.have.property 'status'
-          expect(error.status).to.equal 0  # Network error.
+          expect(error.status).to.equal Dropbox.ApiError.NETWORK_ERROR
         done()
 
     it 'processes data correctly', (done) ->

@@ -848,7 +848,7 @@ buildClientTests = (clientKeys) ->
         expect(cursor).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
-          expect(error.status).to.equal 404
+          expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
         done()
 
   describe '#stat', ->
@@ -904,7 +904,7 @@ buildClientTests = (clientKeys) ->
         expect(listenerError).to.equal error
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error).to.have.property 'status'
-          expect(error.status).to.equal 404
+          expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
         done()
 
     describe 'with httpCache', ->
@@ -1115,7 +1115,7 @@ buildClientTests = (clientKeys) ->
             expect(error).to.be.ok
             unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
               expect(error).to.have.property 'status'
-              expect(error.status).to.equal 404
+              expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
             expect(data).to.equal undefined
             unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.equal undefined
@@ -1584,7 +1584,7 @@ buildClientTests = (clientKeys) ->
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.be.ok
           unless Dropbox.Xhr.ieXdr
-            expect(error.status).to.equal 401
+            expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
             expect(error.response).to.have.property 'error'
             expect(error.response.error).to.match(/token not found/i)
           done()
@@ -1645,7 +1645,7 @@ describe 'Dropbox.Client', ->
               invalidClient.getUserInfo (error, userInfo) ->
                 expect(error).to.be.ok
                 unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do error codes.
-                  expect(error.status).to.equal 401
+                  expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
                   expect(invalidClient.authError).to.equal error
                   expect(invalidClient.isAuthenticated()).to.equal false
                   expect(authStateChanges).to.deep.equal(['invalidClient',

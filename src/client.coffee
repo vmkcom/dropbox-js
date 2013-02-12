@@ -467,8 +467,8 @@ class Dropbox.Client
     xhr = new Dropbox.Xhr 'POST', @urls.chunkedUpload
     xhr.setBody(data).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, cursor) ->
-      if error and error.status is 400 and error.response and
-          error.response.upload_id and error.response.offset
+      if error and error.status is Dropbox.ApiError.INVALID_PARAM and
+          error.response and error.response.upload_id and error.response.offset
         callback null, Dropbox.UploadCursor.parse(error.response)
       else
         callback error, Dropbox.UploadCursor.parse(cursor)
@@ -1269,7 +1269,8 @@ class Dropbox.Client
   # @param {function()} callback called when this error handler is done
   # @return {null}
   handleXhrError: (error, callback) ->
-    if error.status is 401 and @authState is DropboxClient.DONE
+    if error.status is Dropbox.ApiError.INVALID_TOKEN and
+        @authState is DropboxClient.DONE
       # The user's token became invalid.
       @authError = error
       @authState = DropboxClient.ERROR
