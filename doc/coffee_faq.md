@@ -10,31 +10,27 @@ learn CoffeeScript.
 
 **No.**
 
-The examples in the
-[getting started guide](https://github.com/dropbox/dropbox-js/blob/master/doc/getting_started.md)
-are all written in JavaScript. The
+The examples in the [getting started guide](./getting_started.md) are all
+written in JavaScript. The
 [dropbox.js API reference](http://coffeedoc.info/github/dropbox/dropbox-js/master/class_index.html)
 covers the entire library, so you should not need to read the library source
 code to understand how to use it.
 
 _Please open an issue if the documentation is unclear!_
 
-The
-[sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples),
-are written in CoffeeScript. Please use the `Try CoffeeScript` button on the
-[CoffeeScript](http://coffeescript.org/) home page to quickly compile the
-sample CoffeeScript into very readable JavaScript.
+The [sample apps](../samples/), are written in CoffeeScript. Please use the
+`Try CoffeeScript` button on the [CoffeeScript](http://coffeescript.org/) home
+page to quickly compile the sample CoffeeScript into very readable JavaScript.
 
 
 ## Do I need to learn CoffeeScript to know how dropbox.js works?
 
 **No.**
 
-You can follow the
-[development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md)
-to build the un-minified JavaScript library in `lib/dropbox.js` and then use
-your editor's find feature to get to the source code for the methods that you
-are interested in.
+You can follow the [development guide](./development.md) to build the
+un-minified JavaScript library in `lib/dropbox.js` and then use your editor's
+find feature to get to the source code for the methods that you are interested
+in.
 
 The building instructions in the development guide do not require familiarity
 with CoffeeScript.

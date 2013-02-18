@@ -38,7 +38,7 @@ Implementations should call the `credentials` and `setCredentials` methods on
 the client to control the OAuth process.
 
 See the
-[Dropbox.Drivers.Chrome source](https://github.com/dropbox/dropbox-js/blob/master/src/drivers/chrome.coffee)
+[Dropbox.Drivers.Chrome source](../src/drivers/chrome.coffee)
 for a sample implementation of `onAuthStateChange`.
 
 
@@ -94,17 +94,14 @@ token in `localStorage`, so the user doesn't have to authorize the application
 on every request
 
 Although it seems that `rememberUser` should be true by default, it brings a
-couple of drawbacks. The user's token will still be valid after signing off the
-Dropbox web site, so your application will still recognize the user and access
-their Dropbox. This behavior is unintuitive to users. A reasonable compromise
-for apps that use `rememberUser` is to provide a `Sign out` button that calls
-the `signOut` method on the app's `Dropbox.Client` instance.
+couple of drawbacks. The user's token will still be valid after signing out of
+the Dropbox web site, so your application will still recognize the user and
+access their Dropbox. This behavior is unintuitive to users. A reasonable
+compromise for apps that use `rememberUser` is to provide a `Sign out` button
+that calls the `signOut` method on the app's `Dropbox.Client` instance.
 
-The driver's constructor takes a `receiverPath` option t
-
-[checkbox.js](https://github.com/dropbox/dropbox-js/tree/master/samples/checkbox.js)
-sample application uses `rememberUser`, and implements signing off as described
-above.
+The [checkbox.js](../samples/checkbox.js) sample application uses
+`rememberUser`, and implements signing out as described above.
 
 
 ### Dropbox.Drivers.Popup
@@ -121,7 +118,7 @@ is met, so the safest bet is to make the `client.authorize()` call in a `click`
 event listener.
 
 To use the popup driver, create a page on your site that contains the
-[receiver code](https://github.com/dropbox/dropbox-js/blob/master/test/html/oauth_receiver.html),
+[receiver code](../test/html/oauth_receiver.html),
 change the code to reflect the location of `dropbox.js` on your site, and point
 the `Dropbox.Drivers.Popup` constructor to it.
 
@@ -153,18 +150,17 @@ and caveats as the redirecting driver.
 ### Dropbox.Drivers.Chrome
 
 Google Chrome [extensions](http://developer.chrome.com/extensions/) and
-[applications](developer.chrome.com/apps/) are supported by a driver that opens
-a new browser tab (in the case of extensions and legacy applications) or
-an application window (for new applications) to complete the OAuth
-authorization.
+[applications](http://developer.chrome.com/apps/) are supported by a driver
+that opens a new browser tab (in the case of extensions and legacy
+applications) or an application window (for new applications) to complete the
+OAuth authorization.
 
 To use this driver, first add the following files to your extension.
 
-* the [receiver script](https://github.com/dropbox/dropbox-js/blob/master/test/src/helpers/chrome_oauth_receiver.coffee);
-the file is both valid JavaScript and valid CoffeeScript
-* the [receiver page](https://github.com/dropbox/dropbox-js/blob/master/test/html/chrome_oauth_receiver.html);
-change the page to reflect the paths to `dropbox.js` and to the receiver script
-file
+* the [receiver script](../test/src/helpers/chrome_oauth_receiver.coffee); the
+file is both valid JavaScript and valid CoffeeScript
+* the [receiver page](../test/html/chrome_oauth_receiver.html); change the page
+to reflect the paths to `dropbox.js` and to the receiver script file
 
 Point the driver constructor to the receiver page:
 
@@ -199,6 +195,4 @@ To fully automate your test suite, you need to load up the Chrome extension
 bundled in the `dropbox.js` source tree. The extension automatically clicks on
 the "Authorize" button in the Dropbox token authorization page, and closes the
 page after the token authorization process completes. Follow the steps in the
-[development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md)
-to build and install the extension.
-
+[development guide](./development.md) to build and install the extension.

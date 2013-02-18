@@ -1,9 +1,8 @@
 # Client Library for the Dropbox API
 
 This is a JavaScript client library for the Dropbox API,
-[written in CoffeeScript](https://github.com/dropbox/dropbox-js/blob/master/doc/coffee_faq.md),
-suitable for use in both modern browsers and in server-side code running under
-[node.js](http://nodejs.org/).
+[written in CoffeeScript](./doc/coffee_faq.md), suitable for use in both modern
+browsers and in server-side code running under [node.js](http://nodejs.org/).
 
 
 ## Supported Platforms
@@ -20,13 +19,13 @@ Keep in mind that the versions above are not hard requirements.
 
 ## Installation and Usage
 
-The
-[getting started guide](https://github.com/dropbox/dropbox-js/blob/master/doc/getting_started.md)
-will help you get your first dropbox.js application up and running.
+The [getting started guide](./doc/getting_started.md) will help you get your
+first dropbox.js application up and running.
 
-Peruse the source code of the
-[sample apps](https://github.com/dropbox/dropbox-js/tree/master/samples),
-and borrow as much as you need.
+The [code snippets doc](./doc/snippets.md) contains some JavaScript fragments
+that may be useful in the latter stages of application development. The
+[sample apps](./samples/) source code can be useful as a scaffold or as an
+illustration of how all the pieces fit together.
 
 The
 [dropbox.js API reference](http://coffeedoc.info/github/dropbox/dropbox-js/master/class_index.html)
@@ -50,13 +49,11 @@ API.
 
 ## Development
 
-This library is written in CoffeeScript.
-[This document](https://github.com/dropbox/dropbox-js/blob/master/doc/coffee_faq.md)
+This library is written in CoffeeScript. [This document](./doc/coffee_faq.md)
 can help you understand if that matters to you.
 
-The
-[development guide](https://github.com/dropbox/dropbox-js/blob/master/doc/development.md)
-will make your life easier if you need to change the source code.
+The [development guide](./doc/development.md) will make your life easier if you
+need to change the source code.
 
 
 ## Platform-Specific Issues

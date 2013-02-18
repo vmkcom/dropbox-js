@@ -2,7 +2,7 @@
 
 Read this document if you want to build `dropbox.js` or modify its source code.
 If you want to write applications using dropbox.js, check out the
-[Getting Started](getting_started.md).
+[Getting Started doc](getting_started.md).
 
 The library is written using [CoffeeScript](http://coffeescript.org/), built
 using [cake](http://coffeescript.org/documentation/docs/cake.html), minified
@@ -10,16 +10,14 @@ using [uglify.js](https://github.com/mishoo/UglifyJS/), tested using
 [mocha](http://visionmedia.github.com/mocha/) and
 [chai.js](http://chaijs.com/), and packaged using [npm](https://npmjs.org/).
 
-If you don't "speak" CoffeeScript,
-[this document](https://github.com/dropbox/dropbox-js/blob/master/doc/coffee_faq.md)
-might address some of your concerns.
+If you don't "speak" CoffeeScript, [this document](./coffee_faq.md) might
+address some of your concerns.
 
 
 ## Dev Environment Setup
 
-Install [node.js](http://nodejs.org/#download) to get `npm` (the node
-package manager), then use it to install the libraries required by the test
-suite.
+Install [node.js](http://nodejs.org/#download) to get `npm` (the node package
+manager), then use it to install the libraries required by the test suite.
 
 ```bash
 git clone https://github.com/dropbox/dropbox-js.git
