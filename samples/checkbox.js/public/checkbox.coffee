@@ -4,18 +4,18 @@
 class Checkbox
   # @param {Dropbox.Client} dbClient a non-authenticated Dropbox client
   # @param {DOMElement} root the app's main UI element
-  constructor: (@dbClient, root) ->
-    @$root = $ root
-    @taskTemplate = $('#task-template').text().trim()
-    @$activeList = $('#active-task-list')
-    @$doneList = $('#done-task-list')
+  constructor: (@dbClient, @root) ->
+    @$root = $ @root
+    @taskTemplate = $('#task-template').html().trim()
+    @$activeList = $ '#active-task-list', @$root
+    @$doneList = $ '#done-task-list', @$root
     $('#signout-button').click (event) => @onSignOut event
 
     @dbClient.authenticate (error, data) =>
       return @showError(error) if error
       @dbClient.getUserInfo (error, userInfo) =>
         return @showError(error) if error
-        $('#user-name').text userInfo.name
+        $('#user-name', @$root).text userInfo.name
       @tasks = new Tasks @, @dbClient
       @tasks.load =>
         @wire()
@@ -246,4 +246,4 @@ $ ->
   client = new Dropbox.Client(
     key: '/Fahm0FLioA|ZxKxLxy5irfHqsCRs+Ceo8bwJjVPu8xZlfjgGzeCjQ', sandbox: true)
   client.authDriver new Dropbox.Drivers.Redirect(rememberUser: true)
-  new Checkbox client, '#app-ui'
+  window.app = new Checkbox client, '#app-ui'

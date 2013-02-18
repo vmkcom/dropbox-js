@@ -15,3 +15,5 @@ curl --fail https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.9.1/dropbox.js \
     > public/lib/dropbox.js
 curl --fail https://cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.9.1/dropbox.min.map \
     > public/lib/dropbox.min.map
+curl --fail https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.2pre/html5shiv.js \
+    > public/lib/html5shiv.js
