@@ -1658,8 +1658,8 @@ describe 'Dropbox.Client', ->
                   expect(client.authState).to.equal Dropbox.Client.DONE
                   expect(client.isAuthenticated()).to.equal true
                   expect(authStateChanges).to.deep.equal(['authorize2',
-                      Dropbox.Client.RESET, Dropbox.Client.REQUEST,
-                      Dropbox.Client.AUTHORIZED, Dropbox.Client.DONE])
+                      Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
+                      Dropbox.Client.DONE])
                   # Verify that we can do API calls after the 2nd signin.
                   client.getUserInfo (error, userInfo) ->
                     expect(error).to.equal null

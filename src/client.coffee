@@ -125,8 +125,6 @@ class Dropbox.Client
     # Advances the authentication FSM by one step.
     _fsmStep = =>
       if oldAuthState isnt @authState
-        if oldAuthState isnt null
-          @onAuthStateChange.dispatch @
         oldAuthState = @authState
         if @driver and @driver.onAuthStateChange
           @driver.onAuthStateChange(@, _fsmStep)
@@ -149,6 +147,7 @@ class Dropbox.Client
               @oauth.setToken token, tokenSecret
               @authState = DropboxClient.REQUEST
             @_credentials = null
+            @onAuthStateChange.dispatch @
             _fsmStep()
 
         when DropboxClient.REQUEST  # Have request token, get it authorized.
@@ -159,6 +158,7 @@ class Dropbox.Client
           @driver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
             @authState = DropboxClient.AUTHORIZED
             @_credentials = null
+            @onAuthStateChange.dispatch @
             _fsmStep()
 
         when DropboxClient.AUTHORIZED
@@ -172,6 +172,7 @@ class Dropbox.Client
               @uid = data.uid
               @authState = DropboxClient.DONE
             @_credentials = null
+            @onAuthStateChange.dispatch @
             _fsmStep()
 
         when DropboxClient.DONE  # We have an access token.
