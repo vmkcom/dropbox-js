@@ -223,12 +223,18 @@ testCordovaApp = (callback) ->
     callback() if callback
 
 buildCordovaApp = (callback) ->
-  buildStandaloneApp "test/cordova_app/assets/www", ->
-    cordova_js = glob.sync('test/cordova_app/assets/www/cordova-*.js').sort().
+  if fs.existsSync 'test/cordova_app/www'  # iOS
+    appPath = 'test/cordova_app/www'
+  else if fs.existsSync 'test/cordova_app/assets/www'  # Android
+    appPath = 'test/cordova_app/assets/www'
+  else
+    throw new Error 'Cordova www directory not found'
+
+  buildStandaloneApp appPath, ->
+    cordova_js = glob.sync("#{appPath}/cordova-*.js").sort().
                       reverse()[0]
-    run "cp #{cordova_js} test/cordova_app/assets/www/test/js/platform.js", ->
-      run "cp test/html/cordova_index.html " +
-          'test/cordova_app/assets/www/index.html', ->
+    run "cp #{cordova_js} #{appPath}/test/js/platform.js", ->
+      run "cp test/html/cordova_index.html #{appPath}/index.html", ->
         callback() if callback
 
 tokens = (callback) ->

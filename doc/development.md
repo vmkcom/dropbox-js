@@ -118,7 +118,7 @@ If Cordova is unpacked at `~/cordova`, the following command creates an Android
 application.
 
 ```bash
-~/cordova/android/bin/create test/cordova_app
+~/cordova/android/bin/create test/cordova_app com.dropbox.dropbox_js.test_app DropboxJsTest
 ```
 
 This setup only needs to be done once.

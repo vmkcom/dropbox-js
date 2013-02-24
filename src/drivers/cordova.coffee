@@ -21,12 +21,15 @@ class Dropbox.Drivers.Cordova extends Dropbox.Drivers.BrowserBase
     promptPageLoaded = false
     authHost = /^[^/]*\/\/[^/]*\//.exec(authUrl)[0]
     onEvent = (event) ->
-      if event.url is authUrl
+      if event.url is authUrl and promptPageLoaded is false
         # We get loadstop for the app authorization prompt page.
+        # On phones, we get a 2nd loadstop for the same authorization URL
+        # when the user clicks 'Allow'. On tablets, we get a different URL.
         promptPageLoaded = true
         return
       if event.url and event.url.substring(0, authHost.length) isnt authHost
         # The user clicked on the app URL. Wait until they come back.
+        promptPageLoaded = false
         return
       if event.type is 'exit' or promptPageLoaded
         browser.removeEventListener 'loadstop', onEvent
