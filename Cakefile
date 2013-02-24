@@ -40,7 +40,7 @@ task 'vendor', ->
   vendor()
 
 task 'tokens', ->
-  remove.removeSync './test/.token', ignoreMissing: true
+  remove.removeSync './test/token', ignoreMissing: true
   build ->
     tokens ->
       process.exit 0
@@ -72,6 +72,17 @@ task 'chrometest2', ->
     build ->
       buildChromeApp 'app_v2', ->
         testChromeApp()
+
+task 'cordova', ->
+  vendor ->
+    build ->
+      buildCordovaApp()
+
+task 'cordovatest', ->
+  vendor ->
+    build ->
+      buildCordovaApp ->
+        testCordovaApp()
 
 build = (callback) ->
   commands = []
@@ -165,28 +176,31 @@ testChromeApp = (callback) ->
     callback() if callback
 
 buildChromeApp = (manifestFile, callback) ->
-  unless fs.existsSync 'test/chrome_app/test'
-    fs.mkdirSync 'test/chrome_app/test'
-  unless fs.existsSync 'test/chrome_app/node_modules'
-    fs.mkdirSync 'test/chrome_app/node_modules'
+  buildStandaloneApp "test/chrome_app", ->
+    run "cp test/chrome_app/manifests/#{manifestFile}.json " +
+        'test/chrome_app/manifest.json', ->
+      callback() if callback
+
+buildStandaloneApp = (appPath, callback) ->
+  unless fs.existsSync appPath
+    fs.mkdirSync appPath
+  unless fs.existsSync "#{appPath}/test"
+    fs.mkdirSync "#{appPath}/test"
+  unless fs.existsSync "#{appPath}/node_modules"
+    fs.mkdirSync "#{appPath}/node_modules"
 
   links = [
-    ['lib', 'test/chrome_app/lib'],
-    ['node_modules/mocha', 'test/chrome_app/node_modules/mocha'],
-    ['node_modules/sinon-chai', 'test/chrome_app/node_modules/sinon-chai'],
-    ['test/.token', 'test/chrome_app/test/.token'],
-    ['test/binary', 'test/chrome_app/test/binary'],
-    ['test/html', 'test/chrome_app/test/html'],
-    ['test/js', 'test/chrome_app/test/js'],
-    ['test/vendor', 'test/chrome_app/test/vendor'],
+    ['lib', "#{appPath}/lib"],
+    ['node_modules/mocha', "#{appPath}/node_modules/mocha"],
+    ['node_modules/sinon-chai', "#{appPath}/node_modules/sinon-chai"],
+    ['test/token', "#{appPath}/test/token"],
+    ['test/binary', "#{appPath}/test/binary"],
+    ['test/html', "#{appPath}/test/html"],
+    ['test/js', "#{appPath}/test/js"],
+    ['test/vendor', "#{appPath}/test/vendor"],
   ]
-  commands = [
-    "cp test/chrome_app/manifests/#{manifestFile}.json " +
-        'test/chrome_app/manifest.json'
-  ]
-  for link in links
-  #   fs.symlinkSync(path.resolve(link[0]), link[1]) unless fs.existsSync link[1]
-    commands.push "cp -r #{link[0]} #{path.dirname(link[1])}"
+  commands = for link in links
+    "cp -r #{link[0]} #{path.dirname(link[1])}"
   async.forEachSeries commands, run, ->
     callback() if callback
 
@@ -203,6 +217,19 @@ chromeCommand = ->
     'chrome'
   else
     'google-chrome'
+
+testCordovaApp = (callback) ->
+  run 'test/cordova_app/cordova/run', ->
+    callback() if callback
+
+buildCordovaApp = (callback) ->
+  buildStandaloneApp "test/cordova_app/assets/www", ->
+    cordova_js = glob.sync('test/cordova_app/assets/www/cordova-*.js').sort().
+                      reverse()[0]
+    run "cp #{cordova_js} test/cordova_app/assets/www/test/js/platform.js", ->
+      run "cp test/html/cordova_index.html " +
+          'test/cordova_app/assets/www/index.html', ->
+        callback() if callback
 
 tokens = (callback) ->
   TokenStash = require './test/js/token_stash.js'

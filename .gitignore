@@ -21,6 +21,7 @@ test/chrome_app/node_modules
 test/chrome_app/test
 test/chrome_extension/*.js
 test/chrome_profile
+test/cordova_app
 test/js
 tmp/*.js
 
@@ -34,6 +35,6 @@ doc/files
 dropbox-*.tgz
 
 # Potentially sensitive credentials and keys used during testing.
-test/.token
+test/token
 test/ssl
 

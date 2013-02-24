@@ -272,7 +272,15 @@ class Dropbox.Xhr
             fileData = fileData.buffer
 
       contentType or= 'application/octet-stream'
-      fileData = new Blob [fileData], type: contentType
+      try
+        fileData = new Blob [fileData], type: contentType
+      catch blobError
+        # Stock Android / iPhone browsers don't implement the Blob contructor.
+        if window.WebKitBlobBuilder
+          builder = new WebKitBlobBuilder
+          builder.append fileData
+          if blob = builder.getBlob contentType
+            fileData = blob
 
       # Workaround for http://crbug.com/165095
       if typeof File isnt 'undefined' and fileData instanceof File

@@ -1,3 +1,11 @@
+buildBlob = (fragments, mimeType) ->
+  try
+    return new Blob fragments, mimeType
+  catch blobError
+    builder = new WebKitBlobBuilder
+    builder.append fragment for fragment in fragments
+    return builder.getBlob mimeType
+
 buildClientTests = (clientKeys) ->
   # Creates the global client.
   setupClient = (test, done) ->
@@ -32,39 +40,39 @@ buildClientTests = (clientKeys) ->
   # Standard-compliant browsers write via XHR#send(ArrayBufferView).
   setupImageFileUsingArrayBuffer = (test, done) ->
     if Uint8Array?
-      testImageServerOn()
-      xhr = new Dropbox.Xhr 'GET', testImageUrl
-      xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
-        testImageServerOff()
-        expect(error).to.equal null
-        test.__client.writeFile test.imageFile, buffer, (error, stat) ->
-          expect(error).to.equal null
-          # Some browsers will send the '[object Uint8Array]' string instead of
-          # the ArrayBufferView.
-          if stat.size is buffer.byteLength
-            test.imageFileTag = stat.versionTag
-            done true
-          else
-            done false
+      view = new Uint8Array test.imageFileData.length
+      for i in [0...test.imageFileData.length]
+        view[i] = test.imageFileData.charCodeAt i
+      buffer = view.buffer
+      test.__client.writeFile test.imageFile, buffer, (error, stat) ->
+        if error
+          return done(false)
+        # Some browsers will send the '[object Uint8Array]' string instead of
+        # the ArrayBufferView.
+        if stat.size is buffer.byteLength
+          test.imageFileTag = stat.versionTag
+          done true
+        else
+          done false
     else
       done false
 
   # Fallback to XHR#send(Blob).
   setupImageFileUsingBlob = (test, done) ->
     if Blob?
-      testImageServerOn()
-      xhr = new Dropbox.Xhr 'GET', testImageUrl
-      xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
-        testImageServerOff()
-        expect(error).to.equal null
-        blob = new Blob [buffer], type: 'image/png'
-        test.__client.writeFile test.imageFile, blob, (error, stat) ->
-          expect(error).to.equal null
-          if stat.size is blob.size
-            test.imageFileTag = stat.versionTag
-            done true
-          else
-            done false
+      view = new Uint8Array test.imageFileData.length
+      for i in [0...test.imageFileData.length]
+        view[i] = test.imageFileData.charCodeAt i
+      buffer = view.buffer
+      blob = buildBlob [buffer], type: 'image/png'
+      test.__client.writeFile test.imageFile, blob, (error, stat) ->
+        if error
+          return done(false)
+        if stat.size is blob.size
+          test.imageFileTag = stat.versionTag
+          done true
+        else
+          done false
     else
       done false
 
@@ -460,9 +468,9 @@ buildClientTests = (clientKeys) ->
       newBytes = new Uint8Array newBuffer
       for i in [0...@imageFileData.length]
         newBytes[i] = @imageFileData.charCodeAt i
-      @newBlob = new Blob [newBytes], type: 'image/png'
+      @newBlob = buildBlob [newBytes], type: 'image/png'
       if @newBlob.size isnt newBuffer.byteLength
-        @newBlob = new Blob [newBuffer], type: 'image/png'
+        @newBlob = buildBlob [newBuffer], type: 'image/png'
       @client.writeFile @newFile, @newBlob, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -491,7 +499,7 @@ buildClientTests = (clientKeys) ->
       newBytes = new Uint8Array newBuffer
       for i in [0...@imageFileData.length]
         newBytes[i] = @imageFileData.charCodeAt i
-      newBlob = new Blob [newBytes], type: 'image/png'
+      newBlob = buildBlob [newBytes], type: 'image/png'
 
       # Called when we have a File wrapping newBlob.
       actualTestCase = (file) =>
@@ -632,12 +640,12 @@ buildClientTests = (clientKeys) ->
             @buffer2.writeUInt8 @imageFileData.charCodeAt(@length1 + i), i
 
         if Blob?  # node.js and IE9 and below don't have Blob
-          @blob1 = new Blob [@view1], type: 'image/png'
+          @blob1 = buildBlob [@view1], type: 'image/png'
           if @blob1.size isnt @arrayBuffer1.byteLength
-            @blob1 = new Blob [@arrayBuffer1], type: 'image/png'
-          @blob2 = new Blob [@view2], type: 'image/png'
+            @blob1 = buildBlob [@arrayBuffer1], type: 'image/png'
+          @blob2 = buildBlob [@view2], type: 'image/png'
           if @blob2.size isnt @arrayBuffer2.byteLength
-            @blob2 = new Blob [@arrayBuffer2], type: 'image/png'
+            @blob2 = buildBlob [@arrayBuffer2], type: 'image/png'
 
     afterEach (done) ->
       @timeout 20 * 1000  # This sequence is slow on the current API server.

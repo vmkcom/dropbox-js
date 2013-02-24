@@ -407,7 +407,13 @@ Content-Transfer-Encoding: binary\r
     describe '#setBody with Blob', ->
       beforeEach ->
         if Blob?
-          blob = new Blob ["abcdef"], type: 'image/png'
+          try
+            blob = new Blob ["abcdef"], type: 'image/png'
+          catch blobError
+            builder = new WebKitBlobBuilder
+            builder.append "abcdef"
+            blob = builder.getBlob 'image/png'
+
           @xhr.setBody blob
 
       it 'flags the XHR as needing preflight', ->

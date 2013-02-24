@@ -175,6 +175,26 @@ UI should include a method for the user to sign out of Dropbox, which can be
 implemented by calling the `signOut` instance method of `Dropbox.Client`.
 
 
+### Dropbox.Drivers.Cordova
+
+This driver uses Cordova's
+[InAppBrowser](http://cordova.apache.org/docs/en/2.4.0/cordova_inappbrowser_inappbrowser.md.html#InAppBrowser)
+to open a popup-like activity that completes the OAuth authorization.
+
+```javascript
+client.authDriver(new Dropbox.Drivers.Cordova());
+```
+
+This driver implements the `rememberUser` option with the same semantics and
+caveats as the redirecting driver.
+
+
+In theory, the Redirect driver should work for Cordova applications. However,
+[this bug](https://code.google.com/p/android/issues/detail?id=17327) prevents
+it from working on Android, so a cross-platform application should use the
+Cordova-specific driver.
+
+
 ### Dropbox.Drivers.NodeServer
 
 This driver is designed for use in the automated test suites of node.js

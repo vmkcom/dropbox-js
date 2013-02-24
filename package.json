@@ -25,14 +25,14 @@
   },
   "devDependencies": {
     "async": ">= 0.2.5",
-    "chai": ">= 1.4.2",
-    "codo": ">= 1.5.4",
+    "chai": ">= 1.5.0",
+    "codo": ">= 1.5.6",
     "coffee-script": ">= 1.4.0",
     "express": ">= 3.1.0",
     "glob": ">= 3.1.20",
     "mocha": ">= 1.8.1",
     "remove": ">= 0.1.5",
-    "sinon": ">= 1.5.2",
+    "sinon": ">= 1.6.0",
     "sinon-chai": ">= 2.3.1",
     "uglify-js": ">= 2.2.5"
   },

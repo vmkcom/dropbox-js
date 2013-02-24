@@ -277,9 +277,10 @@ describe 'Dropbox.Drivers.Redirect', ->
     beforeEach ->
       @node_js = module? and module.exports? and require?
       @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
+      @cordova = cordova?
 
     it 'should work', (done) ->
-      return done() if @node_js or @chrome_app
+      return done() if @node_js or @chrome_app or @cordova
       @timeout 30 * 1000  # Time-consuming because the user must click.
 
       listenerCalled = false
@@ -393,9 +394,10 @@ describe 'Dropbox.Drivers.Popup', ->
     beforeEach ->
       @node_js = module? and module.exports? and require?
       @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
+      @cordova = cordova?
 
     it 'should work with a query string', (done) ->
-      return done() if @node_js or @chrome_app
+      return done() if @node_js or @chrome_app or @cordova
       @timeout 45 * 1000  # Time-consuming because the user must click.
 
       client = new Dropbox.Client testKeys
@@ -421,7 +423,7 @@ describe 'Dropbox.Drivers.Popup', ->
             done()
 
     it 'should work with a URL fragment and rememberUser: true', (done) ->
-      return done() if @node_js or @chrome_app
+      return done() if @node_js or @chrome_app or @cordova
       @timeout 45 * 1000  # Time-consuming because the user must click.
 
       client = new Dropbox.Client testKeys

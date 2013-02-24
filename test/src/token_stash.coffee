@@ -95,9 +95,9 @@ class TokenStash
 
   # Sets up the directory structure for the credential stash.
   setupFs: ->
-    @dirPath = 'test/.token'
-    @jsonPath = 'test/.token/token.json'
-    @jsPath = 'test/.token/token.js'
+    @dirPath = 'test/token'
+    @jsonPath = 'test/token/token.json'
+    @jsPath = 'test/token/token.js'
 
     unless @fs.existsSync @dirPath
       @fs.mkdirSync @dirPath

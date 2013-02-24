@@ -28,6 +28,8 @@ tmp/*.js
 
 # Test code that is not related to node.js.
 test/chrome_app
+test/chrome_extension
+test/cordova_app
 
 # Documentation output.
 doc/*.html
@@ -37,10 +39,8 @@ doc/files
 
 # Test app logos.
 test/app_icon
-# Test automating Chrome extension.
-test/chrome_extension
 
 # Potentially sensitive credentials and keys used during testing.
-test/.token
+test/token
 test/ssl
 

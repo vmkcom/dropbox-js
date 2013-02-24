@@ -10,9 +10,14 @@ browsers and in server-side code running under [node.js](http://nodejs.org/).
 This library is tested against the following JavaScript platforms.
 
 * [node.js](http://nodejs.org/) 0.6 and 0.8
-* [Chrome](https://www.google.com/chrome) 23
-* [Firefox](www.mozilla.org/firefox) 17
-* Internet Explorer 9
+* [Chrome](http://www.google.com/chrome) 25
+* [Firefox](http://www.mozilla.org/firefox) 19
+* [Internet Explorer](https://github.com/xdissent/ievms) 9 and 10
+* [Chrome extensions](http://developer.chrome.com/extensions) in the Chrome
+  browser mentioned above
+* [Chrome packaged apps](http://developer.chrome.com/apps/) in the Chrome
+  browser mentioned above
+* [Cordova](http://cordova.apache.org/) 2.4
 
 Keep in mind that the versions above are not hard requirements.
 
@@ -71,6 +76,12 @@ The library only works when used from `https://` pages, due to
 Reading and writing binary files is unsupported.
 
 At the moment, there are no plans for fixing these issues.
+
+### Cordova
+
+Reading and writing binary files is currently broken.
+[This issue](https://github.com/dropbox/dropbox-js/issues/50) will be fixed in
+a future release.
 
 
 ## Copyright and License

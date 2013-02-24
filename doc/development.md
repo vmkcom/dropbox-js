@@ -109,6 +109,21 @@ The `cake chrometest` command will open a Google Chrome instance. The
 `dropbox.js Test Suite` application must be clicked.
 
 
+### Cordova Testing
+
+The tests for Cordova assume that a default Cordova application tree for your
+target platform is created under `test/cordova_app`.
+
+If Cordova is unpacked at `~/cordova`, the following command creates an Android
+application.
+
+```bash
+~/cordova/android/bin/create test/cordova_app
+```
+
+This setup only needs to be done once.
+
+
 ### Fully Automated Tests
 
 The test suite opens up the Dropbox authorization page a few times, and also

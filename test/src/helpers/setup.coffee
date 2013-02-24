@@ -1,4 +1,4 @@
-if global? and require? and module?
+if global? and require? and module? and (not cordova?)
   # Node.JS
   exports = global
 
@@ -41,12 +41,16 @@ else
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null
   else
-    # Browser
     exports = window
-    exports.authDriver = new Dropbox.Drivers.Popup(
-        receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
+    if cordova?
+      # Cordova WebView.
+      exports.authDriver = new Dropbox.Drivers.Cordova
+    else
+      # Browser
+      exports.authDriver = new Dropbox.Drivers.Popup(
+          receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
 
-  exports.testImageUrl = '/test/binary/dropbox.png'
+  exports.testImageUrl = '../../test/binary/dropbox.png'
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
 
