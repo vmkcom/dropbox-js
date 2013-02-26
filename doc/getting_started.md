@@ -77,8 +77,7 @@ client side (browser apps and Chrome extensions), as well as all open-source
 applications.
 
 To meet this requirement,
-[encode your API key](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/api_keys.js/public/index.html)
-and pass the encoded key string to the `Dropbox.Client` constructor.
+[encode your API key](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/api_keys.js/public/index.html).
 
 ```javascript
 var client = new Dropbox.Client({
@@ -89,7 +88,7 @@ var client = new Dropbox.Client({
 
 ## Authentication
 Before you can make any API calls, you need to authenticate your application's
-user with Dropbox, and have them authorize your app's to access their Dropbox.
+user with Dropbox, and have them authorize your apps to access their Dropbox.
 
 This process follows the [OAuth 1.0](http://tools.ietf.org/html/rfc5849)
 protocol, which entails sending the user to a Web page on `www.dropbox.com`,
