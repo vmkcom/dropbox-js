@@ -639,7 +639,8 @@ Content-Transfer-Encoding: binary\r
           @xhr.prepare().send (error, data) ->
             expect(error).to.not.be.ok
             expect(data).to.be.a 'string'
-            expect(data).to.equal testImageBytes
+            bytes = (data.charCodeAt i for i in [0...data.length])
+            expect(bytes).to.deep.equal testImageBytes
             done()
 
       describe 'with responseType arraybuffer', ->
@@ -654,10 +655,8 @@ Content-Transfer-Encoding: binary\r
             expect(error).to.not.be.ok
             expect(buffer).to.be.instanceOf ArrayBuffer
             view = new Uint8Array buffer
-            length = buffer.byteLength
-            bytes = (String.fromCharCode view[i] for i in [0...length]).
-                join('')
-            expect(bytes).to.equal testImageBytes
+            bytes = (view[i] for i in [0...buffer.byteLength])
+            expect(bytes).to.deep.equal testImageBytes
             done()
 
       describe 'with responseType blob', ->
@@ -676,10 +675,8 @@ Content-Transfer-Encoding: binary\r
               return unless reader.readyState == FileReader.DONE
               buffer = reader.result
               view = new Uint8Array buffer
-              length = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...length]).
-                  join('')
-              expect(bytes).to.equal testImageBytes
+              bytes = (view[i] for i in [0...buffer.byteLength])
+              expect(bytes).to.deep.equal testImageBytes
               done()
             reader.readAsArrayBuffer blob
 
@@ -694,9 +691,8 @@ Content-Transfer-Encoding: binary\r
           @xhr.prepare().send (error, buffer) ->
             expect(error).to.not.be.ok
             expect(buffer).to.be.instanceOf Buffer
-            stringChars = for i in [0...buffer.length]
-              String.fromCharCode buffer.readUInt8(i)
-            expect(stringChars.join('')).to.equal testImageBytes
+            bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
+            expect(bytes).to.deep.equal testImageBytes
             done()
 
   describe '#urlEncode', ->

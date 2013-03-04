@@ -27,7 +27,7 @@ buildClientTests = (clientKeys) ->
   # Creates the binary image file in the test directory.
   setupImageFile = (test, done) ->
     test.imageFile = "#{test.testFolder}/test-binary-image.png"
-    test.imageFileData = testImageBytes
+    test.imageFileBytes = testImageBytes
 
     setupImageFileUsingArrayBuffer test, (success) ->
       if success
@@ -40,9 +40,9 @@ buildClientTests = (clientKeys) ->
   # Standard-compliant browsers write via XHR#send(ArrayBufferView).
   setupImageFileUsingArrayBuffer = (test, done) ->
     if Uint8Array?
-      view = new Uint8Array test.imageFileData.length
-      for i in [0...test.imageFileData.length]
-        view[i] = test.imageFileData.charCodeAt i
+      view = new Uint8Array test.imageFileBytes.length
+      for i in [0...test.imageFileBytes.length]
+        view[i] = test.imageFileBytes[i]
       buffer = view.buffer
       test.__client.writeFile test.imageFile, buffer, (error, stat) ->
         if error
@@ -60,9 +60,9 @@ buildClientTests = (clientKeys) ->
   # Fallback to XHR#send(Blob).
   setupImageFileUsingBlob = (test, done) ->
     if Blob?
-      view = new Uint8Array test.imageFileData.length
-      for i in [0...test.imageFileData.length]
-        view[i] = test.imageFileData.charCodeAt i
+      view = new Uint8Array test.imageFileBytes.length
+      for i in [0...test.imageFileBytes.length]
+        view[i] = test.imageFileBytes[i]
       buffer = view.buffer
       blob = buildBlob [buffer], type: 'image/png'
       test.__client.writeFile test.imageFile, blob, (error, stat) ->
@@ -78,7 +78,9 @@ buildClientTests = (clientKeys) ->
 
   # Last resort: send a string that will get crushed by encoding errors.
   setupImageFileUsingString = (test, done) ->
-    test.__client.writeFile(test.imageFile, test.imageFileData,
+    stringChars = for i in [0...test.imageFileBytes.length]
+      String.fromCharCode(test.imageFileBytes[i])
+    test.__client.writeFile(test.imageFile, stringChars.join(''),
         { binary: true },
         (error, stat) ->
           expect(error).to.equal null
@@ -99,7 +101,6 @@ buildClientTests = (clientKeys) ->
 
   # Global (expensive) fixtures.
   before (done) ->
-    @timeout 10 * 1000
     setupClient this, =>
       setupDirectory this, =>
         setupImageFile this, =>
@@ -284,7 +285,8 @@ buildClientTests = (clientKeys) ->
     it 'reads a binary file into a string', (done) ->
       @client.readFile @imageFile, binary: true, (error, data, stat) =>
         expect(error).to.equal null
-        expect(data).to.equal @imageFileData
+        bytes = (data.charCodeAt i for i in [0...data.length])
+        expect(bytes).to.deep.equal @imageFileBytes
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
@@ -319,10 +321,8 @@ buildClientTests = (clientKeys) ->
           return unless reader.readyState == FileReader.DONE
           buffer = reader.result
           view = new Uint8Array buffer
-          length = buffer.byteLength
-          bytes = (String.fromCharCode view[i] for i in [0...length]).
-              join('')
-          expect(bytes).to.equal @imageFileData
+          bytes = (view[i] for i in [0...buffer.byteLength])
+          expect(bytes).to.deep.equal @imageFileBytes
           done()
         reader.readAsArrayBuffer blob
 
@@ -331,15 +331,14 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, arrayBuffer: true, (error, buffer, stat) =>
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf ArrayBuffer
+        expect(buffer.byteLength).to.equal @imageFileBytes.length
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
-        length = buffer.byteLength
-        bytes = (String.fromCharCode view[i] for i in [0...length]).
-            join('')
-        expect(bytes).to.equal @imageFileData
+        bytes = (view[i] for i in [0...buffer.byteLength])
+        expect(bytes).to.deep.equal @imageFileBytes
         done()
 
     it 'reads a binary file into a node.js Buffer', (done) ->
@@ -350,9 +349,8 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @imageFile
         expect(stat.isFile).to.equal true
-        stringChars = for i in [0...buffer.length]
-          String.fromCharCode buffer.readUInt8(i)
-        expect(stringChars.join('')).to.equal @imageFileData
+        bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
+        expect(bytes).to.deep.equal @imageFileBytes
         done()
 
     describe 'with an onXhr listener', ->
@@ -464,10 +462,10 @@ buildClientTests = (clientKeys) ->
     it 'writes a Blob to a binary file', (done) ->
       return done() unless Blob? and ArrayBuffer?
       @newFile = "#{@testFolder}/test image from blob.png"
-      newBuffer = new ArrayBuffer @imageFileData.length
+      newBuffer = new ArrayBuffer @imageFileBytes.length
       newBytes = new Uint8Array newBuffer
-      for i in [0...@imageFileData.length]
-        newBytes[i] = @imageFileData.charCodeAt i
+      for i in [0...@imageFileBytes.length]
+        newBytes[i] = @imageFileBytes[i]
       @newBlob = buildBlob [newBytes], type: 'image/png'
       if @newBlob.size isnt newBuffer.byteLength
         @newBlob = buildBlob [newBuffer], type: 'image/png'
@@ -486,19 +484,17 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              length = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...length]).
-                  join('')
-              expect(bytes).to.equal @imageFileData
+              bytes = (view[i] for i in [0...buffer.byteLength])
+              expect(bytes).to.deep.equal @imageFileBytes
               done()
 
     it 'writes a File to a binary file', (done) ->
       return done() unless File? and Blob? and ArrayBuffer?
       @newFile = "#{@testFolder}/test image from file.png"
-      newBuffer = new ArrayBuffer @imageFileData.length
+      newBuffer = new ArrayBuffer @imageFileBytes.length
       newBytes = new Uint8Array newBuffer
-      for i in [0...@imageFileData.length]
-        newBytes[i] = @imageFileData.charCodeAt i
+      for i in [0...@imageFileBytes.length]
+        newBytes[i] = @imageFileBytes[i]
       newBlob = buildBlob [newBytes], type: 'image/png'
 
       # Called when we have a File wrapping newBlob.
@@ -519,10 +515,8 @@ buildClientTests = (clientKeys) ->
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
                 view = new Uint8Array buffer
-                length = buffer.byteLength
-                bytes = (String.fromCharCode view[i] for i in [0...length]).
-                    join('')
-                expect(bytes).to.equal @imageFileData
+                bytes = (view[i] for i in [0...buffer.byteLength])
+                expect(bytes).to.deep.equal @imageFileBytes
                 done()
 
       # TODO(pwnall): use lighter method of constructing a File, when available
@@ -542,10 +536,10 @@ buildClientTests = (clientKeys) ->
     it 'writes an ArrayBuffer to a binary file', (done) ->
       return done() unless ArrayBuffer?
       @newFile = "#{@testFolder}/test image from arraybuffer.png"
-      @newBuffer = new ArrayBuffer @imageFileData.length
+      @newBuffer = new ArrayBuffer @imageFileBytes.length
       newBytes = new Uint8Array @newBuffer
-      for i in [0...@imageFileData.length]
-        newBytes[i] = @imageFileData.charCodeAt i
+      for i in [0...@imageFileBytes.length]
+        newBytes[i] = @imageFileBytes[i]
       @client.writeFile @newFile, @newBuffer, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -561,18 +555,16 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              length = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...length]).
-                  join('')
-              expect(bytes).to.equal @imageFileData
+              bytes = (view[i] for i in [0...buffer.byteLength])
+              expect(bytes).to.deep.equal @imageFileBytes
               done()
 
     it 'writes an ArrayBufferView to a binary file', (done) ->
       return done() unless ArrayBuffer?
       @newFile = "#{@testFolder}/test image from arraybufferview.png"
-      @newBytes = new Uint8Array @imageFileData.length
-      for i in [0...@imageFileData.length]
-        @newBytes[i] = @imageFileData.charCodeAt i
+      @newBytes = new Uint8Array @imageFileBytes.length
+      for i in [0...@imageFileBytes.length]
+        @newBytes[i] = @imageFileBytes[i]
       @client.writeFile @newFile, @newBytes, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -588,18 +580,16 @@ buildClientTests = (clientKeys) ->
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
-              length = buffer.byteLength
-              bytes = (String.fromCharCode view[i] for i in [0...length]).
-                  join('')
-              expect(bytes).to.equal @imageFileData
+              bytes = (view[i] for i in [0...buffer.byteLength])
+              expect(bytes).to.deep.equal @imageFileBytes
               done()
 
     it 'writes a node.js Buffer to a binary file', (done) ->
       return done() unless Buffer?
       @newFile = "#{@testFolder}/test image from node buffer.png"
-      @newBuffer = new Buffer @imageFileData.length
-      for i in [0...@imageFileData.length]
-        @newBuffer.writeUInt8  @imageFileData.charCodeAt(i), i
+      @newBuffer = new Buffer @imageFileBytes.length
+      for i in [0...@imageFileBytes.length]
+        @newBuffer.writeUInt8  @imageFileBytes[i], i
       @client.writeFile @newFile, @newBuffer, (error, stat) =>
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
@@ -613,31 +603,30 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
-          stringChars = for i in [0...buffer.length]
-            String.fromCharCode buffer.readUInt8(i)
-          expect(stringChars.join('')).to.equal @imageFileData
+          bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
+          expect(bytes).to.deep.equal @imageFileBytes
           done()
 
   describe '#resumableUploadStep + #resumableUploadFinish', ->
     beforeEach ->
       if ArrayBuffer?  # IE9 and below doesn't have ArrayBuffer
-        @length1 = Math.ceil @imageFileData.length / 3
-        @length2 = @imageFileData.length - @length1
+        @length1 = Math.ceil @imageFileBytes.length / 3
+        @length2 = @imageFileBytes.length - @length1
         @arrayBuffer1 = new ArrayBuffer @length1
         @buffer1 = new Buffer @length1 if Buffer?
 
         @view1 = new Uint8Array @arrayBuffer1
         for i in [0...@length1]
-          @view1[i] = @imageFileData.charCodeAt i
+          @view1[i] = @imageFileBytes[i]
           if @buffer1
-            @buffer1.writeUInt8 @imageFileData.charCodeAt(i), i
+            @buffer1.writeUInt8 @imageFileBytes[i], i
         @arrayBuffer2 = new ArrayBuffer @length2
         @buffer2 = new Buffer @length2 if Buffer?
         @view2 = new Uint8Array @arrayBuffer2
         for i in [0...@length2]
-          @view2[i] = @imageFileData.charCodeAt @length1 + i
+          @view2[i] = @imageFileBytes[@length1 + i]
           if @buffer2
-            @buffer2.writeUInt8 @imageFileData.charCodeAt(@length1 + i), i
+            @buffer2.writeUInt8 @imageFileBytes[@length1 + i], i
 
         if Blob?  # node.js and IE9 and below don't have Blob
           @blob1 = buildBlob [@view1], type: 'image/png'
@@ -648,7 +637,7 @@ buildClientTests = (clientKeys) ->
             @blob2 = buildBlob [@arrayBuffer2], type: 'image/png'
 
     afterEach (done) ->
-      @timeout 20 * 1000  # This sequence is slow on the current API server.
+      @timeout 30 * 1000  # This sequence is slow on the current API server.
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
@@ -708,10 +697,8 @@ buildClientTests = (clientKeys) ->
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
-                  length = buffer.byteLength
-                  bytes = (String.fromCharCode view[i] for i in [0...length]).
-                      join('')
-                  expect(bytes).to.equal @imageFileData
+                  bytes = (view[i] for i in [0...buffer.byteLength])
+                  expect(bytes).to.deep.equal @imageFileBytes
                   done()
 
     it 'writes a binary file using two ArrayBufferViews', (done) ->
@@ -741,15 +728,13 @@ buildClientTests = (clientKeys) ->
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
-                  length = buffer.byteLength
-                  bytes = (String.fromCharCode view[i] for i in [0...length]).
-                      join('')
-                  expect(bytes).to.equal @imageFileData
+                  bytes = (view[i] for i in [0...buffer.byteLength])
+                  expect(bytes).to.deep.equal @imageFileBytes
                   done()
 
     it 'writes a binary file using two node.js Buffers', (done) ->
       return done() unless @buffer1
-      @timeout 20 * 1000  # This sequence is slow on the current API server.
+      @timeout 30 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable node buffer upload.png"
       @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
@@ -773,9 +758,8 @@ buildClientTests = (clientKeys) ->
                   expect(stat).to.be.instanceOf Dropbox.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
-                  stringChars = for i in [0...buffer.length]
-                    String.fromCharCode buffer.readUInt8(i)
-                  expect(stringChars.join('')).to.equal @imageFileData
+                  bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
+                  expect(bytes).to.deep.equal @imageFileBytes
                   done()
 
     it 'writes a binary file using two Blobs', (done) ->
@@ -805,10 +789,8 @@ buildClientTests = (clientKeys) ->
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
-                  length = buffer.byteLength
-                  bytes = (String.fromCharCode view[i] for i in [0...length]).
-                      join('')
-                  expect(bytes).to.equal @imageFileData
+                  bytes = (view[i] for i in [0...buffer.byteLength])
+                  expect(bytes).to.deep.equal @imageFileBytes
                   done()
 
     it 'recovers from out-of-sync correctly', (done) ->
@@ -1042,8 +1024,6 @@ buildClientTests = (clientKeys) ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'copies a file given by path', (done) ->
-      @timeout 12 * 1000  # This sequence is slow on the current API server.
-
       @newFile = "#{@testFolder}/copy of test-file.txt"
       @client.copy @textFile, @newFile, (error, stat) =>
         expect(error).to.equal null
@@ -1072,7 +1052,6 @@ buildClientTests = (clientKeys) ->
       @client.remove @newFile, (error, stat) -> done()
 
     it 'creates a Dropbox.CopyReference that copies the file', (done) ->
-      @timeout 12 * 1000  # This sequence is slow on the current API server.
       @newFile = "#{@testFolder}/ref copy of test-file.txt"
 
       @client.makeCopyReference @textFile, (error, copyRef) =>
@@ -1093,7 +1072,6 @@ buildClientTests = (clientKeys) ->
 
   describe '#move', ->
     beforeEach (done) ->
-      @timeout 12 * 1000  # This sequence is slow on the current API server.
       @moveFrom = "#{@testFolder}/move source of test-file.txt"
       @moveTo = null
       @client.copy @textFile, @moveFrom, (error, stat) ->
@@ -1106,7 +1084,6 @@ buildClientTests = (clientKeys) ->
         @client.remove @moveTo, (error, stat) -> done()
 
     it 'moves a file', (done) ->
-      @timeout 15 * 1000  # This sequence is slow on the current API server.
       @moveTo = "#{@testFolder}/moved test-file.txt"
       @client.move @moveFrom, @moveTo, (error, stat) =>
         expect(error).to.equal null
@@ -1165,8 +1142,6 @@ buildClientTests = (clientKeys) ->
   describe '#revertFile', ->
     describe 'on a removed file', ->
       beforeEach (done) ->
-        @timeout 12 * 1000  # This sequence seems to be quite slow.
-
         @newFile = "#{@testFolder}/file revert test.txt"
         @client.copy @textFile, @newFile, (error, stat) =>
           expect(error).to.equal null
@@ -1184,8 +1159,6 @@ buildClientTests = (clientKeys) ->
         @client.remove @newFile, (error, stat) -> done()
 
       it 'reverts the file to a previous version', (done) ->
-        @timeout 12 * 1000  # This sequence seems to be quite slow.
-
         @client.revertFile @newFile, @versionTag, (error, stat) =>
           expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
@@ -1372,7 +1345,6 @@ buildClientTests = (clientKeys) ->
 
   describe '#readThumbnail', ->
     it 'reads the image into a string', (done) ->
-      @timeout 12 * 1000  # Thumbnail generation is slow.
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.be.a 'string'
@@ -1385,7 +1357,6 @@ buildClientTests = (clientKeys) ->
 
     it 'reads the image into a Blob', (done) ->
       return done() unless Blob?
-      @timeout 12 * 1000  # Thumbnail generation is slow.
       options = { png: true, blob: true }
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
         expect(error).to.equal null

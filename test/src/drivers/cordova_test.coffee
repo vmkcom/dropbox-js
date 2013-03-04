@@ -15,7 +15,7 @@ describe 'Dropbox.Drivers.Cordova', ->
     beforeEach ->
       @node_js = module? and module.exports? and require?
       @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
-      return done() if @node_js or @chrome_app
+      return if @node_js or @chrome_app
       @client = new Dropbox.Client testKeys
       @driver = new Dropbox.Drivers.Cordova scope: 'some_scope'
       @driver.setStorageKey @client

@@ -21,7 +21,7 @@ task 'test', ->
         tokens ->
           test_cases = glob.sync 'test/js/**/*_test.js'
           test_cases.sort()  # Consistent test case order.
-          run 'node_modules/.bin/mocha --colors --slow 200 --timeout 10000 ' +
+          run 'node_modules/.bin/mocha --colors --slow 200 --timeout 20000 ' +
               "--require test/js/helpers/setup.js #{test_cases.join(' ')}"
 
 task 'webtest', ->
@@ -140,14 +140,9 @@ vendor = (callback) ->
   fs.mkdirSync 'test/vendor' unless fs.existsSync 'test/vendor'
 
   # Embed the binary test image into a 7-bit ASCII JavaScript.
-  bytes = fs.readFileSync 'test/binary/dropbox.png'
-  fragments = []
-  for i in [0...bytes.length]
-    fragment = bytes.readUInt8(i).toString 16
-    while fragment.length < 4
-      fragment = '0' + fragment
-    fragments.push "\\u#{fragment}"
-  js = "window.testImageBytes = \"#{fragments.join('')}\";"
+  buffer = fs.readFileSync 'test/binary/dropbox.png'
+  bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
+  js = "window.testImageBytes = [#{bytes.join(', ')}];\n"
   fs.writeFileSync 'test/vendor/favicon.js', js
 
   downloads = [

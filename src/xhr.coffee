@@ -1,37 +1,41 @@
-if window?
-  if window.XDomainRequest and not ('withCredentials' of new XMLHttpRequest())
-    DropboxXhrRequest = window.XDomainRequest
+if typeof XMLHttpRequest isnt 'undefined' and
+    (typeof window isnt 'undefined' or typeof self isnt 'undefined') and
+    typeof navigator isnt 'undefined' and
+    typeof navigator.userAgent is 'string'
+  # Browser or Web Worker.
+  if typeof XDomainRequest isnt 'undefined' and not
+      ('withCredentials' of new XMLHttpRequest())
+    DropboxXhrRequest = XDomainRequest
     DropboxXhrIeMode = true
     # IE's XDR doesn't allow setting requests' Content-Type to anything other
     # than text/plain, so it can't send _any_ forms.
     DropboxXhrCanSendForms = false
   else
-    DropboxXhrRequest = window.XMLHttpRequest
+    DropboxXhrRequest = XMLHttpRequest
     DropboxXhrIeMode = false
     # Firefox doesn't support adding named files to FormData.
     # https://bugzilla.mozilla.org/show_bug.cgi?id=690659
     DropboxXhrCanSendForms =
-      window.navigator.userAgent.indexOf('Firefox') is -1
+      navigator.userAgent.indexOf('Firefox') is -1
   DropboxXhrDoesPreflight = true
 else
-  # Node.js needs an adapter for the XHR API.
-  DropboxXhrRequest = require('xhr2')
+  # Node.js.
+  DropboxXhrRequest = require('xhr2')  # Need an XHR emulation.
   DropboxXhrIeMode = false
   # Node.js doesn't have FormData. We wouldn't want to bother putting together
   # upload forms in node.js anyway, because it doesn't do CORS preflight
   # checks, so we can use PUT requests without a performance hit.
   DropboxXhrCanSendForms = false
-  # Node.js is a server so it doesn't do annoying browser checks.
+  # Our XHR emulation skips CORS checks, which don't make sense for a server.
   DropboxXhrDoesPreflight = false
 
-# ArrayBufferView isn't available in the global namespce.
-#
-# Using the hack suggested in
-#     https://code.google.com/p/chromium/issues/detail?id=60449
 if typeof Uint8Array is 'undefined'
+  # IE <= 9
   DropboxXhrArrayBufferView = null
+  DropboxXhrWrapBlob = false
   DropboxXhrSendArrayBufferView = false
 else
+  # Old browsers don't expose the ArrayBufferView constructor.
   if Object.getPrototypeOf
     DropboxXhrArrayBufferView = Object.getPrototypeOf(
         Object.getPrototypeOf(new Uint8Array(0))).constructor
@@ -39,9 +43,29 @@ else
     DropboxXhrArrayBufferView =
         (new Uint8Array(0)).__proto__.__proto__.constructor
 
-  # Browsers that haven't implemented XHR#send(ArrayBufferView) also don't
-  # have a real ArrayBufferView prototype. (Safari, Firefox)
-  DropboxXhrSendArrayBufferView = DropboxXhrArrayBufferView isnt Object
+  if typeof Blob is 'undefined'
+    DropboxXhrWrapBlob = false
+    DropboxXhrSendArrayBufferView = true
+  else
+    try
+      if (new Blob [new Uint8Array(2)]).size is 2
+        DropboxXhrWrapBlob = true
+        DropboxXhrSendArrayBufferView = true
+      else
+        DropboxXhrSendArrayBufferView = false
+        DropboxXhrWrapBlob = (new Blob [new ArrayBuffer(2)]).size is 2
+    catch blobError
+      DropboxXhrSendArrayBufferView = false
+      DropboxXhrWrapBlob = false
+      if typeof WebKitBlobBuilder isnt 'undefined'
+        # Android's WebView doesn't support adding named files to FormData.
+        if navigator.userAgent.indexOf('Android') isnt -1
+          DropboxXhrCanSendForms = false
+
+    if DropboxXhrArrayBufferView is Object
+      # Browsers that haven't implemented XHR#send(ArrayBufferView) also don't
+      # have a real ArrayBufferView prototype. (Safari, Firefox)
+      DropboxXhrSendArrayBufferView = false
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
 class Dropbox.Xhr
@@ -55,8 +79,11 @@ class Dropbox.Xhr
   @doesPreflight = DropboxXhrDoesPreflight
   # Superclass for all ArrayBufferView objects.
   @ArrayBufferView = DropboxXhrArrayBufferView
-  # Set to true if we think we can send ArrayBufferView objects via XHR.
+  # True if we think we can send ArrayBufferView objects via XHR.
   @sendArrayBufferView = DropboxXhrSendArrayBufferView
+  # True if ArrayBuffer and ArrayBufferView instances get wrapped in Blobs
+  # before sending via XHR.
+  @wrapBlob = DropboxXhrWrapBlob
 
   # Sets up an AJAX request.
   #
@@ -202,7 +229,7 @@ class Dropbox.Xhr
   #
   # This method requires XHR Level 2 support, which is not available in IE
   # versions <= 9. If these browsers must be supported, it is recommended to
-  # check whether window.Blob is truthy.
+  # check if typeof Uint8Array !== 'undefined'
   #
   # @param {String} responseType the value that will be assigned to the XHR's
   #   responseType property
@@ -256,7 +283,7 @@ class Dropbox.Xhr
     if @isGet
       throw new Error 'setFileField cannot be called on GET requests'
 
-    if typeof(fileData) is 'object' and typeof Blob isnt 'undefined'
+    if typeof(fileData) is 'object'
       if typeof ArrayBuffer isnt 'undefined'
         if fileData instanceof ArrayBuffer
           # Convert ArrayBuffer -> ArrayBufferView on standard-compliant
@@ -276,6 +303,8 @@ class Dropbox.Xhr
         fileData = new Blob [fileData], type: contentType
       catch blobError
         # Stock Android / iPhone browsers don't implement the Blob contructor.
+        # This code is only used on iPhone Safari / WebView (Cordova), because
+        # Android's browser has a bug in sending Blobs.
         if window.WebKitBlobBuilder
           builder = new WebKitBlobBuilder
           builder.append fileData
@@ -285,7 +314,6 @@ class Dropbox.Xhr
       # Workaround for http://crbug.com/165095
       if typeof File isnt 'undefined' and fileData instanceof File
         fileData = new Blob [fileData], type: fileData.type
-        #fileData = fileData
       useFormData = fileData instanceof Blob
     else
       useFormData = false
@@ -395,15 +423,21 @@ class Dropbox.Xhr
 
     if @body isnt null
       body = @body
-      # send() in XHR doesn't like naked ArrayBuffers
-      if Dropbox.Xhr.sendArrayBufferView and body instanceof ArrayBuffer
-        body = new Uint8Array body
+      if Dropbox.Xhr.sendArrayBufferView
+        # Standards-compliant browsers don't like to send() naked ArrayBuffers
+        if body instanceof ArrayBuffer
+          body = new Uint8Array body
+      else
+        # Convert ArrayBufferView -> ArrayBuffer on older browsers, because
+        # they will send "[object Uint8Array]" instead of the actual data.
+        if body.byteOffset is 0 and body.buffer instanceof ArrayBuffer
+          body = body.buffer
 
       try
         @xhr.send body
       catch xhrError
         # Node.js doesn't implement Blob.
-        if !Dropbox.Xhr.sendArrayBufferView and typeof Blob isnt 'undefined'
+        if !Dropbox.Xhr.sendArrayBufferView and Dropbox.Xhr.wrapBlob
           # Firefox doesn't support sending ArrayBufferViews.
           body = new Blob [body], type: 'application/octet-stream'
           @xhr.send body

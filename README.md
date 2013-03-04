@@ -17,7 +17,7 @@ This library is tested against the following JavaScript platforms.
   browser mentioned above
 * [Chrome packaged apps](http://developer.chrome.com/apps/) in the Chrome
   browser mentioned above
-* [Cordova](http://cordova.apache.org/) 2.4
+* [Cordova](http://cordova.apache.org/) 2.5
 
 Keep in mind that the versions above are not hard requirements.
 
@@ -76,12 +76,6 @@ The library only works when used from `https://` pages, due to
 Reading and writing binary files is unsupported.
 
 At the moment, there are no plans for fixing these issues.
-
-### Cordova
-
-Reading and writing binary files is currently broken.
-[This issue](https://github.com/dropbox/dropbox-js/issues/50) will be fixed in
-a future release.
 
 
 ## Copyright and License

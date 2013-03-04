@@ -18,10 +18,7 @@ if global? and require? and module? and (not cordova?)
   testIconPath = './test/binary/dropbox.png'
   fs = require 'fs'
   buffer = fs.readFileSync testIconPath
-  bytes = []
-  for i in [0...buffer.length]
-    bytes.push String.fromCharCode(buffer.readUInt8(i))
-  exports.testImageBytes = bytes.join ''
+  exports.testImageBytes = (buffer.readUInt8(i) for i in [0...buffer.length])
   exports.testImageUrl = 'http://localhost:8913/favicon.ico'
   imageServer = null
   exports.testImageServerOn = ->
