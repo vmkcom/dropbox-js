@@ -16,7 +16,7 @@ client.authenticate({interactive: false}, function(error, client) {
   if (error) {
     return handleError(error);
   }
-  if (client.isAuthenticated() {
+  if (client.isAuthenticated()) {
     // Cached credentials are available, make Dropbox API calls.
     doSomethingCool();
   } else {
