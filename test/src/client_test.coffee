@@ -1234,6 +1234,14 @@ buildClientTests = (clientKeys) ->
           expect(urlInfo.url).to.contain '//db.tt/'
           done()
 
+      it 'returns a shortened Dropbox URL when given empty options', (done) ->
+        @client.makeUrl @textFile, {}, (error, urlInfo) ->
+          expect(error).to.equal null
+          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo.isDirect).to.equal false
+          expect(urlInfo.url).to.contain '//db.tt/'
+          done()
+
     describe 'for a Web URL created with long: true', ->
       it 'returns an URL to a preview page', (done) ->
         @client.makeUrl @textFile, { long: true }, (error, urlInfo) =>
