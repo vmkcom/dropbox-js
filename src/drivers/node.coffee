@@ -35,7 +35,10 @@ class Dropbox.Drivers.NodeServer
   openBrowser: (url) ->
     unless url.match /^https?:\/\//
       throw new Error("Not a http/https URL: #{url}")
-    @open url
+    if 'BROWSER' of process.env
+      @open url, process.env['BROWSER']
+    else
+      @open url
 
   # Creates and starts up an HTTP server that will intercept the redirect.
   createApp: ->

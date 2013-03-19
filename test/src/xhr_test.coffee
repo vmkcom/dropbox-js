@@ -670,15 +670,22 @@ Content-Transfer-Encoding: binary\r
           @xhr.prepare().send (error, blob) ->
             expect(error).to.not.be.ok
             expect(blob).to.be.instanceOf Blob
-            reader = new FileReader
-            reader.onloadend = ->
-              return unless reader.readyState == FileReader.DONE
-              buffer = reader.result
+            onBufferAvailable = (buffer) ->
               view = new Uint8Array buffer
               bytes = (view[i] for i in [0...buffer.byteLength])
               expect(bytes).to.deep.equal testImageBytes
               done()
-            reader.readAsArrayBuffer blob
+            if typeof FileReaderSync isnt 'undefined'
+              # Firefox WebWorkers don't have FileReader.
+              reader = new FileReaderSync
+              buffer = reader.readAsArrayBuffer blob
+              onBufferAvailable buffer
+            else
+              reader = new FileReader
+              reader.onloadend = ->
+                return unless reader.readyState == FileReader.DONE
+                onBufferAvailable reader.result
+              reader.readAsArrayBuffer blob
 
       describe 'with responseType buffer', ->
         beforeEach ->

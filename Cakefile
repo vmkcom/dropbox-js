@@ -142,8 +142,10 @@ vendor = (callback) ->
   # Embed the binary test image into a 7-bit ASCII JavaScript.
   buffer = fs.readFileSync 'test/binary/dropbox.png'
   bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
-  js = "window.testImageBytes = [#{bytes.join(', ')}];\n"
-  fs.writeFileSync 'test/vendor/favicon.js', js
+  browserJs = "window.testImageBytes = [#{bytes.join(', ')}];\n"
+  fs.writeFileSync 'test/vendor/favicon.browser.js', browserJs
+  workerJs = "self.testImageBytes = [#{bytes.join(', ')}];\n"
+  fs.writeFileSync 'test/vendor/favicon.worker.js', workerJs
 
   downloads = [
     # chai.js ships different builds for browsers vs node.js
@@ -233,7 +235,7 @@ buildCordovaApp = (callback) ->
         callback() if callback
 
 tokens = (callback) ->
-  TokenStash = require './test/js/token_stash.js'
+  TokenStash = require './test/js/helpers/token_stash.js'
   tokenStash = new TokenStash
   (new TokenStash()).get ->
     callback() if callback?

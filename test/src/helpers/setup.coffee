@@ -9,7 +9,7 @@ if global? and require? and module? and (not cordova?)
 
   exports.authDriver = new Dropbox.Drivers.NodeServer port: 8912
 
-  TokenStash = require '../token_stash.js'
+  TokenStash = require './token_stash.js'
   (new TokenStash()).get (credentials) ->
     exports.testKeys = credentials
   (new TokenStash(fullDropbox: true)).get (credentials) ->
@@ -38,16 +38,21 @@ else
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null
   else
-    exports = window
-    if cordova?
-      # Cordova WebView.
-      exports.authDriver = new Dropbox.Drivers.Cordova
+    if typeof window is 'undefined' and typeof self isnt 'undefined'
+      # Web Worker.
+      exports = self
+      exports.authDriver = null
+      exports.testImageUrl = '../../../test/binary/dropbox.png'
     else
-      # Browser
-      exports.authDriver = new Dropbox.Drivers.Popup(
-          receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
-
-  exports.testImageUrl = '../../test/binary/dropbox.png'
+      exports = window
+      if cordova?
+        # Cordova WebView.
+        exports.authDriver = new Dropbox.Drivers.Cordova
+      else
+        # Browser
+        exports.authDriver = new Dropbox.Drivers.Popup(
+            receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
+      exports.testImageUrl = '../../test/binary/dropbox.png'
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
 

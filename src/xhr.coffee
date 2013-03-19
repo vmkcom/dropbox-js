@@ -13,9 +13,10 @@ if typeof XMLHttpRequest isnt 'undefined' and
   else
     DropboxXhrRequest = XMLHttpRequest
     DropboxXhrIeMode = false
-    # Firefox doesn't support adding named files to FormData.
+    # Web Workers don't support FormData at all.
+    # Also, Firefox doesn't support adding named files to FormData.
     # https://bugzilla.mozilla.org/show_bug.cgi?id=690659
-    DropboxXhrCanSendForms =
+    DropboxXhrCanSendForms = typeof FormData isnt 'undefined' and
       navigator.userAgent.indexOf('Firefox') is -1
   DropboxXhrDoesPreflight = true
 else

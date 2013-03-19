@@ -47,8 +47,7 @@ class Dropbox.Drivers.BrowserBase
           # There is an old access token. Only use it if the app supports
           # logout.
           unless @rememberUser
-            @forgetCredentials()
-            return callback()
+            return @forgetCredentials(callback)
 
           # Verify that the old access token still works.
           client.setCredentials credentials

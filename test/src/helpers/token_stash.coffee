@@ -31,7 +31,7 @@ class TokenStash
 
   # Obtains credentials by doing a login on the live site.
   liveLogin: (callback) ->
-    Dropbox = require '../../lib/dropbox'
+    Dropbox = require '../../../lib/dropbox'
     sandboxClient = new Dropbox.Client @clientOptions().sandbox
     fullClient = new Dropbox.Client @clientOptions().full
     @setupAuth()
@@ -75,15 +75,18 @@ class TokenStash
     json = JSON.stringify full: fullCredentials, sandbox: sandboxCredentials
     @fs.writeFileSync @jsonPath, json
 
-    js = "window.testKeys = #{JSON.stringify sandboxCredentials};" +
-         "window.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
-    @fs.writeFileSync @jsPath, js
+    browserJs = "window.testKeys = #{JSON.stringify sandboxCredentials};" +
+        "window.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
+    @fs.writeFileSync @browserJsPath, browserJs
+    workerJs = "self.testKeys = #{JSON.stringify sandboxCredentials};" +
+        "self.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
+    @fs.writeFileSync @workerJsPath, workerJs
 
   # Sets up a node.js server-based authentication driver.
   setupAuth: ->
     return if @authDriver
 
-    Dropbox = require '../../lib/dropbox'
+    Dropbox = require '../../../lib/dropbox'
     @authDriver = new Dropbox.Drivers.NodeServer
 
   # Shuts down the node.js server behind the authentication server.
@@ -97,7 +100,8 @@ class TokenStash
   setupFs: ->
     @dirPath = 'test/token'
     @jsonPath = 'test/token/token.json'
-    @jsPath = 'test/token/token.js'
+    @browserJsPath = 'test/token/token.browser.js'
+    @workerJsPath = 'test/token/token.worker.js'
 
     unless @fs.existsSync @dirPath
       @fs.mkdirSync @dirPath

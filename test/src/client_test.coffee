@@ -316,15 +316,22 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
-        reader = new FileReader
-        reader.onloadend = =>
-          return unless reader.readyState == FileReader.DONE
-          buffer = reader.result
-          view = new Uint8Array buffer
-          bytes = (view[i] for i in [0...buffer.byteLength])
-          expect(bytes).to.deep.equal @imageFileBytes
-          done()
-        reader.readAsArrayBuffer blob
+          onBufferAvailable = (buffer) =>
+            view = new Uint8Array buffer
+            bytes = (view[i] for i in [0...buffer.byteLength])
+            expect(bytes).to.deep.equal @imageFileBytes
+            done()
+          if typeof FileReaderSync isnt 'undefined'
+            # Firefox WebWorkers don't have FileReader.
+            reader = new FileReaderSync
+            buffer = reader.readAsArrayBuffer blob
+            onBufferAvailable buffer
+          else
+            reader = new FileReader
+            reader.onloadend = ->
+              return unless reader.readyState == FileReader.DONE
+              onBufferAvailable reader.result
+            reader.readAsArrayBuffer blob
 
     it 'reads a binary file into an ArrayBuffer', (done) ->
       return done() unless ArrayBuffer?
@@ -1365,17 +1372,58 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
-        reader = new FileReader
-        reader.onloadend = =>
-          return unless reader.readyState == FileReader.DONE
-          buffer = reader.result
+        onBufferAvailable = (buffer) ->
           view = new Uint8Array buffer
           length = buffer.byteLength
           bytes = (String.fromCharCode view[i] for i in [0...length]).
               join('')
           expect(bytes).to.contain 'PNG'
           done()
-        reader.readAsArrayBuffer blob
+        if typeof FileReaderSync isnt 'undefined'
+          # Firefox WebWorkers don't have FileReader.
+          reader = new FileReaderSync
+          buffer = reader.readAsArrayBuffer blob
+          onBufferAvailable buffer
+        else
+          reader = new FileReader
+          reader.onloadend = ->
+            return unless reader.readyState == FileReader.DONE
+            onBufferAvailable reader.result
+          reader.readAsArrayBuffer blob
+
+    it 'reads the image into an ArrayBuffer', (done) ->
+      return done() unless ArrayBuffer?
+      options = { png: true, arrayBuffer: true }
+      @client.readThumbnail @imageFile, options, (error, buffer, stat) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf ArrayBuffer
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @imageFile
+          expect(stat.isFile).to.equal true
+        view = new Uint8Array buffer
+        length = buffer.byteLength
+        bytes = (String.fromCharCode view[i] for i in [0...length]).
+            join('')
+        expect(bytes).to.contain 'PNG'
+        done()
+
+    it 'reads the image into a node.js Buffer', (done) ->
+      return done() unless Buffer?
+      options = { png: true, buffer: true }
+      @client.readThumbnail @imageFile, options, (error, buffer, stat) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf Buffer
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat.path).to.equal @imageFile
+          expect(stat.isFile).to.equal true
+        length = buffer.length
+        bytes =
+            (String.fromCharCode buffer.readUInt8(i) for i in [0...length]).
+            join('')
+        expect(bytes).to.contain 'PNG'
+        done()
 
   describe '#reset', ->
     beforeEach ->
@@ -1570,8 +1618,10 @@ buildClientTests = (clientKeys) ->
 
 
 describe 'Dropbox.Client', ->
-  describe 'with full Dropbox access', ->
-    buildClientTests testFullDropboxKeys
+  # Skip some of the long tests in Web workers.
+  unless typeof self isnt 'undefined' and typeof window is 'undefined'
+    describe 'with full Dropbox access', ->
+      buildClientTests testFullDropboxKeys
 
   describe 'with Folder access', ->
     buildClientTests testKeys
@@ -1580,6 +1630,8 @@ describe 'Dropbox.Client', ->
       # NOTE: we're not duplicating this test in the full Dropbox acess suite,
       #       because it's annoying to the tester
       it 'completes the authenticate flow', (done) ->
+        return done() if typeof self isnt 'undefined'  # skip in Web workers
+
         @timeout 45 * 1000  # Time-consuming because the user must click.
         @client.reset()
         @client.authDriver authDriver

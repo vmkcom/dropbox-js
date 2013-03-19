@@ -13,5 +13,8 @@ else if window?
     window.Dropbox[name] = value for own name, value of Dropbox
   else
     window.Dropbox = Dropbox
+else if self?
+  # We're in a Web Worker. The Chooser library should not be imported here.
+  self.Dropbox = Dropbox
 else
   throw new Error 'This library only supports node.js and modern browsers.'

@@ -684,7 +684,7 @@ class Dropbox.Client
     if options and (options['long'] or options.longUrl or options.downloadHack)
       params = { short_url: 'false' }
     else
-      params = {}
+      params = { short_url: 'true' }
 
     path = @urlEncodePath path
     url = "#{@urls.shares}/#{path}"
@@ -793,9 +793,15 @@ class Dropbox.Client
   #   supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
   #   's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
   #   value is "small"
-  # @option options {Boolean} blob if true, the file will be retrieved as a
-  #   Blob, instead of a String; this requires XHR Level 2 support, which is
+  # @option options {Boolean} arrayBuffer if true, the file's contents  will be
+  #   passed to the callback in an ArrayBuffer; this is the recommended method
+  #   of reading thumbnails, as it is well supported across modern browsers;
+  #   requires XHR Level 2 support, which is not available in IE <= 9
+  # @option options {Boolean} blob if true, the file's contents  will be
+  #   passed to the callback in a Blob; requires XHR Level 2 support, which is
   #   not available in IE <= 9
+  # @option options {Boolean} buffer if true, the file's contents  will be
+  #   passed to the callback in a node.js Buffer; this only works on node.js
   # @param {function(?Dropbox.ApiError, ?Object, ?Dropbox.Stat)} callback
   #   called with the result of the /thumbnails HTTP request; if the call
   #   succeeds, the second parameter is the image data as a String or Blob,
@@ -810,6 +816,8 @@ class Dropbox.Client
     responseType = 'b'
     if options
       responseType = 'blob' if options.blob
+      responseType = 'arraybuffer' if options.arrayBuffer
+      responseType = 'buffer' if options.buffer
 
     xhr = @thumbnailXhr path, options
     xhr.setResponseType responseType
