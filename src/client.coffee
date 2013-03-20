@@ -681,15 +681,10 @@ class Dropbox.Client
     #       Rhino VM thinks it is; this hack can be removed when the bug below
     #       is fixed:
     #       https://github.com/mozilla/rhino/issues/93
-    if options
-      if options['long'] or options.longUrl or options.downloadHack
-        params = { short_url: 'false' }
-      else if options.download
-        params = {}
-      else
-        params = { short_url: 'true' }
+    if options and (options['long'] or options.longUrl or options.downloadHack)
+      params = { short_url: 'false' }
     else
-      params = { short_url: 'true' }
+      params = {}
 
     path = @urlEncodePath path
     url = "#{@urls.shares}/#{path}"
