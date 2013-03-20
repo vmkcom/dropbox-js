@@ -1627,7 +1627,7 @@ buildClientTests = (clientKeys) ->
 
 describe 'Dropbox.Client', ->
   # Skip some of the long tests in Web workers.
-  unless typeof self isnt 'undefined' and typeof window is 'undefined'
+  unless (typeof self isnt 'undefined') and (typeof window is 'undefined')
     describe 'with full Dropbox access', ->
       buildClientTests testFullDropboxKeys
 
@@ -1638,7 +1638,8 @@ describe 'Dropbox.Client', ->
       # NOTE: we're not duplicating this test in the full Dropbox acess suite,
       #       because it's annoying to the tester
       it 'completes the authenticate flow', (done) ->
-        return done() if typeof self isnt 'undefined'  # skip in Web workers
+        if (typeof self isnt 'undefined') and (typeof window is 'undefined')
+          return done()  # skip in Web workers
 
         @timeout 45 * 1000  # Time-consuming because the user must click.
         @client.reset()

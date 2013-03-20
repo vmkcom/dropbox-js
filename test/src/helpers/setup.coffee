@@ -37,6 +37,7 @@ else
     # Hack-implement "rememberUser: false" in the Chrome driver.
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null
+    exports.testImageUrl = '../../test/binary/dropbox.png'
   else
     if typeof window is 'undefined' and typeof self isnt 'undefined'
       # Web Worker.
