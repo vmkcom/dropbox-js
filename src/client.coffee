@@ -761,7 +761,7 @@ class Dropbox.Client
   # @option options {String} format value that gets passed directly to the API;
   #   this is intended for newly added formats that the API may not support;
   #   use options such as "png" when applicable
-  # @option options {String} sizeCode specifies the image's dimensions; this
+  # @option options {String} size specifies the image's dimensions; this
   #   gets passed directly to the API; currently, the following values are
   #   supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
   #   's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
@@ -788,7 +788,7 @@ class Dropbox.Client
   # @option options {String} format value that gets passed directly to the API;
   #   this is intended for newly added formats that the API may not support;
   #   use options such as "png" when applicable
-  # @option options {String} sizeCode specifies the image's dimensions; this
+  # @option options {String} size specifies the image's dimensions; this
   #   gets passed directly to the API; currently, the following values are
   #   supported: 'small' (32x32), 'medium' (64x64), 'large' (128x128),
   #   's' (64x64), 'm' (128x128), 'l' (640x480), 'xl' (1024x768); the default
