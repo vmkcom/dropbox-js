@@ -106,11 +106,11 @@ class Dropbox.Stat
     @isRemoved = metadata.is_deleted || false
     @typeIcon = metadata.icon
     if metadata.modified?.length
-      @modifiedAt = new Date Date.parse(metadata.modified)
+      @modifiedAt = Dropbox.Util.parseDate(metadata.modified)
     else
       @modifiedAt = null
     if metadata.client_mtime?.length
-      @clientModifiedAt = new Date Date.parse(metadata.client_mtime)
+      @clientModifiedAt = Dropbox.Util.parseDate(metadata.client_mtime)
     else
       @clientModifiedAt = null
 

@@ -26,7 +26,8 @@ class Dropbox.UploadCursor
   #   Dropbox.UploadCursor#parse to obtain an identical UploadCursor instance
   json: ->
     # NOTE: the assignment only occurs if
-    @_json ||= upload_id: @tag, offset: @offset, expires: @expiresAt.toString()
+    @_json ||=
+        upload_id: @tag, offset: @offset, expires: @expiresAt.toUTCString()
 
   # Creates an UploadCursor instance from a raw reference or API response.
   #
@@ -38,7 +39,7 @@ class Dropbox.UploadCursor
   constructor: (cursorData) ->
     @replace cursorData
 
-  # Replaces the current
+  # Replaces the data in an UploadCursor with the data in an API response.
   #
   # @private Called by Dropbox.Client#resumableUploadStep.
   #
@@ -49,7 +50,7 @@ class Dropbox.UploadCursor
     if typeof cursorData is 'object'
       @tag = cursorData.upload_id or null
       @offset = cursorData.offset or 0
-      @expiresAt = new Date(Date.parse(cursorData.expires) or Date.now())
+      @expiresAt = Dropbox.Util.parseDate(cursorData.expires) or Date.now()
       @_json = cursorData
     else
       @tag = cursorData or null

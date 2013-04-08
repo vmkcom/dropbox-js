@@ -36,7 +36,7 @@ class Dropbox.PublicUrl
   json: ->
     # HACK: this can break if the Dropbox API ever decides to use 'direct' in
     #       its link info
-    @_json ||= url: @url, expires: @expiresAt.toString(), direct: @isDirect
+    @_json ||= url: @url, expires: @expiresAt.toUTCString(), direct: @isDirect
 
   # Creates a PublicUrl instance from a raw API response.
   #
@@ -49,7 +49,7 @@ class Dropbox.PublicUrl
   #   is a file / folder preview link
   constructor: (urlData, isDirect) ->
     @url = urlData.url
-    @expiresAt = new Date Date.parse(urlData.expires)
+    @expiresAt = Dropbox.Util.parseDate urlData.expires
 
     if isDirect is true
       @isDirect = true
@@ -96,7 +96,7 @@ class Dropbox.CopyReference
     # NOTE: the assignment only occurs if the CopyReference was built around a
     #       string; CopyReferences parsed from API responses hold onto the
     #       original JSON
-    @_json ||= copy_ref: @tag, expires: @expiresAt.toString()
+    @_json ||= copy_ref: @tag, expires: @expiresAt.toUTCString()
 
   # Creates a CopyReference instance from a raw reference or API response.
   #
@@ -109,7 +109,7 @@ class Dropbox.CopyReference
   constructor: (refData) ->
     if typeof refData is 'object'
       @tag = refData.copy_ref
-      @expiresAt = new Date Date.parse(refData.expires)
+      @expiresAt = Dropbox.Util.parseDate(refData.expires)
       @_json = refData
     else
       @tag = refData

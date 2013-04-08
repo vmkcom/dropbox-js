@@ -1,4 +1,4 @@
-# node.js implementation of atob and btoa
+# Implementations of atob and btoa for IE and node.js.
 
 if typeof atob is 'function' and typeof btoa is 'function'
   # Modern browsers and workers.
