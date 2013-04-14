@@ -253,6 +253,9 @@ run = (args...) ->
   cmd = spawn '/bin/sh', ['-c', command], options
   cmd.stdout.on 'data', (data) -> process.stdout.write data
   cmd.stderr.on 'data', (data) -> process.stderr.write data
+  cmd.on 'error', ->
+    console.log "Non-zero exit code running\n    #{command}"
+    process.exit 1
   process.on 'SIGHUP', -> cmd.kill()
   cmd.on 'exit', (code) -> callback() if callback? and code is 0
 
