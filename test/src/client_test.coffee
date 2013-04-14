@@ -1250,7 +1250,7 @@ buildClientTests = (clientKeys) ->
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
-          # The cont/ents server does not return CORS headers.
+          # The preview server does not return CORS headers.
           return done() unless @node_js
           xhr = new Dropbox.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
@@ -1275,8 +1275,6 @@ buildClientTests = (clientKeys) ->
           expect(urlInfo.isDirect).to.equal true
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
-          # The contents server does not return CORS headers.
-          return done() unless @node_js
           xhr = new Dropbox.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
             expect(error).to.equal null
@@ -1292,8 +1290,6 @@ buildClientTests = (clientKeys) ->
           expect(urlInfo.url).not.to.contain '//db.tt/'
           expect(urlInfo.expiresAt - Date.now()).to.be.above 86400000
 
-          # The download server does not return CORS headers.
-          return done() unless @node_js
           xhr = new Dropbox.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
             expect(error).to.equal null
