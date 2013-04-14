@@ -94,22 +94,22 @@ build = (callback) ->
     a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
 
   # Compile without --join for decent error messages.
-  commands.push 'node_modules/.bin/coffee --output tmp --compile ' +
-                source_files.join(' ')
-  commands.push 'node_modules/.bin/coffee --output lib --compile ' +
-                "--join dropbox.js #{source_files.join(' ')}"
+  commands.push 'node node_modules/coffee-script/bin/coffee --output tmp ' +
+                '--compile ' + source_files.join(' ')
+  commands.push 'node node_modules/coffee-script/bin/coffee --output lib ' +
+                "--compile --join dropbox.js #{source_files.join(' ')}"
   # Minify the javascript, for browser distribution.
-  commands.push 'cd lib && ../node_modules/.bin/uglifyjs --compress ' +
-      '--mangle --output dropbox.min.js --source-map dropbox.min.map ' +
-      'dropbox.js'
+  commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
+      '--compress --mangle --output dropbox.min.js ' +
+      '--source-map dropbox.min.map dropbox.js'
 
   # Tests are supposed to be independent, so the build order doesn't matter.
   test_dirs = glob.sync 'test/src/**/'
   for test_dir in test_dirs
     out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
     test_files = glob.sync path.join(test_dir, '*.coffee')
-    commands.push "node_modules/.bin/coffee --output #{out_dir} " +
-                  "--compile #{test_files.join(' ')}"
+    commands.push "node node_modules/coffee-script/bin/coffee " +
+                  "--output #{out_dir} --compile #{test_files.join(' ')}"
   async.forEachSeries commands, run, ->
     callback() if callback
 
@@ -240,17 +240,12 @@ tokens = (callback) ->
   (new TokenStash()).get ->
     callback() if callback?
 
-run = (args...) ->
-  for a in args
-    switch typeof a
-      when 'string' then command = a
-      when 'object'
-        if a instanceof Array then params = a
-        else options = a
-      when 'function' then callback = a
-
-  command += ' ' + params.join ' ' if params?
-  cmd = spawn '/bin/sh', ['-c', command], options
+run = (command, callback) ->
+  if /^win/i.test(process.platform)  # Awful windows hacks.
+    command = command.replace(/\//g, '\\')
+    cmd = spawn 'cmd', ['/C', command]
+  else
+    cmd = spawn '/bin/sh', ['-c', command]
   cmd.stdout.on 'data', (data) -> process.stdout.write data
   cmd.stderr.on 'data', (data) -> process.stderr.write data
   cmd.on 'error', ->
