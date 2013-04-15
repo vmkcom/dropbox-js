@@ -1305,18 +1305,18 @@ class Dropbox.Client
   # @private
   # @return {String} the URL to the default value for the "authServer" option
   defaultAuthServer: ->
-    @apiServer.replace 'api.', 'www.'
+    @apiServer.replace 'api', 'www'
 
   # @private
   # @return {String} the URL to the default value for the "fileServer" option
   defaultFileServer: ->
-    @apiServer.replace 'api.', 'api-content.'
+    @apiServer.replace 'api', 'api-content'
 
   # @private
   # @return {String} the URL to the default value for the "downloadServer"
   #     option
   defaultDownloadServer: ->
-    @apiServer.replace 'api.', 'dl.'
+    @apiServer.replace 'api', 'dl'
 
   # Computes the cached value returned by credentials.
   #

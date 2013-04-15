@@ -52,13 +52,15 @@ class TokenStash
 
   # Returns the options used to create a Dropbox Client.
   clientOptions: ->
-    {
+    if process.env['API_KEYS']
+      JSON.parse @fs.readFileSync(process.env['API_KEYS'])
+    else
       sandbox:
         sandbox: true
         key: 'gWJAiHNbmDA=|MJ3xAk3nLeByuOckISnHib+h+1zTCG3TKTOEFvAAZw=='
       full:
         key: 'OYaTsqx6IXA=|z8mRqmTRoSdCqvkTvHTZq4ZZNxa7I5wM8X5E33IwCA=='
-    }
+
 
   # Reads the file containing the access credentials, if it is available.
   #
