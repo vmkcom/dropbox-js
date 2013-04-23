@@ -870,9 +870,8 @@ class Dropbox.Client
 
   # Finds files / folders whose name match a pattern, in the user's Dropbox.
   #
-  # @param {String} path the path to the file whose contents will be reverted
-  #   to a previous version, relative to the user's Dropbox or to the
-  #   application's folder
+  # @param {String} path the path you want to search, relative to the user's
+  #   Dropbox or to the application's folder
   # @param {String} namePattern the string that file / folder names must
   #   contain in order to match the search criteria;
   # @param {?Object} options the advanced settings below; for the default
