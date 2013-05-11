@@ -158,7 +158,7 @@ client.authenticate(function(error, client) {
 });
 ```
 
-## Error Handlng
+## Error Handling
 
 When Dropbox API calls fail, dropbox.js methods pass a `Dropbox.ApiError`
 instance as the first parameter in their callbacks. This parameter is named
