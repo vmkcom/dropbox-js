@@ -297,7 +297,7 @@ class Dropbox.Client
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
   # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat,
-  #                  ?Dropbox.RangeInfo)} callback called with the result of
+  #   ?Dropbox.RangeInfo)} callback called with the result of
   #   the /files (GET) HTTP request; the second parameter is the contents of
   #   the file, the third parameter is a Dropbox.Stat instance describing the
   #   file, and the first parameter is null; if the start and/or length options
@@ -870,8 +870,8 @@ class Dropbox.Client
 
   # Finds files / folders whose name match a pattern, in the user's Dropbox.
   #
-  # @param {String} path the path you want to search, relative to the user's
-  #   Dropbox or to the application's folder
+  # @param {String} path the path that will serve as the root of the search,
+  #   relative to the user's Dropbox or to the application's folder
   # @param {String} namePattern the string that file / folder names must
   #   contain in order to match the search criteria;
   # @param {?Object} options the advanced settings below; for the default
