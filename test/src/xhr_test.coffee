@@ -1,4 +1,4 @@
-describe 'Dropbox.Xhr', ->
+describe.only 'Dropbox.Xhr', ->
   beforeEach ->
     @node_js = module? and module?.exports? and require?
     @oauth = new Dropbox.Oauth testKeys
@@ -701,6 +701,129 @@ Content-Transfer-Encoding: binary\r
             bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
             expect(bytes).to.deep.equal testImageBytes
             done()
+
+  describe '#send in synchronous mode', ->
+    it 'reports errors correctly', ->
+      @url = 'https://api.dropbox.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', @url, true
+      callbackCalled = false
+      @xhr.prepare().send (error, data) =>
+        callbackCalled = true
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal @url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
+        expect(error).to.have.property 'responseText'
+        expect(error.responseText).to.be.a 'string'
+        unless Dropbox.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
+          expect(error).to.have.property 'response'
+          expect(error.response).to.be.an 'object'
+        expect(error.toString()).to.match /^Dropbox API error/
+        expect(error.toString()).to.contain 'POST'
+        expect(error.toString()).to.contain @url
+      expect(callbackCalled).to.be.true
+
+    it 'reports errors correctly when onError is set', ->
+      @url = 'https://api.dropbox.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', @url, true
+      listenerError = null
+      callbackCalled = false
+      @xhr.onError = (error, callback) ->
+        expect(listenerError).to.equal null
+        expect(callbackCalled).to.equal false
+        listenerError = error
+        callback error
+      @xhr.prepare().send (error, data) =>
+        callbackCalled = true
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal @url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        expect(listenerError).to.equal error
+      expect(callbackCalled).to.equal true
+
+    it 'reports network errors correctly', ->
+      @url = 'https://broken.to.causeanetworkerror.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', @url, true
+      callbackCalled = false
+      @xhr.prepare().send (error, data) =>
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal @url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        expect(error).to.have.property 'responseText'
+        expect(error.responseText).to.equal '(no response)'
+        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal Dropbox.ApiError.NETWORK_ERROR
+        callbackCalled = true
+      expect(callbackCalled).to.equal true
+
+    it 'processes data correctly', ->
+      xhr = new Dropbox.Xhr('POST',
+          'https://api.dropbox.com/1/oauth/request_token', true)
+      xhr.addOauthParams @oauth
+      callbackCalled = false
+      xhr.prepare().send (error, data) ->
+        callbackCalled = true
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+        callbackCalled = true
+      expect(callbackCalled).to.equal true
+
+    it 'processes data correctly when using setCallback', ->
+      xhr = new Dropbox.Xhr('POST',
+          'https://api.dropbox.com/1/oauth/request_token', true)
+      xhr.addOauthParams @oauth
+      callbackCalled = false
+      xhr.setCallback (error, data) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+        callbackCalled = true
+      expect(callbackCalled).to.equal false
+      xhr.prepare().send()
+      expect(callbackCalled).to.equal true
+
+    it 'processes data and headers correctly', ->
+      xhr = new Dropbox.Xhr('POST',
+          'https://api.dropbox.com/1/oauth/request_token', true)
+      xhr.addOauthParams @oauth
+      xhr.reportResponseHeaders()
+      callbackCalled = false
+      xhr.prepare().send (error, data, metadata, headers) ->
+        callbackCalled = true
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+        expect(headers).to.have.property 'content-type'
+        expect(headers['content-type']).to.
+            equal 'application/x-www-form-urlencoded'
+      expect(callbackCalled).to.equal true
+
+    it 'sends Authorize headers correctly', ->
+      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't set headers.
+
+      xhr = new Dropbox.Xhr('POST',
+          'https://api.dropbox.com/1/oauth/request_token', true)
+      xhr.addOauthHeader @oauth
+      callbackCalled = false
+      xhr.prepare().send (error, data) ->
+        callbackCalled = true
+        expect(error).to.equal null
+        expect(data).to.have.property 'oauth_token'
+        expect(data).to.have.property 'oauth_token_secret'
+      expect(callbackCalled).to.equal true
 
   describe '#urlEncode', ->
     it 'iterates properly', ->

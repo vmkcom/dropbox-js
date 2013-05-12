@@ -92,9 +92,13 @@ class Dropbox.Xhr
   #   'POST', 'PUT', etc.)
   # @param {String} baseUrl the URL that receives the request; this URL might
   #   be modified, e.g. by appending parameters for GET requests
-  constructor: (@method, baseUrl) ->
+  # @param {Boolean} synchromous if true, the XHR will be processed
+  #   synchronously; this has all sorts of bad consequences, and should only be
+  #   done for debugging
+  constructor: (@method, baseUrl, synchronous) ->
     @isGet = @method is 'GET'
     @url = baseUrl
+    @async = !synchronous
     @wantHeaders = false
     @headers = {}
     @params = null
@@ -394,7 +398,7 @@ class Dropbox.Xhr
       @xhr.onprogress = ->
     else
       @xhr.onreadystatechange = => @onReadyStateChange()
-    @xhr.open @method, @url, true
+    @xhr.open @method, @url, @async
 
     unless ieXdr
       for own header, value of @headers
@@ -437,6 +441,11 @@ class Dropbox.Xhr
       try
         @xhr.send body
       catch xhrError
+        # Report synchronous errors using the same path as async errors.
+        if @async is false and xhrError.name is "NetworkError"
+          @onXdrError()  # HACK(pwnall): implement proper error reporting path
+          return
+
         # Node.js doesn't implement Blob.
         if !Dropbox.Xhr.sendArrayBufferView and Dropbox.Xhr.wrapBlob
           # Firefox doesn't support sending ArrayBufferViews.
@@ -445,7 +454,13 @@ class Dropbox.Xhr
         else
           throw xhrError
     else
-      @xhr.send()
+      try
+        @xhr.send()
+      catch xhrError
+        # Report synchronous errors using the same path as async errors.
+        if @async is false and xhrError.name is "NetworkError"
+          @onXdrError()  # HACK(pwnall): implement proper error reporting path
+          return
     @
 
   # Encodes an associative array (hash) into a x-www-form-urlencoded String.
