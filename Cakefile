@@ -176,7 +176,7 @@ buildChromeApp = (manifestFile, callback) ->
   buildStandaloneApp "test/chrome_app", ->
     run "cp test/chrome_app/manifests/#{manifestFile}.json " +
         'test/chrome_app/manifest.json', ->
-      callback() if callback
+          callback() if callback
 
 buildStandaloneApp = (appPath, callback) ->
   unless fs.existsSync appPath
