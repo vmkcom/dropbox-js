@@ -144,7 +144,7 @@ class Dropbox.Xhr
   setCallback: (@callback) ->
     @
 
-  # Ammends the request parameters to include an OAuth signature.
+  # Amends the request parameters to include an OAuth signature.
   #
   # The OAuth signature will become invalid if the parameters are changed after
   # the signing process.
@@ -171,7 +171,7 @@ class Dropbox.Xhr
       else
         @addOauthParams oauth
 
-  # Ammends the request parameters to include an OAuth signature.
+  # Amends the request parameters to include an OAuth signature.
   #
   # The OAuth signature will become invalid if the parameters are changed after
   # the signing process.

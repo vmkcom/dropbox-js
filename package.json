@@ -25,16 +25,16 @@
   },
   "devDependencies": {
     "async": ">= 0.2.8",
-    "chai": ">= 1.5.0",
-    "codo": ">= 1.6.1",
+    "chai": ">= 1.6.0",
+    "codo": ">= 1.7.0",
     "coffee-script": ">= 1.6.2",
-    "express": ">= 3.2.4",
+    "express": ">= 3.2.5",
     "glob": ">= 3.2.1",
-    "mocha": "git://github.com/pwnall/mocha.git#web-workers",
+    "mocha": "git://github.com/pwnall/mocha.git#web-workers-2",
     "remove": ">= 0.1.5",
     "sinon": ">= 1.7.2",
-    "sinon-chai": ">= 2.3.1",
-    "uglify-js": ">= 2.3.2"
+    "sinon-chai": ">= 2.4.0",
+    "uglify-js": ">= 2.3.5"
   },
   "main": "lib/dropbox.js",
   "directories": {
