@@ -1025,12 +1025,11 @@ class Dropbox.Client
   # Copies a file or folder in the user's Dropbox.
   #
   # This method's "from" parameter can be either a path or a copy reference
-  # obtained by a previous call to makeCopyRef. The method uses a crude
-  # heuristic to interpret the "from" string -- if it doesn't contain any
-  # slash (/) or dot (.) character, it is assumed to be a copy reference. The
-  # easiest way to work with it is to prepend "/" to every path passed to the
-  # method. The method will process paths that start with multiple /s
-  # correctly.
+  # obtained by a previous call to makeCopyRef.
+  #
+  # The method treats String arguments as paths and CopyReference instances as
+  # copy references. The CopyReference constructor can be used to get instances
+  # out of copy reference strings, or out of their JSON representations.
   #
   # @param {String, Dropbox.CopyReference} from the path of the file or folder
   #   that will be copied, or a Dropbox.CopyReference instance obtained by
