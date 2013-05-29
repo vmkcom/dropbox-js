@@ -145,6 +145,44 @@ should still disable the automation (by clicking on the extension icon) when
 you're not testing dropbox.js, just in case the extension code has bugs.
 
 
+### Custom Server
+
+The test suite can be ran against a custom API server. This is only likely to
+be useful to Dropbox employees. The steps in this section document the process
+of pointing the test suite to a custom server.
+
+First, create two applications on the custom server. The first application's
+access type should be "Full Dropbox", and the second application's access type
+should be "App folder".
+
+Second, open `test/config/api.json` in a text editor. Plug in the "Full
+Dropbox" application's API key and secret into the `"full"` section, and the
+"App folder" application's API key and secret into the `"sandbox"` section.
+Change the server keys to point to the custom server.
+
+After changing the `api.json` file, it might be helpful to ask git to ignore
+the changes, so the custom configuration is not accidentally included in a pull
+request.
+
+```bash
+git update-index --assume-unchanged test/config/api.json
+```
+
+Third, obtain API tokens that point to the custom server.
+
+```bash
+API_CONFIG=test/config/api.json cake tokens
+```
+
+The custom server's URL is embedded in the API tokens, so all future tests will
+use the custom server. To get back to using the official Dropbox API server,
+re-generate the API tokens.
+
+```bash
+cake tokens
+```
+
+
 ## Release Process
 
 1. At the very least, test in node.js and in a browser before releasing.
