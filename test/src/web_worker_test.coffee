@@ -1,6 +1,6 @@
 # TODO(pwnall): enable tests when the PRs cited in the Workers bug get pulled.
 #               https://github.com/dropbox/dropbox-js/issues/52
-describe.skip 'Web Worker tests', ->
+describe.except 'Web Worker tests', ->
   if typeof window isnt 'undefined' and typeof window.Worker is 'function'
     it 'pass', (done) ->
       @timeout 3600000  # This test actually runs the whole suite in a Worker.
@@ -10,8 +10,11 @@ describe.skip 'Web Worker tests', ->
       worker.onmessage = (event) ->
         message = event.data
         switch message.type
-          when 'pass'
-            console.log 'WebWorker Test passed: ' + message.test.fullTitle
+          # NOTE: notifications for passing tests crowd out the (hopefully few)
+          #       failures and make debugging hard, so they're not shown; if
+          #       that becomes desirable, the code below will do the job
+          # when 'pass'
+          #   console.log 'WebWorker Test passed: ' + message.test.fullTitle
           when 'fail'
             console.warn 'WebWorker Test failed: ' + message.test.fullTitle
           when 'done'
