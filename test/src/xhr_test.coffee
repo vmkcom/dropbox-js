@@ -515,8 +515,11 @@ Content-Transfer-Encoding: binary\r
       expect(@xhr.preflight).to.equal true
 
   describe '#send', ->
+    beforeEach ->
+      client = new Dropbox.Client testKeys
+      @url = client.urls.requestToken
+
     it 'reports errors correctly', (done) ->
-      @url = 'https://api.dropbox.com/1/oauth/request_token'
       @xhr = new Dropbox.Xhr 'POST', @url
       @xhr.prepare().send (error, data) =>
         expect(data).to.equal undefined
@@ -539,7 +542,6 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'reports errors correctly when onError is set', (done) ->
-      @url = 'https://api.dropbox.com/1/oauth/request_token'
       @xhr = new Dropbox.Xhr 'POST', @url
       listenerError = null
       xhrCallbackCalled = false
@@ -577,8 +579,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes data correctly', (done) ->
-      xhr = new Dropbox.Xhr 'POST',
-                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr = new Dropbox.Xhr 'POST', @url
       xhr.addOauthParams @oauth
       xhr.prepare().send (error, data) ->
         expect(error).to.not.be.ok
@@ -587,8 +588,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes data correctly when using setCallback', (done) ->
-      xhr = new Dropbox.Xhr 'POST',
-                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr = new Dropbox.Xhr 'POST', @url
       xhr.addOauthParams @oauth
       xhr.setCallback (error, data) ->
         expect(error).to.not.be.ok
@@ -598,8 +598,7 @@ Content-Transfer-Encoding: binary\r
       xhr.prepare().send()
 
     it 'processes data and headers correctly', (done) ->
-      xhr = new Dropbox.Xhr 'POST',
-                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr = new Dropbox.Xhr 'POST', @url
       xhr.addOauthParams @oauth
       xhr.reportResponseHeaders()
       xhr.prepare().send (error, data, metadata, headers) ->
@@ -614,8 +613,7 @@ Content-Transfer-Encoding: binary\r
     it 'sends Authorize headers correctly', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't set headers.
 
-      xhr = new Dropbox.Xhr 'POST',
-                            'https://api.dropbox.com/1/oauth/request_token',
+      xhr = new Dropbox.Xhr 'POST', @url
       xhr.addOauthHeader @oauth
       xhr.prepare().send (error, data) ->
         expect(error).to.equal null
