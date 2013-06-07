@@ -1,164 +1,334 @@
-# Stripped-down OAuth implementation that works with the Dropbox API server.
+# Stripped-down OAuth 2 implementation that works with the Dropbox API server.
 class Dropbox.Oauth
-  # Creates an Oauth instance that manages an application's keys and token.
+  # Creates an Oauth instance that manages an application's key and token data.
   #
   # @param {Object} options the following properties
-  # @option options {String} key the Dropbox application's key (consumer key,
-  #   in OAuth vocabulary); browser-side applications should use
-  #   Dropbox.encodeKey to obtain an encoded key string, and pass it as the
-  #   key option
-  # @option options {String} secret the Dropbox application's secret (consumer
-  #   secret, in OAuth vocabulary); browser-side applications should not use
-  #   the secret option; instead, they should pass the result of
-  #   Dropbox.encodeKey as the key option
+  # @option options {String} key the Dropbox application's key (client
+  #   identifier, in OAuth2 vocabulary)
+  # @option options {String} secret the Dropbox application's secret (client
+  #   secret, in OAuth vocabulary); browser-side applications should not pass
+  #   in a client secret
   constructor: (options) ->
-    @key = @k = null
-    @secret = @s = null
-    @token = null
-    @tokenSecret = null
+    @_id = null
+    @_secret = null
+    @_stateParam = null
+    @_authCode = null
+    @_token = null
+    @_tokenKey = null
+    @_tokenKid = null
     @_appHash = null
-    @reset options
+    @_loaded = null
+    @setCredentials options
 
-  # Creates an Oauth instance that manages an application's keys and token.
+  # Resets the credentials used by this Oauth instance.
   #
   # @see Dropbox.Oauth#constructor for options
-  reset: (options) ->
-    if options.secret
-      @k = @key = options.key
-      @s = @secret = options.secret
-      @_appHash = null
-    else if options.key
-      @key = options.key
-      @secret = null
-      secret = atob dropboxEncodeKey(@key).split('|', 2)[1]
-      [k, s] = secret.split '?', 2
-      @k = decodeURIComponent k
-      @s = decodeURIComponent s
-      @_appHash = null
-    else
-      unless @k
-        throw new Error 'No API key supplied'
+  setCredentials: (options) ->
+    unless options.key
+      throw new Error 'No API key supplied'
 
+    @_id = options.key
+    @_secret = options.secret or null
+    @_appHash = null
+    @_loaded = true
+
+    @reset()
     if options.token
-      @setToken options.token, options.tokenSecret
-    else
-      @setToken null, ''
+      @_token = options.token
+      if options.tokenKey
+        @_tokenKey = options.tokenKey
+        @_tokenKid = options.tokenKid
+    else if options.oauthCode
+      @_authCode = options.oauthCode
+    else if options.oauthStateParam
+      @_stateParam = options.oauthStateParam
 
-  # Sets the OAuth token to be used for future requests.
-  setToken: (token, tokenSecret) ->
-    if token and (not tokenSecret)
-        throw new Error 'No secret supplied with the user token'
-
-    @token = token
-    @tokenSecret = tokenSecret || ''
-
-    # This is part of signing, but it's set here so it can be cached.
-    @hmacKey = Dropbox.Xhr.urlEncodeValue(@s) + '&' +
-      Dropbox.Xhr.urlEncodeValue(tokenSecret)
-    null
-
-  # Computes the value of the Authorization HTTP header.
+  # The credentials used by this Oauth instance.
   #
-  # This method mutates the params object, and removes all the OAuth-related
-  # parameters from it.
+  # @return {Object<String, String>} an object that can be passed into
+  #   Dropbox.Oauth#constructor or into Dropbox.Oauth#reset to obtain a new
+  #   instance that uses the same credentials
+  credentials: ->
+    returnValue = { key: @_id }
+    returnValue.secret = @_secret if @_secret
+    if @_token isnt null
+      returnValue.token = @_token
+      if @_tokenKey
+        returnValue.tokenKey = @_tokenKey
+        returnValue.tokenKid = @_tokenKid
+    else if @_authCode isnt null
+      returnValue.oauthCode = @_authCode
+    else if @_stateParam isnt null
+      returnValue.oauthStateParam = @_stateParam
+    returnValue
+
+  # The authentication process step that this instance's credentials are for
+  #
+  # @return {Number} one of the constants defined in Dropbox.Client, such as
+  #    Dropbox.Client.DONE
+  step: ->
+    if @_token isnt null
+      Dropbox.Client.DONE
+    else if @_authCode isnt null
+      Dropbox.Client.AUTHORIZED
+    else if @_stateParam isnt null
+      if @_loaded
+        Dropbox.Client.PARAM_LOADED
+      else
+        Dropbox.Client.PARAM_SET
+    else
+      Dropbox.Client.RESET
+
+  # Sets the "state" parameter value for the following /authorize request.
+  #
+  # @param {String} stateParam the value of the "state" parameter
+  setAuthStateParam: (stateParam) ->
+    @reset()
+    @_loaded = false
+    @_stateParam = stateParam
+    @
+
+  # Verifies the "state" query parameter in an /authorize redirect.
+  #
+  # If this method returns false, the /authorize redirect should be ignored.
+  #
+  # @param {String} stateParam the value of the "state" query parameter in the
+  #   request caused by an /authorize HTTP redirect
+  # @return {Boolean} true if the given value matches the "state" parameter
+  #   sent to /authorize; false if no /authorize redirect was expected, or if
+  #   the value doesn't match
+  checkAuthStateParam: (stateParam) ->
+    (@_stateParam is stateParam) and (@_stateParam isnt null)
+
+  # @private
+  # This should only be called by Dropbox.Client#authenticate. All other code
+  # should use Dropbox.Oauth#checkAuthStateParam.
+  #
+  # @return {String} the "state" query parameter set by setAuthStateParam
+  authStateParam: ->
+    @_stateParam
+
+  # Assimilates the information in an /authorize redirect's query parameters.
+  #
+  # The parameters may contain an access code, which will bring the Oauth
+  # instance in the AUTHORIZED state, or may contain an access token, which
+  # will bring the Oauth instance in the DONE state.
+  #
+  # @param {Object<String, String>} queryParams the query parameters that
+  #   contain an authorization code or access token; these should be query
+  #   parameters received from an /authorize redirect
+  # @return {Boolean} true if the query parameters contained information about
+  #   an OAuth 2 authorization code or access token; false if no useful
+  #   information was found and this instance's state was not changed
+  #
+  # @see RFC 6749 for authorization codes
+  # @see RFC 6750 for OAuth 2.0 Bearer Tokens
+  # @see draft-ietf-oauth-v2-http-mac for OAuth 2.0 MAC Tokens
+  processRedirectParams: (queryParams) ->
+    if queryParams.code
+      @reset()
+      @_loaded = false
+      @_authCode = queryParams.code
+      return true
+
+    tokenType = queryParams.token_type
+    if tokenType
+      if tokenType isnt 'bearer' and tokenType isnt 'mac'
+        throw new Error("Unimplemented token type #{tokenType}")
+
+      @reset()
+      @_loaded = false
+      if tokenType is 'mac'
+        if queryParams.mac_algorithm isnt 'hmac-sha-1'
+          throw new Error(
+              "Unimplemented MAC algorithms #{queryParams.mac_algorithm}")
+        @_tokenKey = queryParams.mac_key
+        @_tokenKid = queryParams.kid
+      @_token = queryParams.access_token
+      return true
+
+    false
+
+  # Computes the value of the OAuth 2-specified Authorization HTTP header.
+  #
+  # OAuth 2 supports two methods of passing authorization information. The
+  # Authorization header (implemented by this method) is the recommended
+  # method, and form parameters (implemented by addAuthParams) is the fallback
+  # method. The fallback method is useful for avoiding CORS preflight requests.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
   #   that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
-  #   request parameters; the parameters should include the oauth_
-  #   parameters generated by calling {Dropbox.Oauth#boilerplateParams}
+  #   request parameters
   # @return {String} the value to be used for the Authorization HTTP header
   authHeader: (method, url, params) ->
-    @addAuthParams method, url, params
+    if @_token is null
+      # RFC 6749: OAuth 2.0 (Client Authentication, Protocol Endpoints)
+      userPassword = if @_secret is null
+        Dropbox.Util.btoa("#{@_id}:")
+      else
+        Dropbox.Util.btoa("#{@_id}:#{@_secret}")
+      "Basic #{userPassword}"
+    else
+      if @_tokenKey is null
+        # RFC 6750: Bearer Tokens.
+        "Bearer #{@_token}"
+      else
+        # IETF draft-ietf-oauth-v2-http-mac
+        macParams = @macParams method, url, params
+        "MAC kid=#{macParams.kid} ts=#{macParams.ts} " +
+              "access_token=#{@_token} mac=#{macParams.mac}"
 
-    # Collect all the OAuth parameters.
-    oauth_params = []
-    for param, value of params
-      if param.substring(0, 6) == 'oauth_'
-        oauth_params.push param
-    oauth_params.sort()
-
-    # Remove the parameters from the params hash and add them to the header.
-    header = []
-    for param in oauth_params
-      header.push Dropbox.Xhr.urlEncodeValue(param) + '="' +
-          Dropbox.Xhr.urlEncodeValue(params[param]) + '"'
-      delete params[param]
-
-    # NOTE: the space after the comma is optional in the OAuth spec, so we'll
-    #       skip it to save some bandwidth
-    'OAuth ' + header.join(',')
-
-  # Generates OAuth-required HTTP parameters.
+  # Generates OAuth-required form parameters.
   #
-  # This method mutates the params object, and adds the OAuth-related
-  # parameters to it.
+  # OAuth 2 supports two methods of passing authorization information. The
+  # Authorization header (implemented by authHeader) is the recommended method,
+  # and form parameters (implemented by this method) is the fallback method.
+  # The fallback method is useful for avoiding CORS preflight requests.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
   #   that receives the request
   # @param {Object} params an associative array (hash) containing the HTTP
-  #   request parameters; the parameters should include the oauth_
-  #   parameters generated by calling {Dropbox.Oauth#boilerplateParams}
-  # @return {String} the value to be used for the Authorization HTTP header
+  #   request parameters; this parameter will be mutated
+  # @return {Object} the value of the params argument
   addAuthParams: (method, url, params) ->
-    # Augment params with OAuth parameters.
-    @boilerplateParams params
-    params.oauth_signature = @signature method, url, params
+    if @_token is null
+      # RFC 6749: OAuth 2.0 (Client Authentication, Protocol Endpoints)
+      params.client_id = @_id
+      if @_secret isnt null
+        params.client_secret = @_secret
+    else
+      if @_tokenKey isnt null
+        # IETF draft-ietf-oauth-v2-http-mac
+        macParams = @macParams method, url, params
+        params.kid = macParams.kid
+        params.ts = macParams.ts
+        params.mac = macParams.mac
+      # RFC 6750: Bearer Tokens and IETF draft-ietf-oauth-v2-http-mac
+      params.access_token = @_token
     params
 
-  # Adds boilerplate OAuth parameters to a request's parameter list.
+  # The query parameters to be used in an /oauth2/authorize URL.
   #
-  # This should be called right before signing a request, to maximize the
-  # chances that the OAuth timestamp will be fresh.
+  # @param {String} responseType one of the /authorize response types
+  #   implemented by dropbox.js
+  # @param {String?} redirectUrl the URL that the user's browser should be
+  #   redirected to in order to perform an /oauth2/authorize request
+  # @return {Object<String, String>} the query parameters for the
+  #   /oauth2/authorize URL
   #
-  # @param {Object} params an associative array (hash) containing the
-  #   parameters for an OAuth request; the boilerplate parameters will be
-  #   added to this hash
-  # @return {Object} params
-  boilerplateParams: (params) ->
-    params.oauth_consumer_key = @k
-    params.oauth_nonce = Dropbox.Oauth.nonce()
-    params.oauth_signature_method = 'HMAC-SHA1'
-    params.oauth_token = @token if @token
-    params.oauth_timestamp = Math.floor(Date.now() / 1000)
-    params.oauth_version = '1.0'
+  # @see Dropbox.AuthDriver#authType
+  # @see RFC 6749 for the authorization process in OAuth 2.0
+  authorizeUrlParams: (responseType, redirectUrl) ->
+    if responseType isnt 'token' and responseType isnt 'code'
+      throw new Error("Unimplemented /authorize response type #{responseType}")
+    # NOTE: these parameters will never contain the client secret
+    params =
+        client_id: @_id, state: @_stateParam, response_type: responseType
+    params.redirect_uri = redirectUrl if redirectUrl
     params
 
-  # Generates a nonce for an OAuth request.
+  # The query parameters to be used in an /oauth2/token URL.
   #
-  # @return {String} the nonce to be used as the oauth_nonce parameter
-  @nonce: ->
-    # Nonces have to be unique for requests with the same timestamp.
-    #     http://tools.ietf.org/html/rfc5849#section-3.3
-    Math.random().toString(36)
+  # @param {String?} redirectUrl the URL that the user's browser was redirected
+  #   to after performing the /oauth2/authorize request; this must be the same
+  #   as the redirectUrl parameter passed to authorizeUrlParams
+  # @return {Object<String, String>} the query parameters for the /oauth2/token
+  #   URL
+  accessTokenParams: (redirectUrl) ->
+    params = { grant_type: 'authorization_code', code: @_authCode }
+    params.redirect_uri = redirectUrl if redirectUrl
+    params
 
-  # Computes the signature for an OAuth request.
+  # Extracts the query parameters in an /authorize redirect URL.
+  #
+  # This is provided as a helper for dropbox.js OAuth drivers. It is not a
+  # general-purpose URL parser, but it will handle the URLs generated by the
+  # Dropbox API server.
+  @queryParamsFromUrl: (url) ->
+    match = /^[^?#]+(\?([^\#]*))?(\#(.*))?$/.exec url
+    return {} unless match
+    query = match[2] or ''
+    fragment = match[4] or ''
+    fragmentOffset = fragment.indexOf '?'
+    if fragmentOffset isnt -1
+      fragment = fragment.substring fragmentOffset + 1
+    params = {}
+    for kvp in query.split('&').concat fragment.split('&')
+      offset = kvp.indexOf '='
+      continue if offset is -1
+      params[decodeURIComponent(kvp.substring(0, offset))] =
+          decodeURIComponent kvp.substring(offset + 1)
+    params
+
+  # The parameters of an OAuth 2 MAC authenticator.
+  #
+  # @private
+  # This is called internally by addHeader and addAuthParams when OAuth 2 MAC
+  # tokens are in use.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
   #   that receives the request
-  # @param {Object} params an associative array (hash) containing the HTTP
-  #   request parameters; the parameters should include the oauth_
-  #   parameters generated by calling {Dropbox.Oauth#boilerplateParams}
-  # @return {String} the signature, ready to be used as the oauth_signature
-  #   OAuth parameter
-  signature: (method, url, params) ->
+  # @param {Object} queryParams an associative array (hash) containing the
+  #   query parameters in the HTTP request URL
+  # @return {Object<String, String>} the MAC authenticator attributes
+  macParams: (method, url, params) ->
+    macParams = { kid: @_tokenKid, ts: Dropbox.Oauth.timestamp() }
+
+    # TODO(pwnall): upgrade to the OAuth 2 MAC tokens algorithm
     string = method.toUpperCase() + '&' + Dropbox.Xhr.urlEncodeValue(url) +
       '&' + Dropbox.Xhr.urlEncodeValue(Dropbox.Xhr.urlEncode(params))
-    base64HmacSha1 string, @hmacKey
+    macParams.mac = base64HmacSha1 string, @_tokenKey
 
+    macParams
+
+  # @private
+  # Used by Dropbox.Client#appHash
+  #
   # @return {String} a string that uniquely identifies the OAuth application
   appHash: ->
     return @_appHash if @_appHash
-    @_appHash = base64Sha1(@k).replace(/\=/g, '')
+    @_appHash = base64Sha1(@_id).replace(/\=/g, '')
 
+  # Drops all user-specific OAuth information.
+  #
+  # This method gets this instance in the RESET auth step.
+  #
+  # @return this, for easy call chaining
+  reset: ->
+    @_stateParam = null
+    @_authCode = null
+    @_token = null
+    @_tokenKey = null
+    @_tokenKid = null
+    @
 
-# Polyfill for Internet Explorer 8.
+  # The timestamp used for an OAuth 2 request.
+  #
+  # @private
+  # This method is separated out for testing purposes.
+  #
+  # @return {Number} a timestamp suitable for use in computing OAuth 2 MAC
+  #   authenticators
+  @timestamp: ->
+    Math.floor(Date.now() / 1000)
+
+  # Generates a random OAuth 2 authentication state parameter value.
+  #
+  # This is used for authentication drivers that do not implement
+  # Dropbox.AuthDriver#getStateParam.
+  #
+  # @return {String} a randomly generated parameter
+  @randomAuthStateParam: ->
+    ['oas', Date.now().toString(36), Math.random().toString(36)].join '_'
+
+# Date.now() workaround for Internet Explorer 8.
 unless Date.now?
-  Date.now = () ->
-    (new Date()).getTime()
+  Dropbox.OAuth.timestamp = ->
+    Math.floor((new Date()).getTime() / 1000)

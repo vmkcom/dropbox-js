@@ -1,5 +1,7 @@
 if global? and require? and module? and (not cordova?)
   # Node.JS
+  require('source-map-support').install()
+
   exports = global
 
   exports.Dropbox = require '../../../lib/dropbox'
@@ -10,10 +12,10 @@ if global? and require? and module? and (not cordova?)
   exports.authDriver = new Dropbox.Drivers.NodeServer port: 8912
 
   TokenStash = require './token_stash.js'
-  (new TokenStash()).get (credentials) ->
-    exports.testKeys = credentials
-  (new TokenStash(fullDropbox: true)).get (credentials) ->
-    exports.testFullDropboxKeys = credentials
+  stash = new TokenStash()
+  stash.get (credentials) ->
+    exports.testKeys = credentials.sandbox
+    exports.testFullDropboxKeys = credentials.full
 
   testIconPath = './test/binary/dropbox.png'
   fs = require 'fs'
@@ -27,6 +29,8 @@ if global? and require? and module? and (not cordova?)
   exports.testImageServerOff = ->
     imageServer.closeServer()
     imageServer = null
+
+  exports.testXhrServer = 'https://localhost:8912'
 else
   if chrome? and chrome.runtime
     # Chrome app
@@ -54,8 +58,17 @@ else
         exports.authDriver = new Dropbox.Drivers.Popup(
             receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
       exports.testImageUrl = '../../test/binary/dropbox.png'
+
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
+
+  exports.testXhrServer = exports.location.origin
+
+  # NOTE: browser-side apps should not use API secrets, so we remove them
+  exports.testKeys.__secret = exports.testKeys.secret
+  delete exports.testKeys['secret']
+  exports.testFullDropboxKeys.__secret = exports.testFullDropboxKeys.secret
+  delete exports.testFullDropboxKeys['secret']
 
 # Shared setup.
 exports.assert = exports.chai.assert

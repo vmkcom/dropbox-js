@@ -79,12 +79,12 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
     @storageKey = "dropbox_js_#{@scope}_credentials"
 
   # Saves token information when appropriate.
-  onAuthStateChange: (client, callback) ->
-    switch client.authState
+  onAuthStepChange: (client, callback) ->
+    switch client.authStep
       when Dropbox.Client.RESET
         @loadCredentials (credentials) =>
           if credentials
-            if credentials.authState
+            if credentials.authStep
               # Stuck authentication process, reset.
               return @forgetCredentials(callback)
             client.setCredentials credentials
@@ -173,7 +173,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # Stores a Dropbox.Client's credentials to local storage.
   #
   # @private
-  # onAuthStateChange calls this method during the authentication flow.
+  # onAuthStepChange calls this method during the authentication flow.
   #
   # @param {Object} credentials the result of a Drobpox.Client#credentials call
   # @param {function()} callback called when the storing operation is complete
@@ -187,7 +187,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # Retrieves a token and secret from localStorage.
   #
   # @private
-  # onAuthStateChange calls this method during the authentication flow.
+  # onAuthStepChange calls this method during the authentication flow.
   #
   # @param {function(?Object)} callback supplied with the credentials object
   #   stored by a previous call to
@@ -202,7 +202,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # Deletes information previously stored by a call to storeCredentials.
   #
   # @private
-  # onAuthStateChange calls this method during the authentication flow.
+  # onAuthStepChange calls this method during the authentication flow.
   #
   # @param {function()} callback called after the credentials are deleted
   # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining

@@ -243,7 +243,6 @@ class Task
 
 # Start up the code when the DOM is fully loaded.
 $ ->
-  client = new Dropbox.Client(
-    key: '/Fahm0FLioA|ZxKxLxy5irfHqsCRs+Ceo8bwJjVPu8xZlfjgGzeCjQ', sandbox: true)
-  client.authDriver new Dropbox.Drivers.Redirect(rememberUser: true)
+  client = new Dropbox.Client key: 'ol56zaikdq4kxjx'
+  client.authDriver new Dropbox.Drivers.Redirect rememberUser: true
   window.app = new Checkbox client, '#app-ui'

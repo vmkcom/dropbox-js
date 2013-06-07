@@ -63,8 +63,8 @@ describe 'Dropbox.Xhr', ->
           expect(@xhr.params).to.have.property 'answer'
           expect(@xhr.params.answer).to.equal 42
 
-        it 'adds an oauth_signature param', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
+        it 'adds an access_token param', ->
+          expect(@xhr.params).to.have.property 'access_token'
 
         it 'does not add an Authorization header', ->
           expect(@xhr.headers).not.to.have.property 'Authorization'
@@ -80,8 +80,8 @@ describe 'Dropbox.Xhr', ->
           expect(@xhr.params).to.have.property 'answer'
           expect(@xhr.params.answer).to.equal 42
 
-        it 'does not add an oauth_signature param', ->
-          expect(@xhr.params).not.to.have.property 'oauth_signature'
+        it 'does not add an access_token param', ->
+          expect(@xhr.params).not.to.have.property 'access_token'
 
         it 'adds an Authorization header', ->
           expect(@xhr.headers).to.have.property 'Authorization'
@@ -90,8 +90,8 @@ describe 'Dropbox.Xhr', ->
       beforeEach ->
         @xhr.addOauthParams @oauth
 
-      it 'adds an oauth_signature param', ->
-        expect(@xhr.params).to.have.property 'oauth_signature'
+      it 'adds an access_token param', ->
+        expect(@xhr.params).to.have.property 'access_token'
 
     describe '#addOauthHeader without params', ->
       beforeEach ->
@@ -107,7 +107,7 @@ describe 'Dropbox.Xhr', ->
 
         if Dropbox.Xhr.doesPreflight
           it 'uses addOauthParams', ->
-            expect(@xhr.params).to.have.property 'oauth_signature'
+            expect(@xhr.params).to.have.property 'access_token'
         else
           it 'uses addOauthHeader in node.js', ->
             expect(@xhr.headers).to.have.property 'Authorization'
@@ -119,7 +119,7 @@ describe 'Dropbox.Xhr', ->
 
         if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
           it 'uses addOauthParams in IE', ->
-            expect(@xhr.params).to.have.property 'oauth_signature'
+            expect(@xhr.params).to.have.property 'access_token'
         else
           it 'uses addOauthHeader', ->
             expect(@xhr.headers).to.have.property 'Authorization'
@@ -131,7 +131,7 @@ describe 'Dropbox.Xhr', ->
 
           if Dropbox.Xhr.ieXdr
             it 'uses addOauthParams in IE', ->
-              expect(@xhr.params).to.have.property 'oauth_signature'
+              expect(@xhr.params).to.have.property 'access_token'
           else
             it 'uses addOauthHeader', ->
               expect(@xhr.headers).to.have.property 'Authorization'
@@ -143,7 +143,7 @@ describe 'Dropbox.Xhr', ->
 
           if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
             it 'uses addOauthParams in IE', ->
-              expect(@xhr.params).to.have.property 'oauth_signature'
+              expect(@xhr.params).to.have.property 'access_token'
           else
             it 'uses addOauthHeader', ->
               expect(@xhr.headers).to.have.property 'Authorization'
@@ -263,8 +263,8 @@ describe 'Dropbox.Xhr', ->
           expect(@xhr.params).to.have.property 'answer'
           expect(@xhr.params.answer).to.equal 42
 
-        it 'adds an oauth_signature param', ->
-          expect(@xhr.params).to.have.property 'oauth_signature'
+        it 'adds an access_token param', ->
+          expect(@xhr.params).to.have.property 'access_token'
 
         it 'does not add an Authorization header', ->
           expect(@xhr.headers).not.to.have.property 'Authorization'
@@ -280,8 +280,8 @@ describe 'Dropbox.Xhr', ->
           expect(@xhr.params).to.have.property 'answer'
           expect(@xhr.params.answer).to.equal 42
 
-        it 'does not add an oauth_signature param', ->
-          expect(@xhr.params).not.to.have.property 'oauth_signature'
+        it 'does not add an access_token param', ->
+          expect(@xhr.params).not.to.have.property 'access_token'
 
         it 'adds an Authorization header', ->
           expect(@xhr.headers).to.have.property 'Authorization'
@@ -290,8 +290,8 @@ describe 'Dropbox.Xhr', ->
       beforeEach ->
         @xhr.addOauthParams @oauth
 
-      it 'adds an oauth_signature param', ->
-        expect(@xhr.params).to.have.property 'oauth_signature'
+      it 'adds an access_token param', ->
+        expect(@xhr.params).to.have.property 'access_token'
 
     describe '#addOauthHeader without params', ->
       beforeEach ->
@@ -307,7 +307,7 @@ describe 'Dropbox.Xhr', ->
 
         if Dropbox.Xhr.doesPreflight
           it 'uses addOauthParams', ->
-            expect(@xhr.params).to.have.property 'oauth_signature'
+            expect(@xhr.params).to.have.property 'access_token'
         else
           it 'uses addOauthHeader in node.js', ->
             expect(@xhr.headers).to.have.property 'Authorization'
@@ -319,7 +319,7 @@ describe 'Dropbox.Xhr', ->
 
         if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
           it 'uses addOauthParams in IE', ->
-            expect(@xhr.params).to.have.property 'oauth_signature'
+            expect(@xhr.params).to.have.property 'access_token'
         else
           it 'uses addOauthHeader', ->
             expect(@xhr.headers).to.have.property 'Authorization'
@@ -331,7 +331,7 @@ describe 'Dropbox.Xhr', ->
 
           if Dropbox.Xhr.doesPreflight
             it 'uses addOauthParams', ->
-              expect(@xhr.params).to.have.property 'oauth_signature'
+              expect(@xhr.params).to.have.property 'access_token'
           else
             it 'uses addOauthHeader in node.js', ->
               expect(@xhr.headers).to.have.property 'Authorization'
@@ -343,7 +343,7 @@ describe 'Dropbox.Xhr', ->
 
           if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP headers.
             it 'uses addOauthParams in IE', ->
-              expect(@xhr.params).to.have.property 'oauth_signature'
+              expect(@xhr.params).to.have.property 'access_token'
           else
             it 'uses addOauthHeader', ->
               expect(@xhr.headers).to.have.property 'Authorization'
@@ -516,33 +516,36 @@ Content-Transfer-Encoding: binary\r
 
   describe '#send', ->
     beforeEach ->
-      client = new Dropbox.Client testKeys
-      @url = client.urls.requestToken
+      @client = new Dropbox.Client testKeys
+      @url = @client.urls.token
 
     it 'reports errors correctly', (done) ->
-      @xhr = new Dropbox.Xhr 'POST', @url
+      url = @client.urls.token
+      @xhr = new Dropbox.Xhr 'POST', url
       @xhr.prepare().send (error, data) =>
         expect(data).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'url'
-        expect(error.url).to.equal @url
+        expect(error.url).to.equal url
         expect(error).to.have.property 'method'
         expect(error.method).to.equal 'POST'
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
           expect(error).to.have.property 'status'
-          expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
-        expect(error).to.have.property 'responseText'
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+          expect(error).to.have.property 'responseText'
         expect(error.responseText).to.be.a 'string'
         unless Dropbox.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
           expect(error).to.have.property 'response'
           expect(error.response).to.be.an 'object'
+          expect(error.response).to.have.property 'error'
         expect(error.toString()).to.match /^Dropbox API error/
         expect(error.toString()).to.contain 'POST'
-        expect(error.toString()).to.contain @url
+        expect(error.toString()).to.contain url
         done()
 
     it 'reports errors correctly when onError is set', (done) ->
-      @xhr = new Dropbox.Xhr 'POST', @url
+      url = @client.urls.token
+      @xhr = new Dropbox.Xhr 'POST', url
       listenerError = null
       xhrCallbackCalled = false
       @xhr.onError = (error, callback) ->
@@ -555,20 +558,20 @@ Content-Transfer-Encoding: binary\r
         expect(data).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'url'
-        expect(error.url).to.equal @url
+        expect(error.url).to.equal url
         expect(error).to.have.property 'method'
         expect(error.method).to.equal 'POST'
         expect(listenerError).to.equal error
         done()
 
     it 'reports network errors correctly', (done) ->
-      @url = 'https://broken.to.causeanetworkerror.com/1/oauth/request_token'
-      @xhr = new Dropbox.Xhr 'POST', @url
+      url = 'https://broken.to.causeanetworkerror.com/1/oauth/request_token'
+      @xhr = new Dropbox.Xhr 'POST', url
       @xhr.prepare().send (error, data) =>
         expect(data).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(error).to.have.property 'url'
-        expect(error.url).to.equal @url
+        expect(error.url).to.equal url
         expect(error).to.have.property 'method'
         expect(error.method).to.equal 'POST'
         expect(error).to.have.property 'responseText'
@@ -578,33 +581,52 @@ Content-Transfer-Encoding: binary\r
           expect(error.status).to.equal Dropbox.ApiError.NETWORK_ERROR
         done()
 
-    it 'processes data correctly', (done) ->
-      xhr = new Dropbox.Xhr 'POST', @url
-      xhr.addOauthParams @oauth
+    it 'processes form-urlencoded data correctly', (done) ->
+      url = testXhrServer + '/form_encoded'
+      xhr = new Dropbox.Xhr 'POST', url
       xhr.prepare().send (error, data) ->
         expect(error).to.not.be.ok
-        expect(data).to.have.property 'oauth_token'
-        expect(data).to.have.property 'oauth_token_secret'
+        expect(data).to.have.property 'access_token'
+        expect(data.access_token).to.equal 'test token'
+        expect(data).to.have.property 'token_type'
+        expect(data.token_type).to.equal 'bearer'
+        done()
+
+    it 'processes JSON-encoded data correctly', (done) ->
+      url = testXhrServer + '/json_encoded'
+      xhr = new Dropbox.Xhr 'POST', url
+      xhr.prepare().send (error, data) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'uid'
+        expect(data.uid).to.equal 42
+        expect(data).to.have.property 'country'
+        expect(data.country).to.equal 'US'
+        expect(data).to.have.property 'display_name'
+        expect(data.display_name).to.equal 'John P. User'
         done()
 
     it 'processes data correctly when using setCallback', (done) ->
-      xhr = new Dropbox.Xhr 'POST', @url
-      xhr.addOauthParams @oauth
+      url = testXhrServer + '/form_encoded'
+      xhr = new Dropbox.Xhr 'POST', url
       xhr.setCallback (error, data) ->
         expect(error).to.not.be.ok
-        expect(data).to.have.property 'oauth_token'
-        expect(data).to.have.property 'oauth_token_secret'
+        expect(data).to.have.property 'access_token'
+        expect(data.access_token).to.equal 'test token'
+        expect(data).to.have.property 'token_type'
+        expect(data.token_type).to.equal 'bearer'
         done()
       xhr.prepare().send()
 
     it 'processes data and headers correctly', (done) ->
-      xhr = new Dropbox.Xhr 'POST', @url
-      xhr.addOauthParams @oauth
+      url = testXhrServer + '/form_encoded'
+      xhr = new Dropbox.Xhr 'POST', url
       xhr.reportResponseHeaders()
       xhr.prepare().send (error, data, metadata, headers) ->
         expect(error).to.not.be.ok
-        expect(data).to.have.property 'oauth_token'
-        expect(data).to.have.property 'oauth_token_secret'
+        expect(data).to.have.property 'access_token'
+        expect(data.access_token).to.equal 'test token'
+        expect(data).to.have.property 'token_type'
+        expect(data.token_type).to.equal 'bearer'
         expect(headers).to.have.property 'content-type'
         expect(headers['content-type']).to.
             equal 'application/x-www-form-urlencoded'
@@ -613,12 +635,14 @@ Content-Transfer-Encoding: binary\r
     it 'sends Authorize headers correctly', (done) ->
       return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't set headers.
 
-      xhr = new Dropbox.Xhr 'POST', @url
+      url = @client.urls.accountInfo
+      xhr = new Dropbox.Xhr 'GET', url
       xhr.addOauthHeader @oauth
       xhr.prepare().send (error, data) ->
         expect(error).to.equal null
-        expect(data).to.have.property 'oauth_token'
-        expect(data).to.have.property 'oauth_token_secret'
+        expect(data).to.have.property 'uid'
+        expect(data.uid.toString()).to.equal testKeys.uid
+        expect(data).to.have.property 'display_name'
         done()
 
     describe 'with a binary response', ->

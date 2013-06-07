@@ -42,8 +42,9 @@ task 'vendor', ->
 task 'tokens', ->
   remove.removeSync './test/token', ignoreMissing: true
   build ->
-    tokens ->
-      process.exit 0
+    ssl_cert ->
+      tokens ->
+        process.exit 0
 
 task 'doc', ->
   run 'node_modules/.bin/codo src'
@@ -96,6 +97,8 @@ build = (callback) ->
   # Compile without --join for decent error messages.
   commands.push 'node node_modules/coffee-script/bin/coffee --output tmp ' +
                 '--compile ' + source_files.join(' ')
+  # TODO(pwnall): add --map after --compile when CoffeeScript #2779 is fixed
+  #               and the .map file isn't useless
   commands.push 'node node_modules/coffee-script/bin/coffee --output lib ' +
                 "--compile --join dropbox.js #{source_files.join(' ')}"
   # Minify the javascript, for browser distribution.
@@ -236,8 +239,8 @@ buildCordovaApp = (callback) ->
 
 tokens = (callback) ->
   TokenStash = require './test/js/helpers/token_stash.js'
-  tokenStash = new TokenStash
-  (new TokenStash()).get ->
+  tokenStash = new TokenStash tls: fs.readFileSync('test/ssl/cert.pem')
+  tokenStash.get ->
     callback() if callback?
 
 run = (command, callback) ->

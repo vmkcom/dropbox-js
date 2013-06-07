@@ -6,24 +6,14 @@ class Dropbox.Client
   # all Dropbox interactions.
   #
   # @param {Object} options the application type and API key
-  # @option options {Boolean} sandbox true for applications that request
-  #   sandbox access (access to a single folder exclusive to the app)
-  # @option options {String} key the Dropbox application's key; browser-side
-  #   applications should use Dropbox.encodeKey to obtain an encoded
-  #   key string, and pass it as the key option
-  # @option options {String} secret the Dropbox application's secret;
-  #   browser-side applications should not use the secret option; instead,
-  #   they should pass the result of Dropbox.encodeKey as the key option
+  # @option options {String} key the Dropbox application's key (client
+  #   identifier, in OAuth2 vocabulary)
+  # @option options {String} secret the Dropbox application's secret (client
+  #   secret, in OAuth vocabulary); browser-side applications should not pass
+  #   in a client secret
   # @option options {String} token if set, the user's access token
-  # @option options {String} tokenSecret if set, the secret for the user's
-  #   access token
   # @option options {String} uid if set, the user's Dropbox UID
-  # @option options {Number} authState if set, indicates that the token and
-  #   tokenSecret are in an intermediate state in the authentication process;
-  #   this option should never be set by hand, however it may be returned by
-  #   calls to credentials()
   constructor: (options) ->
-    @sandbox = options.sandbox or false
     @apiServer = options.server or @defaultApiServer()
     @authServer = options.authServer or @defaultAuthServer()
     @fileServer = options.fileServer or @defaultFileServer()
@@ -31,17 +21,16 @@ class Dropbox.Client
 
     @onXhr = new Dropbox.EventSource cancelable: true
     @onError = new Dropbox.EventSource
-    @onAuthStateChange = new Dropbox.EventSource
+    @onAuthStepChange = new Dropbox.EventSource
     @xhrOnErrorHandler = (error, callback) => @handleXhrError error, callback
 
     @oauth = new Dropbox.Oauth options
+    @uid = options.uid or null
+    @authStep = @oauth.step()
     @driver = null
     @filter = null
-    @uid = null
-    @authState = null
     @authError = null
     @_credentials = null
-    @setCredentials options
 
     @setupUrls()
 
@@ -71,9 +60,9 @@ class Dropbox.Client
   onError: null
 
   # @property {Dropbox.EventSource<Dropbox.Client>} fires non-cancelable events
-  #   every time this client's authState property changes; this can be used to
+  #   every time this client's authStep property changes; this can be used to
   #   update UI state
-  onAuthStateChange: null
+  onAuthStepChange: null
 
   # The authenticated user's Dropbx user ID.
   #
@@ -102,8 +91,8 @@ class Dropbox.Client
   #   authorization; true by default; this is useful for determining if the
   #   authDriver has cached credentials available
   # @param {?function(?Dropbox.ApiError, Dropbox.Client)} callback called when
-  #   the authentication completes; if successful, the second parameter is
-  #   this client and the first parameter is null
+  #   the authentication completes; if successful, the second parameter is this
+  #   client and the first parameter is null
   # @return {Dropbox.Client} this, for easy call chaining
   authenticate: (options, callback) ->
     if !callback and typeof options is 'function'
@@ -115,73 +104,104 @@ class Dropbox.Client
     else
       interactive = true
 
-    unless @driver or @authState is DropboxClient.DONE
+    unless @driver or @authStep is DropboxClient.DONE
       throw new Error 'Call authDriver to set an authentication driver'
 
-    if @authState is DropboxClient.ERROR
+    if @authStep is DropboxClient.ERROR
       throw new Error 'Client got in an error state. Call reset() to reuse it!'
 
-    oldAuthState = null
+
+    # _fsmStep helper that transitions the FSM to the next step.
+    # This is repetitive stuff done at the end of each step.
+    _fsmNextStep = =>
+      @authStep = @oauth.step()
+      @_credentials = null
+      @onAuthStepChange.dispatch @
+      _fsmStep()
+
+    # _fsmStep helper that transitions the FSM to the error step.
+    _fsmErrorStep = =>
+      @authStep = DropboxClient.ERROR
+      @_credentials = null
+      @onAuthStepChange.dispatch @
+      _fsmStep()
+
     # Advances the authentication FSM by one step.
+    oldAuthStep = null
     _fsmStep = =>
-      if oldAuthState isnt @authState
-        oldAuthState = @authState
-        if @driver and @driver.onAuthStateChange
-          @driver.onAuthStateChange(@, _fsmStep)
+      if oldAuthStep isnt @authStep
+        oldAuthStep = @authStep
+        if @driver and @driver.onAuthStepChange
+          @driver.onAuthStepChange(@, _fsmStep)
           return
 
-      switch @authState
-        when DropboxClient.RESET  # No user credentials -> request token.
+      switch @authStep
+        when DropboxClient.RESET
+          # No credentials. Decide on a state param for OAuth 2 authorization.
           unless interactive
-            # NOTE: requestToken isn't really interactive, but it will lead to
-            #       /authorize, which is interactive; might as well stop here
             callback null, @ if callback
             return
-          @requestToken (error, data) =>
-            if error
-              @authError = error
-              @authState = DropboxClient.ERROR
-            else
-              token = data.oauth_token
-              tokenSecret = data.oauth_token_secret
-              @oauth.setToken token, tokenSecret
-              @authState = DropboxClient.REQUEST
-            @_credentials = null
-            @onAuthStateChange.dispatch @
-            _fsmStep()
+          if @driver.getStateParam
+            @driver.getStateParam (stateParam) =>
+              # NOTE: the driver might have injected the state param itself
+              if @client.authStep is DropboxClient.RESET
+                @oauth.setAuthStateParam stateParam
+              _fsmNextStep()
+          @oauth.setAuthStateParam Dropbox.Oauth.randomAuthStateParam()
+          _fsmNextStep()
 
-        when DropboxClient.REQUEST  # Have request token, get it authorized.
+        when DropboxClient.PARAM_SET
+          # Ask the user for authorization.
           unless interactive
             callback null, @ if callback
             return
-          authUrl = @authorizeUrl @oauth.token
-          @driver.doAuthorize authUrl, @oauth.token, @oauth.tokenSecret, =>
-            @authState = DropboxClient.AUTHORIZED
-            @_credentials = null
-            @onAuthStateChange.dispatch @
-            _fsmStep()
+          authUrl = @authorizeUrl()
+          @driver.doAuthorize authUrl, @oauth.authStateParam(), @,
+              (queryParams) =>
+                if queryParams.error
+                  # TODO(pwnall): wrap the error around a Dropbox.ApiError
+                  #               or create a Dropbox.AuthError
+                  _fsmErrorStep()
+                else
+                  @oauth.processRedirectParams queryParams
+                  @uid = queryParams.uid
+                  _fsmNextStep()
+
+        when DropboxClient.PARAM_LOADED
+          # Check a previous state parameter.
+          unless @driver.resumeAuthorize
+            # This switches the client to the PARAM_SET state
+            @oauth.setAuthStateParam @oauth.authStateParam()
+            _fsmNextStep()
+            return
+          @driver.resumeAuthorize @oauth.authStateParam(), @, (queryParams) =>
+            if queryParams.error
+              # TODO(pwnall): wrap the error around a Dropbox.ApiError
+              #               or create a Dropbox.AuthError
+              _fsmErrorStep()
+            else
+              @oauth.processRedirectParams queryParams
+              @uid = queryParams.uid
+              _fsmNextStep()
 
         when DropboxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
           @getAccessToken (error, data) =>
             if error
               @authError = error
-              @authState = DropboxClient.ERROR
+              _fsmErrorStep()
             else
-              @oauth.setToken data.oauth_token, data.oauth_token_secret
+              @oauth.processRedirectParams data
               @uid = data.uid
-              @authState = DropboxClient.DONE
-            @_credentials = null
-            @onAuthStateChange.dispatch @
-            _fsmStep()
+              _fsmNextStep()
 
         when DropboxClient.DONE  # We have an access token.
             callback null, @ if callback
             return
 
         when DropboxClient.SIGNED_OFF  # The user signed off, restart the flow.
-          # The authState change makes reset() not trigger onAuthStateChange.
-          @authState = DropboxClient.RESET
+          # The authStep change makes reset() not trigger onAuthStepChange.
+          @authStep = DropboxClient.RESET
           @reset()
           _fsmStep()
 
@@ -194,7 +214,7 @@ class Dropbox.Client
 
   # @return {Boolean} true if this client is authenticated, false otherwise
   isAuthenticated: ->
-    @authState is DropboxClient.DONE
+    @authStep is DropboxClient.DONE
 
   # Revokes the user's Dropbox credentials.
   #
@@ -214,13 +234,13 @@ class Dropbox.Client
         callback error if callback
         return
 
-      # The authState change makes reset() not trigger onAuthStateChange.
-      @authState = DropboxClient.RESET
+      # The authStep change makes reset() not trigger onAuthStepChange.
+      @authStep = DropboxClient.RESET
       @reset()
-      @authState = DropboxClient.SIGNED_OFF
-      @onAuthStateChange.dispatch @
-      if @driver and @driver.onAuthStateChange
-        @driver.onAuthStateChange @, ->
+      @authStep = DropboxClient.SIGNED_OFF
+      @onAuthStepChange.dispatch @
+      if @driver and @driver.onAuthStepChange
+        @driver.onAuthStepChange @, ->
           callback error if callback
       else
         callback error if callback
@@ -993,7 +1013,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   mkdir: (path, callback) ->
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsCreateFolder
-    xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
+    xhr.setParams(root: 'auto', path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata) if callback
@@ -1009,7 +1029,7 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   remove: (path, callback) ->
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsDelete
-    xhr.setParams(root: @fileRoot, path: @normalizePath(path)).
+    xhr.setParams(root: 'auto', path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata) if callback
@@ -1048,7 +1068,7 @@ class Dropbox.Client
       callback = options
       options = null
 
-    params = { root: @fileRoot, to_path: @normalizePath(toPath) }
+    params = { root: 'auto', to_path: @normalizePath(toPath) }
     if from instanceof Dropbox.CopyReference
       params.from_copy_ref = from.tag
     else
@@ -1080,7 +1100,7 @@ class Dropbox.Client
 
     xhr = new Dropbox.Xhr 'POST', @urls.fileopsMove
     xhr.setParams(
-        root: @fileRoot, from_path: @normalizePath(fromPath),
+        root: 'auto', from_path: @normalizePath(fromPath),
         to_path: @normalizePath(toPath)).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.Stat.parse(metadata) if callback
@@ -1090,11 +1110,11 @@ class Dropbox.Client
   # @return {Dropbox.Client} this, for easy call chaining
   reset: ->
     @uid = null
-    @oauth.setToken null, ''
-    oldAuthState = @authState
-    @authState = DropboxClient.RESET
-    if oldAuthState isnt @authState
-      @onAuthStateChange.dispatch @
+    @oauth.reset()
+    oldAuthStep = @authStep
+    @authStep = @oauth.step()
+    if oldAuthStep isnt @authStep
+      @onAuthStepChange.dispatch @
     @authError = null
     @_credentials = null
     @
@@ -1104,20 +1124,14 @@ class Dropbox.Client
   # @param {?Object} the result of a prior call to credentials()
   # @return {Dropbox.Client} this, for easy call chaining
   setCredentials: (credentials) ->
-    oldAuthState = @authState
-    @oauth.reset credentials
+    oldAuthStep = @authStep
+    @oauth.setCredentials credentials
+    @authStep = @oauth.step()
     @uid = credentials.uid or null
-    if credentials.authState
-      @authState = credentials.authState
-    else
-      if credentials.token
-        @authState = DropboxClient.DONE
-      else
-        @authState = DropboxClient.RESET
     @authError = null
     @_credentials = null
-    if oldAuthState isnt @authState
-      @onAuthStateChange.dispatch @
+    if oldAuthStep isnt @authStep
+      @onAuthStepChange.dispatch @
     @
 
   # @return {String} a string that uniquely identifies the Dropbox application
@@ -1131,34 +1145,31 @@ class Dropbox.Client
   # This is called by the constructor, and used by the other methods. It should
   # not be used directly.
   setupUrls: ->
-    @fileRoot = if @sandbox then 'sandbox' else 'dropbox'
-
     @urls =
       # Authentication.
-      requestToken: "#{@apiServer}/1/oauth/request_token"
-      authorize: "#{@authServer}/1/oauth/authorize"
-      accessToken: "#{@apiServer}/1/oauth/access_token"
+      authorize: "#{@authServer}/1/oauth2/authorize"
+      token: "#{@apiServer}/1/oauth2/token"
       signOut: "#{@apiServer}/1/unlink_access_token"
 
       # Accounts.
       accountInfo: "#{@apiServer}/1/account/info"
 
       # Files and metadata.
-      getFile: "#{@fileServer}/1/files/#{@fileRoot}"
-      postFile: "#{@fileServer}/1/files/#{@fileRoot}"
-      putFile: "#{@fileServer}/1/files_put/#{@fileRoot}"
-      metadata: "#{@apiServer}/1/metadata/#{@fileRoot}"
+      getFile: "#{@fileServer}/1/files/auto"
+      postFile: "#{@fileServer}/1/files/auto"
+      putFile: "#{@fileServer}/1/files_put/auto"
+      metadata: "#{@apiServer}/1/metadata/auto"
       delta: "#{@apiServer}/1/delta"
-      revisions: "#{@apiServer}/1/revisions/#{@fileRoot}"
-      restore: "#{@apiServer}/1/restore/#{@fileRoot}"
-      search: "#{@apiServer}/1/search/#{@fileRoot}"
-      shares: "#{@apiServer}/1/shares/#{@fileRoot}"
-      media: "#{@apiServer}/1/media/#{@fileRoot}"
-      copyRef: "#{@apiServer}/1/copy_ref/#{@fileRoot}"
-      thumbnails: "#{@fileServer}/1/thumbnails/#{@fileRoot}"
+      revisions: "#{@apiServer}/1/revisions/auto"
+      restore: "#{@apiServer}/1/restore/auto"
+      search: "#{@apiServer}/1/search/auto"
+      shares: "#{@apiServer}/1/shares/auto"
+      media: "#{@apiServer}/1/media/auto"
+      copyRef: "#{@apiServer}/1/copy_ref/auto"
+      thumbnails: "#{@fileServer}/1/thumbnails/auto"
       chunkedUpload: "#{@fileServer}/1/chunked_upload"
       commitChunkedUpload:
-          "#{@fileServer}/1/commit_chunked_upload/#{@fileRoot}"
+          "#{@fileServer}/1/commit_chunked_upload/auto"
 
       # File operations.
       fileopsCopy: "#{@apiServer}/1/fileops/copy"
@@ -1169,25 +1180,38 @@ class Dropbox.Client
   # @property {Number} the client's progress in the authentication process;
   #   Dropbox.Client#isAuthenticated should be called instead whenever
   #   possible; this attribute was intended to be used by OAuth drivers
-  authState: null
+  authStep: null
 
-  # authState value for a client that experienced an authentication error
+  # authStep value for a client that experienced an authentication error
   @ERROR: 0
 
-  # authState value for a properly initialized client with no user credentials
+  # authStep value for a properly initialized client with no user credentials
   @RESET: 1
 
-  # authState value for a client with a request token that must be authorized
-  @REQUEST: 2
+  # authStep value for a client that has an /authorize state parameter value
+  #
+  # This state is entered when the state parameter is set directly by
+  # Dropbox.Client#authenticate. Auth drivers that need to save the OAuth state
+  # during Dropbox.AuthDriver#doAuthorize should do so in the PARAM_SET state.
+  @PARAM_SET: 2
 
-  # authState value for a client whose request token was authorized
-  @AUTHORIZED: 3
+  # authStep value for a client that has an /authorize state parameter value
+  #
+  # This state is entered when the state parameter is loaded from an external
+  # data source, by Dropbox.Client#setCredentials or
+  # Dropbox.Client#constructor. Auth drivers that need to save the OAuth state
+  # during Dropbox.AuthDriver#doAuthorize should check for authorization
+  # completion in the PARAM_LOADED state.
+  @PARAM_LOADED: 3
 
-  # authState value for a client that has an access token
-  @DONE: 4
+  # authStep value for a client that has an authorization code
+  @AUTHORIZED: 4
 
-  # authState value for a client that voluntarily invalidated its access token
-  @SIGNED_OFF: 5
+  # authStep value for a client that has an access token
+  @DONE: 5
+
+  # authStep value for a client that voluntarily invalidated its access token
+  @SIGNED_OFF: 6
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
   #
@@ -1213,35 +1237,18 @@ class Dropbox.Client
     else
       path
 
-  # Generates an OAuth request token.
+  # The URL for /oauth2/authorize, embedding the user's token.
   #
   # @private
   # This a low-level method called by authorize. Users should call authorize.
   #
-  # @param {function(error, data)} callback called with the result of the
-  #   /oauth/request_token HTTP request
-  requestToken: (callback) ->
-    xhr = new Dropbox.Xhr('POST', @urls.requestToken).signWithOauth(@oauth)
-    @dispatchXhr xhr, callback
-
-  # The URL for /oauth/authorize, embedding the user's token.
-  #
-  # @private
-  # This a low-level method called by authorize. Users should call authorize.
-  #
-  # @param {String} token the oauth_token obtained from an /oauth/request_token
-  #   call
   # @return {String} the URL that the user's browser should be redirected to in
-  #   order to perform an /oauth/authorize request
-  authorizeUrl: (token) ->
-    callbackUrl = @driver.url token
-    if callbackUrl is null
-      params = { oauth_token: token }
-    else
-      params = { oauth_token: token, oauth_callback: callbackUrl }
-    "#{@urls.authorize}?" + Dropbox.Xhr.urlEncode(params)
+  #   order to perform an /oauth2/authorize request
+  authorizeUrl: () ->
+    params = @oauth.authorizeUrlParams @driver.authType(), @driver.url()
+    @urls.authorize + "?" + Dropbox.Xhr.urlEncode(params)
 
-  # Exchanges an OAuth request token with an access token.
+  # Exchanges an OAuth 2 authorization code with an access token.
   #
   # @private
   # This a low-level method called by authorize. Users should call authorize.
@@ -1249,7 +1256,9 @@ class Dropbox.Client
   # @param {function(error, data)} callback called with the result of the
   #   /oauth/access_token HTTP request
   getAccessToken: (callback) ->
-    xhr = new Dropbox.Xhr('POST', @urls.accessToken).signWithOauth(@oauth)
+    params = @oauth.accessTokenParams @driver.url()
+    xhr = new Dropbox.Xhr('POST', @urls.token).setParams(params).
+        addOauthParams(@oauth)
     @dispatchXhr xhr, callback
 
   # Prepares and sends an XHR to the Dropbox API server.
@@ -1281,13 +1290,13 @@ class Dropbox.Client
   # @return {null}
   handleXhrError: (error, callback) ->
     if error.status is Dropbox.ApiError.INVALID_TOKEN and
-        @authState is DropboxClient.DONE
+        @authStep is DropboxClient.DONE
       # The user's token became invalid.
       @authError = error
-      @authState = DropboxClient.ERROR
-      @onAuthStateChange.dispatch @
-      if @driver and @driver.onAuthStateChange
-        @driver.onAuthStateChange @, =>
+      @authStep = DropboxClient.ERROR
+      @onAuthStepChange.dispatch @
+      if @driver and @driver.onAuthStepChange
+        @driver.onAuthStepChange @, =>
           @onError.dispatch error
           callback error
         return null
@@ -1312,7 +1321,7 @@ class Dropbox.Client
 
   # @private
   # @return {String} the URL to the default value for the "downloadServer"
-  #     option
+  #   option
   defaultDownloadServer: ->
     @apiServer.replace 'api', 'dl'
 
@@ -1321,19 +1330,8 @@ class Dropbox.Client
   # @private
   # @see Dropbox.Client#computeCredentials
   computeCredentials: ->
-    value =
-      key: @oauth.key
-      sandbox: @sandbox
-    value.secret = @oauth.secret if @oauth.secret
-    if @oauth.token
-      value.token = @oauth.token
-      value.tokenSecret = @oauth.tokenSecret
+    value = @oauth.credentials()
     value.uid = @uid if @uid
-    if @authState isnt DropboxClient.ERROR and
-       @authState isnt DropboxClient.RESET and
-       @authState isnt DropboxClient.DONE and
-       @authState isnt DropboxClient.SIGNED_OFF
-      value.authState = @authState
     if @apiServer isnt @defaultApiServer()
       value.server = @apiServer
     if @authServer isnt @defaultAuthServer()

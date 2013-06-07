@@ -1,24 +1,28 @@
 # Stashes Dropbox access credentials.
 class TokenStash
-  # @param {Object} options the advanced options below
-  # @option options {Boolean} fullDropbox if true, the returned credentials
-  #     will be good for full Dropbox access; otherwise, the credentials will
-  #     work for Folder access
+  # @param {Object} options one or more of the options below
+  # @option options {Object} tls tls.createServer() options for the node.js
+  #   HTTPS server that intercepts the OAuth 2 authorization redirect
   constructor: (options) ->
-    @fs = require 'fs'
+    @_tlsOptions = options?.tls or {}
+    @_fs = require 'fs'
     # Node 0.6 hack.
-    unless @fs.existsSync
+    unless @_fs.existsSync
       path = require 'path'
-      @fs.existsSync = (filePath) -> path.existsSync filePath
-    @getCache = null
-    @sandbox = !options?.fullDropbox
+      @_fs.existsSync = (filePath) -> path.existsSync filePath
+    @_getCache = null
     @setupFs()
 
   # Calls the supplied method with the Dropbox access credentials.
+  #
+  # @param {function(Object<String, Object>)} callback called with an object
+  #   whose 'full' and 'sandbox' properties point to two set of Oauth
+  #   credentials
+  # @return null
   get: (callback) ->
-    @getCache or= @readStash()
-    if @getCache
-      callback @getCache
+    @_getCache or= @readStash()
+    if @_getCache
+      callback @_getCache
       return null
 
     @liveLogin (fullCredentials, sandboxCredentials) =>
@@ -26,86 +30,101 @@ class TokenStash
         throw new Error('Dropbox API authorization failed')
 
       @writeStash fullCredentials, sandboxCredentials
-      @getCache = @readStash()
-      callback @getCache
+      @_getCache = @readStash()
+      callback @_getCache
+    null
 
   # Obtains credentials by doing a login on the live site.
+  #
+  # @private
+  # Used internally by get.
+  #
+  # @param {function(Object, Object)} callback called with two sets of
+  #   crendentials; the first set has Full Dropbox access, the second set has
+  #   App folder access
+  # @return null
   liveLogin: (callback) ->
     Dropbox = require '../../../lib/dropbox'
     sandboxClient = new Dropbox.Client @clientOptions().sandbox
     fullClient = new Dropbox.Client @clientOptions().full
     @setupAuth()
-    sandboxClient.authDriver @authDriver
+    sandboxClient.authDriver @_authDriver
     sandboxClient.authenticate (error, data) =>
       if error
         @killAuth()
+        console.error error
         callback null
         return
-      fullClient.authDriver @authDriver
+      fullClient.authDriver @_authDriver
       fullClient.authenticate (error, data) =>
         @killAuth()
         if error
+          console.error error
           callback null
           return
         credentials = @clientOptions()
         callback fullClient.credentials(), sandboxClient.credentials()
+    null
 
   # Returns the options used to create a Dropbox Client.
   clientOptions: ->
     if process.env['API_CONFIG']
-      JSON.parse @fs.readFileSync(process.env['API_CONFIG'])
+      JSON.parse @_fs.readFileSync(process.env['API_CONFIG'])
     else
       sandbox:
-        sandbox: true
-        key: 'gWJAiHNbmDA=|MJ3xAk3nLeByuOckISnHib+h+1zTCG3TKTOEFvAAZw=='
+        key: 'xa6rd0x8wsuk9hc'
+        secret: 'y6nw1t64rcppd8a'
       full:
-        key: 'OYaTsqx6IXA=|z8mRqmTRoSdCqvkTvHTZq4ZZNxa7I5wM8X5E33IwCA=='
+        key: 'c9x6i3k2zlwz21g'
+        secret: '82nxm80jz231rpn'
 
 
   # Reads the file containing the access credentials, if it is available.
   #
   # @return {Object?} parsed access credentials, or null if they haven't been
-  #     stashed
+  #   stashed
   readStash: ->
-    unless @fs.existsSync @jsonPath
+    unless @_fs.existsSync @_jsonPath
       return null
-    stash = JSON.parse @fs.readFileSync @jsonPath
-    if @sandbox then stash.sandbox else stash.full
+    JSON.parse @_fs.readFileSync @_jsonPath
 
   # Stashes the access credentials for future test use.
+  #
+  # @return null
   writeStash: (fullCredentials, sandboxCredentials) ->
     json = JSON.stringify full: fullCredentials, sandbox: sandboxCredentials
-    @fs.writeFileSync @jsonPath, json
+    @_fs.writeFileSync @_jsonPath, json
 
     browserJs = "window.testKeys = #{JSON.stringify sandboxCredentials};" +
         "window.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
-    @fs.writeFileSync @browserJsPath, browserJs
+    @_fs.writeFileSync @_browserJsPath, browserJs
     workerJs = "self.testKeys = #{JSON.stringify sandboxCredentials};" +
         "self.testFullDropboxKeys = #{JSON.stringify fullCredentials};"
-    @fs.writeFileSync @workerJsPath, workerJs
+    @_fs.writeFileSync @_workerJsPath, workerJs
+    null
 
   # Sets up a node.js server-based authentication driver.
   setupAuth: ->
-    return if @authDriver
+    return if @_authDriver
 
     Dropbox = require '../../../lib/dropbox'
-    @authDriver = new Dropbox.Drivers.NodeServer
+    @_authDriver = new Dropbox.Drivers.NodeServer tls: @_tlsOptions
 
   # Shuts down the node.js server behind the authentication server.
   killAuth: ->
-    return unless @authDriver
+    return unless @_authDriver
 
-    @authDriver.closeServer()
-    @authDriver = null
+    @_authDriver.closeServer()
+    @_authDriver = null
 
   # Sets up the directory structure for the credential stash.
   setupFs: ->
-    @dirPath = 'test/token'
-    @jsonPath = 'test/token/token.json'
-    @browserJsPath = 'test/token/token.browser.js'
-    @workerJsPath = 'test/token/token.worker.js'
+    @_dirPath = 'test/token'
+    @_jsonPath = 'test/token/token.json'
+    @_browserJsPath = 'test/token/token.browser.js'
+    @_workerJsPath = 'test/token/token.worker.js'
 
-    unless @fs.existsSync @dirPath
-      @fs.mkdirSync @dirPath
+    unless @_fs.existsSync @_dirPath
+      @_fs.mkdirSync @_dirPath
 
 module.exports = TokenStash

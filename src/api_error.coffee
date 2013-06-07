@@ -35,7 +35,7 @@ class Dropbox.ApiError
   # The OAuth token used for the request will never become valid again, so the
   # user should be re-authenticated.
   #
-  # The authState of a Dropbox.Client will automatically transition from DONE
+  # The authStep of a Dropbox.Client will automatically transition from DONE
   # to ERROR when this error is received.
   @INVALID_TOKEN: 401
 

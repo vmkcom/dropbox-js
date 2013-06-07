@@ -16,7 +16,7 @@ class Dropbox.Drivers.Cordova extends Dropbox.Drivers.BrowserBase
     @scope = options?.scope or 'default'
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
-  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+  doAuthorize: (authUrl, stateParam, client, callback) ->
     browser = window.open authUrl, '_blank', 'location=yes'
     promptPageLoaded = false
     authHost = /^[^/]*\/\/[^/]*\//.exec(authUrl)[0]
@@ -42,15 +42,3 @@ class Dropbox.Drivers.Cordova extends Dropbox.Drivers.BrowserBase
   # This driver does not use a redirect page.
   url: -> null
 
-  # Discards tokens saved during the authentication process.
-  onAuthStateChange: (client, callback) ->
-    superCall = do => => super client, callback
-    @setStorageKey client
-    if client.authState is DropboxClient.RESET
-      @loadCredentials (credentials) =>
-        if credentials and credentials.authState  # Incomplete authentication.
-          @forgetCredentials superCall
-        else
-          superCall()
-    else
-      superCall()

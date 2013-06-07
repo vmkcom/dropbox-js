@@ -65,7 +65,7 @@ describe 'Dropbox.Drivers.Chrome', ->
       authDriver.forgetCredentials ->
         client.authenticate (error, client) ->
           expect(error).to.equal null
-          expect(client.authState).to.equal Dropbox.Client.DONE
+          expect(client.authStep).to.equal Dropbox.Client.DONE
           # Verify that we can do API calls.
           client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
@@ -74,7 +74,7 @@ describe 'Dropbox.Drivers.Chrome', ->
             client.reset()
             client.authenticate interactive: false, (error, client) ->
               expect(error).to.equal null
-              expect(client.authState).to.equal Dropbox.Client.DONE
+              expect(client.authStep).to.equal Dropbox.Client.DONE
               expect(client.isAuthenticated()).to.equal true
               # Verify that we can do API calls.
               client.getUserInfo (error, userInfo) ->

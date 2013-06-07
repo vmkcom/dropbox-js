@@ -213,6 +213,12 @@ buildClientTests = (clientKeys) ->
         expect(data).to.equal @textFileData
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
+
+          # TODO(pwnall): enable after API contents server bug is fixed
+          #if clientKeys.key is testFullDropboxKeys.key
+          #  expect(stat.inAppFolder).to.equal false
+          #else
+          #  expect(stat.inAppFolder).to.equal true
           expect(stat.path).to.equal @textFile
           expect(stat.isFile).to.equal true
         done()
@@ -440,6 +446,11 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
+        # TODO(pwnall): enable after API contents server bug is fixed
+        #if clientKeys.key is testFullDropboxKeys.key
+        #  expect(stat.inAppFolder).to.equal false
+        #else
+        #  expect(stat.inAppFolder).to.equal true
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
@@ -668,6 +679,11 @@ buildClientTests = (clientKeys) ->
             expect(stat).to.be.instanceOf Dropbox.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
+            # TODO(pwnall): enable after API contents server bug is fixed
+            #if clientKeys.key is testFullDropboxKeys.key
+            #  expect(stat.inAppFolder).to.equal false
+            #else
+            #  expect(stat.inAppFolder).to.equal true
             @client.readFile @newFile, (error, data, stat) =>
               expect(error).to.equal null
               expect(data).to.equal line1 + line2
@@ -675,6 +691,11 @@ buildClientTests = (clientKeys) ->
                 expect(stat).to.be.instanceOf Dropbox.Stat
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
+                # TODO(pwnall): enable after API contents server bug is fixed
+                #if clientKeys.key is testFullDropboxKeys.key
+                #  expect(stat.inAppFolder).to.equal false
+                #else
+                #  expect(stat.inAppFolder).to.equal true
               done()
 
     it 'writes a binary file using two ArrayBuffers', (done) ->
@@ -857,10 +878,10 @@ buildClientTests = (clientKeys) ->
         expect(stat.isFile).to.equal true
         expect(stat.versionTag).to.equal @textFileTag
         expect(stat.size).to.equal @textFileData.length
-        if clientKeys.sandbox
-          expect(stat.inAppFolder).to.equal true
-        else
+        if clientKeys.key is testFullDropboxKeys.key
           expect(stat.inAppFolder).to.equal false
+        else
+          expect(stat.inAppFolder).to.equal true
         done()
 
     it 'retrieves a Stat for a folder', (done) ->
@@ -870,10 +891,10 @@ buildClientTests = (clientKeys) ->
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
         expect(stat.size).to.equal 0
-        if clientKeys.sandbox
-          expect(stat.inAppFolder).to.equal true
-        else
+        if clientKeys.key is testFullDropboxKeys.key
           expect(stat.inAppFolder).to.equal false
+        else
+          expect(stat.inAppFolder).to.equal true
         expect(entries).to.equal undefined
         done()
 
@@ -923,10 +944,10 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFile).to.equal true
           expect(stat.versionTag).to.equal @textFileTag
           expect(stat.size).to.equal @textFileData.length
-          if clientKeys.sandbox
-            expect(stat.inAppFolder).to.equal true
-          else
+          if clientKeys.key is testFullDropboxKeys.key
             expect(stat.inAppFolder).to.equal false
+          else
+            expect(stat.inAppFolder).to.equal true
           done()
 
   describe '#readdir', ->
@@ -941,6 +962,10 @@ buildClientTests = (clientKeys) ->
         expect(dir_stat).to.be.instanceOf Dropbox.Stat
         expect(dir_stat.path).to.equal @testFolder
         expect(dir_stat.isFolder).to.equal true
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(dir_stat.inAppFolder).to.equal false
+        else
+          expect(dir_stat.inAppFolder).to.equal true
         expect(entry_stats).to.be.ok
         expect(entry_stats).to.have.length 2
         expect(entry_stats[0]).to.be.instanceOf Dropbox.Stat
@@ -1036,6 +1061,10 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFile
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(stat.inAppFolder).to.equal false
+        else
+          expect(stat.inAppFolder).to.equal true
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
@@ -1069,6 +1098,10 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
+          if clientKeys.key is testFullDropboxKeys.key
+            expect(stat.inAppFolder).to.equal false
+          else
+            expect(stat.inAppFolder).to.equal true
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
@@ -1097,6 +1130,10 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @moveTo
         expect(stat.isFile).to.equal true
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(stat.inAppFolder).to.equal false
+        else
+          expect(stat.inAppFolder).to.equal true
         @client.readFile @moveTo, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
@@ -1129,6 +1166,10 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(stat).to.be.instanceOf Dropbox.Stat
         expect(stat.path).to.equal @newFolder
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(stat.inAppFolder).to.equal false
+        else
+          expect(stat.inAppFolder).to.equal true
         @client.stat @newFolder, { removed: true }, (error, stat) =>
           expect(error).to.equal null
           expect(stat).to.be.instanceOf Dropbox.Stat
@@ -1171,6 +1212,10 @@ buildClientTests = (clientKeys) ->
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isRemoved).to.equal false
+          if clientKeys.key is testFullDropboxKeys.key
+            expect(stat.inAppFolder).to.equal false
+          else
+            expect(stat.inAppFolder).to.equal true
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
@@ -1189,6 +1234,10 @@ buildClientTests = (clientKeys) ->
         expect(matches[0]).to.be.instanceOf Dropbox.Stat
         expect(matches[0].path).to.equal @testFolder
         expect(matches[0].isFolder).to.equal true
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(matches[0].inAppFolder).to.equal false
+        else
+          expect(matches[0].inAppFolder).to.equal true
         done()
 
     it 'lists the test folder files given the "test" pattern', (done) ->
@@ -1363,7 +1412,11 @@ buildClientTests = (clientKeys) ->
         unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
           expect(stat).to.be.instanceOf Dropbox.Stat
           expect(stat.path).to.equal @imageFile
-          expect(stat.isFile).to.equal true
+          #expect(stat.isFile).to.equal true
+          #if clientKeys.key is testFullDropboxKeys.key
+          #  expect(stat.inAppFolder).to.equal false
+          #else
+          #  expect(stat.inAppFolder).to.equal true
         done()
 
     it 'reads the image into a Blob', (done) ->
@@ -1431,121 +1484,91 @@ buildClientTests = (clientKeys) ->
 
   describe '#reset', ->
     beforeEach ->
-      @authStates = []
-      @client.onAuthStateChange.addListener (client) =>
-        @authStates.push client.authState
+      @authSteps = []
+      @client.onAuthStepChange.addListener (client) =>
+        @authSteps.push client.authStep
       @client.reset()
 
     it 'gets the client into the RESET state', ->
-      expect(@client.authState).to.equal Dropbox.Client.RESET
+      expect(@client.authStep).to.equal Dropbox.Client.RESET
 
     it 'removes token and uid information', ->
       credentials = @client.credentials()
       expect(credentials).not.to.have.property 'token'
-      expect(credentials).not.to.have.property 'tokenSecret'
       expect(credentials).not.to.have.property 'uid'
 
-    it 'triggers onAuthStateChange', ->
-      expect(@authStates).to.deep.equal [Dropbox.Client.RESET]
+    it 'triggers onAuthStepChange', ->
+      expect(@authSteps).to.deep.equal [Dropbox.Client.RESET]
 
-    it 'does not trigger onAuthState if already reset', ->
-      @authStates = []
+    it 'does not trigger onAuthStep if already reset', ->
+      @authSteps = []
       @client.reset()
-      expect(@authStates).to.deep.equal []
+      expect(@authSteps).to.deep.equal []
 
   describe '#credentials', ->
     it 'contains all the expected keys when DONE', ->
       credentials = @client.credentials()
       expect(credentials).to.have.property 'key'
-      expect(credentials).to.have.property 'sandbox'
       expect(credentials).to.have.property 'token'
-      expect(credentials).to.have.property 'tokenSecret'
       expect(credentials).to.have.property 'uid'
-
-    it 'does not return an authState when DONE', ->
-      credentials = @client.credentials()
-      expect(credentials).not.to.have.property 'authState'
-      expect(credentials).not.to.have.property 'secret'
 
     it 'contains all the expected keys when RESET', ->
       @client.reset()
       credentials = @client.credentials()
       expect(credentials).to.have.property 'key'
-      expect(credentials).to.have.property 'sandbox'
-
-    it 'does not return an authState when RESET', ->
-      @client.reset()
-      credentials = @client.credentials()
-      expect(credentials).not.to.have.property 'authState'
-      expect(credentials).not.to.have.property 'secret'
 
     describe 'for a client with raw keys', ->
       beforeEach ->
         @client.setCredentials(
           key: 'dpf43f3p2l4k3l03', secret: 'kd94hf93k423kf44',
-          token: 'user-token', tokenSecret: 'user-secret', uid: '1234567')
+          token: 'user-token', uid: '1234567')
 
       it 'contains all the expected keys when DONE', ->
         credentials = @client.credentials()
         expect(credentials).to.have.property 'key'
         expect(credentials).to.have.property 'secret'
         expect(credentials).to.have.property 'token'
-        expect(credentials).to.have.property 'tokenSecret'
         expect(credentials).to.have.property 'uid'
 
       it 'contains all the expected keys when RESET', ->
         @client.reset()
         credentials = @client.credentials()
         expect(credentials).to.have.property 'key'
-        expect(credentials).to.have.property 'sandbox'
         expect(credentials).to.have.property 'secret'
-
 
   describe '#setCredentials', ->
     it 'gets the client into the RESET state', ->
       @client.setCredentials key: 'app-key', secret: 'app-secret'
-      expect(@client.authState).to.equal Dropbox.Client.RESET
+      expect(@client.authStep).to.equal Dropbox.Client.RESET
       credentials = @client.credentials()
       expect(credentials.key).to.equal 'app-key'
       expect(credentials.secret).to.equal 'app-secret'
-
-    it 'gets the client into the REQUEST state', ->
-      @client.setCredentials(
-          key: 'app-key', secret: 'app-secret', token: 'user-token',
-          tokenSecret: 'user-secret', authState: Dropbox.Client.REQUEST)
-      expect(@client.authState).to.equal Dropbox.Client.REQUEST
-      credentials = @client.credentials()
-      expect(credentials.key).to.equal 'app-key'
-      expect(credentials.secret).to.equal 'app-secret'
-      expect(credentials.token).to.equal 'user-token'
-      expect(credentials.tokenSecret).to.equal 'user-secret'
 
     it 'gets the client into the DONE state', ->
       @client.setCredentials(
           key: 'app-key', secret: 'app-secret', token: 'user-token',
-          tokenSecret: 'user-secret', uid: '3141592')
-      expect(@client.authState).to.equal Dropbox.Client.DONE
+          uid: '3141592')
+      expect(@client.authStep).to.equal Dropbox.Client.DONE
       credentials = @client.credentials()
       expect(credentials.key).to.equal 'app-key'
       expect(credentials.secret).to.equal 'app-secret'
       expect(credentials.token).to.equal 'user-token'
-      expect(credentials.tokenSecret).to.equal 'user-secret'
       expect(credentials.uid).to.equal '3141592'
 
     beforeEach ->
-      @authStates = []
-      @client.onAuthStateChange.addListener (client) =>
-        @authStates.push client.authState
+      @authSteps = []
+      @client.onAuthStepChange.addListener (client) =>
+        @authSteps.push client.authStep
 
-    it 'triggers onAuthStateChange when switching from DONE to RESET', ->
+    it 'triggers onAuthStepChange when switching from DONE to RESET', ->
       @client.setCredentials key: 'app-key', secret: 'app-secret'
-      expect(@authStates).to.deep.equal [Dropbox.Client.RESET]
+      expect(@authSteps).to.deep.equal [Dropbox.Client.RESET]
 
-    it 'does not trigger onAuthStateChange when not switching', ->
+    it 'does not trigger onAuthStepChange when not switching', ->
       @client.setCredentials key: 'app-key', secret: 'app-secret'
-      @authStates = []
+      @authSteps = []
       @client.setCredentials key: 'app-key', secret: 'app-secret'
-      expect(@authStates).to.deep.equal []
+      expect(@authSteps).to.deep.equal []
 
   describe '#appHash', ->
     it 'is consistent', ->
@@ -1582,44 +1605,80 @@ buildClientTests = (clientKeys) ->
     it 'complains if called when the client is in ERROR', ->
       @client.authDriver doAuthorize: ->
         assert false, 'The OAuth driver should not be invoked'
-      @client.authState = Dropbox.Client.ERROR
+      @client.authStep = Dropbox.Client.ERROR
       expect(=> @client.authenticate null).to.throw Error, /error.*reset/i
 
     describe 'with interactive: false', ->
       beforeEach ->
-        @client.authDriver doAuthorize: ->
-          assert false, 'The OAuth driver should not be invoked'
+        @driver =
+          doAuthorize: ->
+            assert false, 'The OAuth driver should not be invoked'
+          url: ->
+            'https://localhost:8912/oauth_redirect'
+        @client.authDriver @driver
 
       it 'stops at RESET with interactive: false', (done) ->
         @client.reset()
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.equal null
-          expect(client.authState).to.equal Dropbox.Client.RESET
+          expect(client.authStep).to.equal Dropbox.Client.RESET
           done()
 
-      it 'stops at REQUEST with interactive: false', (done) ->
-        credentials = @client.credentials()
-        credentials.token = 'should_not_be_used'
-        credentials.authState = Dropbox.Client.REQUEST
-        @client.setCredentials credentials
+      it 'stops at PARAM_SET with interactive: false', (done) ->
+        @client.reset()
+        @client.oauth.setAuthStateParam 'state_should_not_be_used'
+        @client.authStep = @client.oauth.step()
+        expect(@client.authStep).to.equal Dropbox.Client.PARAM_SET
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.equal null
-          expect(client.authState).to.equal Dropbox.Client.REQUEST
+          expect(client.authStep).to.equal Dropbox.Client.PARAM_SET
+          done()
+
+      it 'proceeds from PARAM_LOADED with interactive: false', (done) ->
+        @client.reset()
+        credentials = @client.credentials()
+        credentials.oauthStateParam = 'state_should_not_be_used'
+        @client.setCredentials credentials
+        expect(@client.authStep).to.equal Dropbox.Client.PARAM_LOADED
+        @client.authenticate interactive: false, (error, client) ->
+          expect(error).to.equal null
+          expect(client.authStep).to.equal Dropbox.Client.PARAM_SET
           done()
 
       it 'proceeds from AUTHORIZED with interactive: false', (done) ->
+        @client.reset()
         credentials = @client.credentials()
-        credentials.token = 'invalid_token'
-        credentials.authState = Dropbox.Client.AUTHORIZED
+        if '__secret' of clientKeys
+          # Browser drivers use Implicit Grant, so they don't use the API
+          # secret. However, this code path assumes on Authorization Code, so
+          # it needs the API secret.
+          credentials.secret = clientKeys.__secret
+        credentials.oauthCode = 'invalid_authorization_code'
         @client.setCredentials credentials
+        expect(@client.authStep).to.equal Dropbox.Client.AUTHORIZED
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.be.ok
           unless Dropbox.Xhr.ieXdr
-            expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
+            expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
             expect(error.response).to.have.property 'error'
-            expect(error.response.error).to.match(/token not found/i)
+            expect(error.response.error).to.have.property 'error_description'
+            expect(error.response.error.error_description).to.
+                match(/code.*not valid/i)
           done()
 
+      it 'calls resumeAuthorize from PARAM_LOADED when defined', (done) ->
+        @driver.resumeAuthorize = (stateParam, client, callback) ->
+          expect(stateParam).to.equal 'state_should_not_be_used'
+          expect(client.authStep).to.equal Dropbox.Client.PARAM_LOADED
+          done()
+        @client.reset()
+        credentials = @client.credentials()
+        credentials.oauthStateParam = 'state_should_not_be_used'
+        @client.setCredentials credentials
+        expect(@client.authStep).to.equal Dropbox.Client.PARAM_LOADED
+        @client.authenticate (error, client) ->
+          expect('callback_should_not_be_called').to.equal false
+          done()
 
 describe 'Dropbox.Client', ->
   # Skip some of the long tests in Web workers.
@@ -1640,62 +1699,77 @@ describe 'Dropbox.Client', ->
         @timeout 45 * 1000  # Time-consuming because the user must click.
         @client.reset()
         @client.authDriver authDriver
-        authStateChanges = ['authorize']
-        @client.onAuthStateChange.addListener (client) ->
-          authStateChanges.push client.authState
+        authStepChanges = ['authorize']
+        @client.onAuthStepChange.addListener (client) ->
+          authStepChanges.push client.authStep
         @client.authenticate (error, client) =>
           expect(error).to.equal null
           expect(client).to.equal @client
-          expect(client.authState).to.equal Dropbox.Client.DONE
+          expect(client.authStep).to.equal Dropbox.Client.DONE
           expect(client.isAuthenticated()).to.equal true
-          expect(authStateChanges).to.deep.equal(['authorize',
-              Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
-              Dropbox.Client.DONE])
+          if testKeys.secret
+            # node.js uses Authorization Codes
+            expect(authStepChanges).to.deep.equal(['authorize',
+                Dropbox.Client.PARAM_SET, Dropbox.Client.AUTHORIZED,
+                Dropbox.Client.DONE])
+          else
+            # Browsers use Implicit Grant.
+            expect(authStepChanges).to.deep.equal(['authorize',
+                Dropbox.Client.PARAM_SET, Dropbox.Client.DONE])
+
           # Verify that we can do API calls.
+          console.log 's2'
           client.getUserInfo (error, userInfo) ->
             expect(error).to.equal null
             expect(userInfo).to.be.instanceOf Dropbox.UserInfo
             invalidCredentials = client.credentials()
-            authStateChanges = ['signOff']
+            authStepChanges = ['signOff']
             client.signOut (error) ->
               expect(error).to.equal null
-              expect(client.authState).to.equal Dropbox.Client.SIGNED_OFF
+              expect(client.authStep).to.equal Dropbox.Client.SIGNED_OFF
               expect(client.isAuthenticated()).to.equal false
-              expect(authStateChanges).to.deep.equal(['signOff',
+              expect(authStepChanges).to.deep.equal(['signOff',
                   Dropbox.Client.SIGNED_OFF])
               # Verify that we can't use the old token in API calls.
               # We have an invalid token, so we also test 401 handling.
               invalidClient = new Dropbox.Client invalidCredentials
-              invalidClient.onAuthStateChange.addListener (client) ->
-                authStateChanges.push client.authState
-              authStateChanges = ['invalidClient']
-              invalidClient.authDriver onAuthStateChange: (client, callback) ->
-                expect(authStateChanges).to.deep.equal(['invalidClient',
+              invalidClient.onAuthStepChange.addListener (client) ->
+                authStepChanges.push client.authStep
+              authStepChanges = ['invalidClient']
+              invalidClient.authDriver onAuthStepChange: (client, callback) ->
+                expect(authStepChanges).to.deep.equal(['invalidClient',
                     Dropbox.Client.ERROR])
-                authStateChanges.push 'driver-' + client.authState
+                authStepChanges.push 'driver-' + client.authStep
                 callback()
               invalidClient.onError.addListener (client) ->
-                expect(authStateChanges).to.deep.equal(['invalidClient',
+                expect(authStepChanges).to.deep.equal(['invalidClient',
                     Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR])
-                authStateChanges.push 'onError'
+                authStepChanges.push 'onError'
               invalidClient.getUserInfo (error, userInfo) ->
                 expect(error).to.be.ok
                 unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do error codes.
                   expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
                   expect(invalidClient.authError).to.equal error
                   expect(invalidClient.isAuthenticated()).to.equal false
-                  expect(authStateChanges).to.deep.equal(['invalidClient',
+                  expect(authStepChanges).to.deep.equal(['invalidClient',
                       Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR,
                       'onError'])
                 # Verify that the same client can be used for a 2nd signin.
-                authStateChanges = ['authorize2']
+                authStepChanges = ['authorize2']
                 client.authenticate (error, client) ->
                   expect(error).to.equal null
-                  expect(client.authState).to.equal Dropbox.Client.DONE
+                  expect(client.authStep).to.equal Dropbox.Client.DONE
                   expect(client.isAuthenticated()).to.equal true
-                  expect(authStateChanges).to.deep.equal(['authorize2',
-                      Dropbox.Client.REQUEST, Dropbox.Client.AUTHORIZED,
-                      Dropbox.Client.DONE])
+                  if testKeys.secret
+                    # node.js uses Authorization Codes
+                    expect(authStepChanges).to.deep.equal(['authorize2',
+                        Dropbox.Client.PARAM_SET, Dropbox.Client.AUTHORIZED,
+                        Dropbox.Client.DONE])
+                  else
+                    # Browsers use Implicit Grant.
+                    expect(authStepChanges).to.deep.equal(['authorize2',
+                        Dropbox.Client.PARAM_SET, Dropbox.Client.DONE])
+
                   # Verify that we can do API calls after the 2nd signin.
                   client.getUserInfo (error, userInfo) ->
                     expect(error).to.equal null
@@ -1710,6 +1784,6 @@ describe 'Dropbox.Client', ->
 
     describe '#constructor', ->
       it 'raises an Error if initialized without an API key / secret', ->
-        expect(-> new Dropbox.Client(token: '123', tokenSecret: '456')).to.
+        expect(-> new Dropbox.Client(token: '123')).to.
             throw(Error, /no api key/i)
 

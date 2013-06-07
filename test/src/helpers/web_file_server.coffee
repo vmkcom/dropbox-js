@@ -17,9 +17,35 @@ class WebFileServer
   testUrl: ->
     "https://localhost:#{@port}/test/html/browser_test.html"
 
+  # The self-signed certificate used by this server.
+  certificate: ->
+    return null unless @useHttps
+    keyMaterial = fs.readFileSync 'test/ssl/cert.pem', 'utf8'
+    certIndex = keyMaterial.indexOf '-----BEGIN CERTIFICATE-----'
+    keyMaterial.substring certIndex
+
   # The server code.
   createApp: ->
     @app = express()
+
+    ## Middleware.
+
+    # CORS headers.
+    @app.use (request, response, next) ->
+      response.header 'Access-Control-Allow-Origin', '*'
+      response.header 'Access-Control-Allow-Methods', 'DELETE,GET,POST,PUT'
+      response.header 'Access-Control-Allow-Headers',
+                      'Content-Type, Authorization'
+      next()
+
+    @app.use @app.router
+
+    @app.use express.static(fs.realpathSync(__dirname + '/../../../'),
+                            { hidden: true })
+
+    ## Routes
+
+    # Ends the tests.
     @app.get '/diediedie', (request, response) =>
       if 'failed' of request.query
         failed = parseInt request.query['failed']
@@ -37,16 +63,24 @@ class WebFileServer
         @server.close()
         process.exit exitCode
 
-    @app.use (request, response, next) ->
-      response.header 'Access-Control-Allow-Origin', '*'
-      response.header 'Access-Control-Allow-Methods', 'DELETE,GET,POST,PUT'
-      response.header 'Access-Control-Allow-Headers',
-                      'Content-Type, Authorization'
-      next()
+    # Simulate receiving an OAuth 2 access token.
+    @app.post '/form_encoded', (request, response) ->
+      body = 'access_token=test%20token&token_type=bearer'
+      response.header 'Content-Type', 'application/x-www-form-urlencoded'
+      response.header 'Content-Length', body.length.toString()
+      response.end body
 
-    @app.use express.static(fs.realpathSync(__dirname + '/../../../'),
-                            { hidden: true })
-    options = key: fs.readFileSync 'test/ssl/cert.pem'
+    # Simulate receiving user info.
+    @app.post '/json_encoded', (request, response) ->
+      body = JSON.stringify(
+          uid: 42, country: 'US', display_name: 'John P. User')
+      response.header 'Content-Type', 'application/json'
+      response.header 'Content-Length', body.length.toString()
+      response.end body
+
+    ## Server creation.
+
+    options = key: fs.readFileSync('test/ssl/cert.pem')
     options.cert = options.key
     @server = https.createServer(options, @app)
     @server.listen @port

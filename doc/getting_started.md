@@ -57,31 +57,28 @@ var Dropbox = require("dropbox");
 an API key. Read the brief
 [API core concepts intro](https://www.dropbox.com/developers/start/core).
 
-Once you have an API key, use it to create a `Dropbox.Client`.
+Once you have an API key, use it to create a
+[Dropbox.Client](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html).
+
+If your JavaScript code runs on users' computers, do NOT expose your API secret
+in the code.
 
 ```javascript
-var client = new Dropbox.Client({
-    key: "your-key-here", secret: "your-secret-here", sandbox: true
+// Browser-side applications do not use an API secret.
+var client = new Dropbox.Client({ key: "your-key-here" });
+secret: "your-secret-here"
 });
 ```
 
-If your application requires full Dropbox access, leave out the `sandbox: true`
-parameter.
-
-
-### Browser and Open-Source Applications
-
-The Dropbox API guidelines ask that the API key and secret is never exposed in
-cleartext. This is an issue for the applications that use dropbox.js on the
-client side (browser apps and Chrome extensions), as well as all open-source
-applications.
-
-To meet this requirement,
-[encode your API key](https://dl-web.dropbox.com/spa/pjlfdak1tmznswp/api_keys.js/public/index.html).
+if your application runs in node.js or in another server environment that you
+control, include both your API key and API secret in the `Dropbox.Client`
+constructor call.
 
 ```javascript
+// Server-side applications use both the API key and secret.
 var client = new Dropbox.Client({
-    key: "encoded-key-string|it-is-really-really-long", sandbox: true
+    key: "your-key-here",
+    secret: "your-secret-here"
 });
 ```
 
@@ -90,14 +87,15 @@ var client = new Dropbox.Client({
 Before you can make any API calls, you need to authenticate your application's
 user with Dropbox, and have them authorize your apps to access their Dropbox.
 
-This process follows the [OAuth 1.0](http://tools.ietf.org/html/rfc5849)
+This process follows the [OAuth 2.0](http://tools.ietf.org/html/rfc6749)
 protocol, which entails sending the user to a Web page on `www.dropbox.com`,
-and then having them redirected back to your application. Each Web application
-has its requirements, so `dropbox.js` lets you customize the authentication
-process by implementing an [OAuth driver](../src/auth_driver.coffee).
+and then having them redirected back to your application. Web applications can
+use different methods and UI to drive the user through this process, so
+`dropbox.js` lets application code hook into the authorization process by
+implementing an [OAuth driver](../src/auth_driver.coffee).
 
-At the same time, dropbox.js ships with a couple of OAuth drivers, and you
-should take advantage of them as you prototype your application.
+dropbox.js ships with a couple of [built-in OAuth drivers](built_in.md), which
+a great way to jump-start application development. The
 
 Read the [authentication doc](./auth_drivers.md) for further information about
 writing an OAuth driver, and to learn about all the drivers that ship with
@@ -111,7 +109,7 @@ The following snippet will set up the recommended driver.
 client.authDriver(new Dropbox.Drivers.Redirect());
 ```
 
-The [authentication doc](./auth_drivers.md) describes some useful options that
+The [built-in OAuth drivers](built_in.md) describes some useful options that
 you can pass to the `Dropbox.Drivers.Redirect` constructor.
 
 ### node.js Setup
@@ -123,7 +121,7 @@ all the clients.
 client.authDriver(new Dropbox.Drivers.NodeServer(8191));
 ```
 
-The [authentication doc](./auth_drivers.md) has useful tips on using the
+The [built-in OAuth drivers doc](built_in.md) has useful tips on using the
 `NodeServer` driver.
 
 ### Chrome App / Extension Setup
@@ -132,8 +130,8 @@ At this time, the setup for Chrome applications and extensions is a bit more
 involved than the one-liners above.
 
 The `Dropbox.Drivers.Chrome` section in the
-[authentication doc](./auth_drivers.md) has a step-by-step process for setting
-up the Chrome OAuth driver.
+[built-in OAuth drivers doc](built_in.md) has a step-by-step process for
+setting up the Chrome OAuth driver.
 
 ### Shared Code
 

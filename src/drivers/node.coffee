@@ -6,29 +6,40 @@ class Dropbox.Drivers.NodeServer
   #
   # @param {?Object} options one or more of the options below
   # @option options {Number} port the number of the TCP port that will receive
-  #   HTTP requests
+  #   HTTPS requests; defaults to 8912
+  # @option options {Object} tls one or more of the options accepted by
+  #   tls.createServer in the node.js standard library; at a minimum, the key
+  #   option should be provided
   # @param {String} faviconFile the path to a file that will be served at
   #   /favicon.ico
   constructor: (options) ->
-    @port = options?.port or 8912
-    @faviconFile = options?.favicon or null
+    @_port = options?.port or 8912
+    if options?.tls
+      @_tlsOptions  = options.tls
+      if typeof @_tlsOptions is 'string' or @_tlsOptions instanceof Buffer
+        @_tlsOptions = key: @_tlsOptions, cert: @_tlsOptions
+    else
+      @_tlsOptions = null
+    @_faviconFile = options?.favicon or null
     # Calling require in the constructor because this doesn't work in browsers.
-    @fs = require 'fs'
-    @http = require 'http'
-    @open = require 'open'
+    @_fs = require 'fs'
+    @_http = require 'http'
+    @_https = require 'https'
+    @_open = require 'open'
 
-    @callbacks = {}
-    @nodeUrl = require 'url'
+    @_callbacks = {}
+    @_nodeUrl = require 'url'
     @createApp()
 
+  # The /authorize response type.
+  authType: -> "code"
+
   # URL to the node.js OAuth callback handler.
-  url: (token) ->
-    "http://localhost:#{@port}/oauth_callback?dboauth_token=" +
-        encodeURIComponent(token)
+  url: -> "https://localhost:#{@_port}/oauth_callback"
 
   # Opens the token
-  doAuthorize: (authUrl, token, tokenSecret, callback) ->
-    @callbacks[token] = callback
+  doAuthorize: (authUrl, stateParam, client, callback) ->
+    @_callbacks[stateParam] = callback
     @openBrowser authUrl
 
   # Opens the given URL in a browser.
@@ -36,39 +47,39 @@ class Dropbox.Drivers.NodeServer
     unless url.match /^https?:\/\//
       throw new Error("Not a http/https URL: #{url}")
     if 'BROWSER' of process.env
-      @open url, process.env['BROWSER']
+      @_open url, process.env['BROWSER']
     else
-      @open url
+      @_open url
 
   # Creates and starts up an HTTP server that will intercept the redirect.
   createApp: ->
-    @app = @http.createServer (request, response) =>
-      @doRequest request, response
-    @app.listen @port
+    if @_tlsOptions
+      @_app = @_https.createServer @_tlsOptions, (request, response) =>
+        @doRequest request, response
+    else
+      @_app = @_http.createServer (request, response) =>
+        @doRequest request, response
+    @_app.listen @_port
 
   # Shuts down the HTTP server.
   #
   # The driver will become unusable after this call.
   closeServer: ->
-    @app.close()
+    @_app.close()
 
   # Reads out an /authorize callback.
   doRequest: (request, response) ->
-    url = @nodeUrl.parse request.url, true
+    url = @_nodeUrl.parse request.url, true
     if url.pathname is '/oauth_callback'
-      if url.query.not_approved is 'true'
-        rejected = true
-        token = url.query.dboauth_token
-      else
-        rejected = false
-        token = url.query.oauth_token
-      if @callbacks[token]
-        @callbacks[token](rejected)
-        delete @callbacks[token]
+      stateParam = url.query.state
+      if @_callbacks[stateParam]
+        @_callbacks[stateParam](url.query)
+        delete @_callbacks[stateParam]
+
     data = ''
     request.on 'data', (dataFragment) -> data += dataFragment
     request.on 'end', =>
-      if @faviconFile and (url.pathname is '/favicon.ico')
+      if @_faviconFile and (url.pathname is '/favicon.ico')
         @sendFavicon response
       else
         @closeBrowser response
@@ -87,7 +98,7 @@ class Dropbox.Drivers.NodeServer
 
   # Renders the favicon file.
   sendFavicon: (response) ->
-    @fs.readFile @faviconFile, (error, data) ->
+    @_fs.readFile @_faviconFile, (error, data) ->
       response.writeHead(200,
         { 'Content-Length': data.length, 'Content-Type': 'image/x-icon' })
       response.write data
