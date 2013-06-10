@@ -441,6 +441,23 @@ buildClientTests = (clientKeys) ->
             expect(stat.isFile).to.equal true
           done()
 
+    it 'writes a new text file with ~ - and _ in the name', (done) ->
+      @newFile = "#{@testFolder}/oauth~sig-test_file.txt"
+      @newFileData = "A file whose name checks for OAuth signatures on ~-_"
+      @client.writeFile @newFile, @newFileData, (error, stat) =>
+        expect(error).to.equal null
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
+        expect(stat.path).to.equal @newFile
+        expect(stat.isFile).to.equal true
+        @client.readFile @newFile, (error, data, stat) =>
+          expect(error).to.equal null
+          expect(data).to.equal @newFileData
+          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
+            expect(stat.path).to.equal @newFile
+            expect(stat.isFile).to.equal true
+          done()
+
     it 'writes a Blob to a binary file', (done) ->
       return done() unless Blob? and ArrayBuffer?
       @newFile = "#{@testFolder}/test image from blob.png"
