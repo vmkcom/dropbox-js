@@ -707,6 +707,9 @@ Content-Transfer-Encoding: binary\r
     it 'percent-encodes properly', ->
       expect(Dropbox.Xhr.urlEncode({'a +x()': "*b'"})).to.
         equal 'a%20%2Bx%28%29=%2Ab%27'
+    it 'does-not percent-encode characters singled out by OAuth spec', ->
+      expect(Dropbox.Xhr.urlEncode({'key': '1-2.3_4~'})).to.
+        equal 'key=1-2.3_4~'
 
   describe '#urlDecode', ->
     it 'iterates properly', ->

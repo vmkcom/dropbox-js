@@ -1,6 +1,6 @@
 # TODO(pwnall): enable tests when the PRs cited in the Workers bug get pulled.
 #               https://github.com/dropbox/dropbox-js/issues/52
-describe.except 'Web Worker tests', ->
+describe.skip 'Web Worker tests', ->
   if typeof window isnt 'undefined' and typeof window.Worker is 'function'
     it 'pass', (done) ->
       @timeout 3600000  # This test actually runs the whole suite in a Worker.
