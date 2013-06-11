@@ -1,5 +1,5 @@
 if global? and require? and module? and (not cordova?)
-  # Node.JS
+  # node.js
   require('source-map-support').install()
 
   exports = global
