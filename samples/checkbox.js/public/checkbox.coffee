@@ -29,7 +29,7 @@ class Checkbox
     @renderTask(task) for task in @tasks.active
     @renderTask(task) for task in @tasks.done
 
-  # Renders a task into the
+  # Renders a task into the list that it belongs to.
   renderTask: (task) ->
     $list = if task.done then @$doneList else @$activeList
     $list.append @$taskDom(task)
@@ -54,14 +54,12 @@ class Checkbox
   # Called when the user wants to create a new task.
   onNewTask: (event) ->
     event.preventDefault()
-    name = $('#new-task-name').val()
-    if @tasks.findByName name
-      alert "You already have this task on your list!"
+    task = new Task name: $('#new-task-name').val(), done: false
+    if @tasks.findByName task.name
+      window.alert "You already have this task on your list!"
     else
       $('#new-task-button').attr 'disabled', 'disabled'
       $('#new-task-name').attr 'disabled', 'disabled'
-      task = new Task()
-      task.name = name
       @tasks.addTask task, =>
         $('#new-task-name').removeAttr('disabled').val ''
         $('#new-task-button').removeAttr 'disabled'
@@ -134,13 +132,13 @@ class Tasks
       # In most cases, this will fail, so don't bother checking for errors.
       @dbClient.readdir '/active', (error, entries, dir_stat, entry_stats) =>
         return @showError(error) if error
-        @active = ((new Task()).fromStat(stat) for stat in entry_stats)
+        @active = (Task.fromStat(stat) for stat in entry_stats)
         readActive = true
         done() if readActive and readDone
     @dbClient.mkdir '/done', (error, stat) =>
       @dbClient.readdir '/done', (error, entries, dir_stat, entry_stats) =>
         return @showError(error) if error
-        @done = ((new Task()).fromStat(stat) for stat in entry_stats)
+        @done = (Task.fromStat(stat) for stat in entry_stats)
         readDone = true
         done() if readActive and readDone
     @
@@ -151,7 +149,6 @@ class Tasks
   # @param {function()} done called when the task is saved to the user's
   #     Dropbox
   addTask: (task, done) ->
-    task.cleanupName()
     @dbClient.writeFile task.path(), '', (error, stat) =>
       return @showError(error) if error
       @addTaskToModel task
@@ -218,23 +215,18 @@ class Tasks
 # Model for a single user task.
 class Task
   # Creates a task with default values.
-  constructor: ->
-    @name = null
-    @done = false
-
-  # Reads data about a task from the stat of is file in a user's Dropbox.
-  #
-  # @param {Dropbox.Stat} entry the directory entry representing the task
-  fromStat: (entry) ->
-    @name = entry.name
-    @done = entry.path.split('/', 3)[1] is 'done'
-    @
-
-  # Cleans up the task name so that it's valid Dropbox file name.
-  cleanupName: (name) ->
+  constructor: (properties) ->
+    @name = properties?.name or '(no name)'
+    @done = properties?.done or false
     # English-only hack that removes slashes from the task name.
     @name = @name.replace(/\ \/\ /g, ' or ').replace(/\//g, ' or ')
-    @
+
+  # Creates a Task from the stat of its file in a user's Dropbox.
+  #
+  # @param {Dropbox.Stat} entry the directory entry representing the task
+  # @return {Task} the newly created task
+  @fromStat: (entry) ->
+    new Task name: entry.name, done: entry.path.split('/', 3)[1] is 'done'
 
   # Path to the file representing the task in the user's Dropbox.
   # @return {String} fully-qualified path
