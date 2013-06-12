@@ -138,11 +138,11 @@ webtest = (callback) ->
   callback() if callback?
 
 ssl_cert = (callback) ->
-  fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'
   if fs.existsSync 'test/ssl/cert.pem'
     callback() if callback?
     return
 
+  fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'
   run 'openssl req -new -x509 -days 365 -nodes -batch ' +
       '-out test/ssl/cert.pem -keyout test/ssl/cert.pem ' +
       '-subj /O=dropbox.js/OU=Testing/CN=localhost ', callback
