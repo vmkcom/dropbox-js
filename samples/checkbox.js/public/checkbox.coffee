@@ -223,7 +223,7 @@ class Task
 
   # Creates a Task from the stat of its file in a user's Dropbox.
   #
-  # @param {Dropbox.Stat} entry the directory entry representing the task
+  # @param {Dropbox.File.Stat} entry the directory entry representing the task
   # @return {Task} the newly created task
   @fromStat: (entry) ->
     new Task name: entry.name, done: entry.path.split('/', 3)[1] is 'done'
@@ -236,5 +236,5 @@ class Task
 # Start up the code when the DOM is fully loaded.
 $ ->
   client = new Dropbox.Client key: 'ol56zaikdq4kxjx'
-  client.authDriver new Dropbox.Drivers.Redirect rememberUser: true
+  client.authDriver new Dropbox.AuthDriver.Redirect rememberUser: true
   window.app = new Checkbox client, '#app-ui'

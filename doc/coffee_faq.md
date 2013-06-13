@@ -49,7 +49,7 @@ without touching the source code.
 * You can add methods to the prototype classes such as `Dropbox.Client` to
 implement custom operations. _Please open an issue if you think your addition
 is generally useful!_
-* You can replace internal classes such as `Dropbox.Xhr` (or selectively
+* You can replace internal classes such as `Dropbox.Util.Xhr` (or selectively
 replace methods) with wrappers that tweak the original behavior
 
 

@@ -69,7 +69,7 @@ else
       DropboxXhrSendArrayBufferView = false
 
 # Dispatches low-level AJAX calls (XMLHttpRequests).
-class Dropbox.Xhr
+class Dropbox.Util.Xhr
   # The object used to perform AJAX requests (XMLHttpRequest).
   @Request = DropboxXhrRequest
   # Set to true when using the XDomainRequest API.
@@ -108,7 +108,7 @@ class Dropbox.Xhr
     @onError = null
 
   # @property {?XMLHttpRequest} the raw XMLHttpRequest object used to make the
-  #   request; null until Dropbox.Xhr#prepare is called
+  #   request; null until Dropbox.Util.Xhr#prepare is called
   xhr: null
 
   # @property {?function(Dropbox.ApiError, function(Dropbox.ApiError))} if the
@@ -122,7 +122,7 @@ class Dropbox.Xhr
   #
   # @param {?Object} params an associative array (hash) containing the HTTP
   #   request parameters
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setParams: (params) ->
     if @signed
       throw new Error 'setParams called after addOauthParams or addOauthHeader'
@@ -133,14 +133,14 @@ class Dropbox.Xhr
 
   # Sets the function called when the XHR completes.
   #
-  # This function can also be set when calling Dropbox.Xhr#send.
+  # This function can also be set when calling Dropbox.Util.Xhr#send.
   #
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
   #   the XHR completes; if an error occurs, the first parameter will be a
   #   Dropbox.ApiError instance; otherwise, the second parameter will be an
   #   instance of the required response type (e.g., String, Blob), and the
   #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setCallback: (@callback) ->
     @
 
@@ -152,18 +152,18 @@ class Dropbox.Xhr
   # This method automatically decides the best way to add the OAuth signature
   # to the current request. Modifying the request in any way (e.g., by adding
   # headers) might result in a valid signature that is applied in a sub-optimal
-  # fashion. For best results, call this right before Dropbox.Xhr#prepare.
+  # fashion. For best results, call this right before Dropbox.Util.Xhr#prepare.
   #
-  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
-  #   used to sign the request
+  # @param {Dropbox.Util.Oauth} oauth OAuth instance whose key and secret will
+  #   be used to sign the request
   # @param {Boolean} cacheFriendly if true, the signing process choice will be
   #   biased towards allowing the HTTP cache to work; by default, the choice
   #   attempts to avoid the CORS preflight request whenever possible
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   signWithOauth: (oauth, cacheFriendly) ->
-    if Dropbox.Xhr.ieXdr
+    if Dropbox.Util.Xhr.ieXdr
       @addOauthParams oauth
-    else if @preflight or !Dropbox.Xhr.doesPreflight
+    else if @preflight or !Dropbox.Util.Xhr.doesPreflight
       @addOauthHeader oauth
     else
       if @isGet and cacheFriendly
@@ -176,9 +176,9 @@ class Dropbox.Xhr
   # The OAuth signature will become invalid if the parameters are changed after
   # the signing process.
   #
-  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
-  #   used to sign the request
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @param {Dropbox.Util.Oauth} oauth OAuth instance whose key and secret will
+  #   be used to sign the request
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   addOauthParams: (oauth) ->
     if @signed
       throw new Error 'Request already has an OAuth signature'
@@ -193,9 +193,9 @@ class Dropbox.Xhr
   # The OAuth signature will become invalid if the parameters are changed after
   # the signing process.
   #
-  # @param {Dropbox.Oauth} oauth OAuth instance whose key and secret will be
-  #   used to sign the request
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @param {Dropbox.Util.Oauth} oauth OAuth instance whose key and secret will
+  #   be used to sign the request
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   addOauthHeader: (oauth) ->
     if @signed
       throw new Error 'Request already has an OAuth signature'
@@ -208,7 +208,7 @@ class Dropbox.Xhr
   #
   # @param {String, Blob, ArrayBuffer} body the body to be sent in a request;
   #   GET requests cannot have a body
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setBody: (body) ->
     if @isGet
       throw new Error 'setBody cannot be called on GET requests'
@@ -234,7 +234,7 @@ class Dropbox.Xhr
   #
   # @param {String} responseType the value that will be assigned to the XHR's
   #   responseType property
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setResponseType: (@responseType) ->
     @
 
@@ -246,7 +246,7 @@ class Dropbox.Xhr
   #
   # @param {String} headerName the name of the HTTP header
   # @param {String} value the value that the header will be set to
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setHeader: (headerName, value) ->
     if @headers[headerName]
       oldValue = @headers[headerName]
@@ -264,7 +264,7 @@ class Dropbox.Xhr
   #
   # Response headers are not available on Internet Explorer 9 and below.
   #
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   reportResponseHeaders: ->
     @wantHeaders = true
 
@@ -289,14 +289,15 @@ class Dropbox.Xhr
         if fileData instanceof ArrayBuffer
           # Convert ArrayBuffer -> ArrayBufferView on standard-compliant
           # browsers, to avoid warnings from the Blob constructor.
-          if Dropbox.Xhr.sendArrayBufferView
+          if Dropbox.Util.Xhr.sendArrayBufferView
             fileData = new Uint8Array fileData
         else
           # Convert ArrayBufferView -> ArrayBuffer on older browsers, to avoid
           # having a Blob that contains "[object Uint8Array]" instead of the
           # actual data.
-          if !Dropbox.Xhr.sendArrayBufferView and fileData.byteOffset is 0 and
-             fileData.buffer instanceof ArrayBuffer
+          if !Dropbox.Util.Xhr.sendArrayBufferView and
+              fileData.byteOffset is 0 and
+              fileData.buffer instanceof ArrayBuffer
             fileData = fileData.buffer
 
       contentType or= 'application/octet-stream'
@@ -343,10 +344,10 @@ class Dropbox.Xhr
   # Moves this request's parameters to its URL.
   #
   # @private
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   paramsToUrl: ->
     if @params
-      queryString = Dropbox.Xhr.urlEncode @params
+      queryString = Dropbox.Util.Xhr.urlEncode @params
       if queryString.length isnt 0
         @url = [@url, '?', queryString].join ''
       @params = null
@@ -355,7 +356,7 @@ class Dropbox.Xhr
   # Moves this request's parameters to its body.
   #
   # @private
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   paramsToBody: ->
     if @params
       if @body isnt null
@@ -363,7 +364,7 @@ class Dropbox.Xhr
       if @isGet
         throw new Error 'paramsToBody cannot be called on GET requests'
       @headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      @body = Dropbox.Xhr.urlEncode @params
+      @body = Dropbox.Util.Xhr.urlEncode @params
       @params = null
     @
 
@@ -371,12 +372,12 @@ class Dropbox.Xhr
   #
   # This method completely sets up a native XHR object and stops short of
   # calling its send() method, so the API client has a chance of customizing
-  # the XHR. After customizing the XHR, Dropbox.Xhr#send should be called.
+  # the XHR. After customizing the XHR, Dropbox.Util.Xhr#send should be called.
   #
   #
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   prepare: ->
-    ieXdr = Dropbox.Xhr.ieXdr
+    ieXdr = Dropbox.Util.Xhr.ieXdr
     if @isGet or @body isnt null or ieXdr
       @paramsToUrl()
       if @body isnt null and typeof @body is 'string'
@@ -384,7 +385,7 @@ class Dropbox.Xhr
     else
       @paramsToBody()
 
-    @xhr = new Dropbox.Xhr.Request()
+    @xhr = new Dropbox.Util.Xhr.Request()
     if ieXdr
       @xhr.onload = => @onXdrLoad()
       @xhr.onerror = => @onXdrError()
@@ -411,20 +412,20 @@ class Dropbox.Xhr
 
   # Fires off the prepared XHR request.
   #
-  # Dropbox.Xhr#prepare should be called exactly once before this method.
+  # Dropbox.Util.Xhr#prepare should be called exactly once before this method.
   #
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
   #   the XHR completes; if an error occurs, the first parameter will be a
   #   Dropbox.ApiError instance; otherwise, the second parameter will be an
   #   instance of the required response type (e.g., String, Blob), and the
   #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
-  # @return {Dropbox.Xhr} this, for easy call chaining
+  # @return {Dropbox.Util.Xhr} this, for easy call chaining
   send: (callback) ->
     @callback = callback or @callback
 
     if @body isnt null
       body = @body
-      if Dropbox.Xhr.sendArrayBufferView
+      if Dropbox.Util.Xhr.sendArrayBufferView
         # Standards-compliant browsers don't like to send() naked ArrayBuffers
         if body instanceof ArrayBuffer
           body = new Uint8Array body
@@ -438,7 +439,7 @@ class Dropbox.Xhr
         @xhr.send body
       catch xhrError
         # Node.js doesn't implement Blob.
-        if !Dropbox.Xhr.sendArrayBufferView and Dropbox.Xhr.wrapBlob
+        if !Dropbox.Util.Xhr.sendArrayBufferView and Dropbox.Util.Xhr.wrapBlob
           # Firefox doesn't support sending ArrayBufferViews.
           body = new Blob [body], type: 'application/octet-stream'
           @xhr.send body
@@ -504,7 +505,7 @@ class Dropbox.Xhr
     if @wantHeaders
       allHeaders = @xhr.getAllResponseHeaders()
       if allHeaders
-        headers = Dropbox.Xhr.parseResponseHeaders allHeaders
+        headers = Dropbox.Util.Xhr.parseResponseHeaders allHeaders
       else
         # Work around https://bugzilla.mozilla.org/show_bug.cgi?id=608735
         headers = @guessResponseHeaders()
@@ -539,7 +540,7 @@ class Dropbox.Xhr
     text = if @xhr.responseText? then @xhr.responseText else @xhr.response
     switch @xhr.getResponseHeader('Content-Type')
        when 'application/x-www-form-urlencoded'
-         @callback null, Dropbox.Xhr.urlDecode(text), metadata, headers
+         @callback null, Dropbox.Util.Xhr.urlDecode(text), metadata, headers
        when 'application/json', 'text/javascript'
          @callback null, JSON.parse(text), metadata, headers
        else
@@ -610,7 +611,7 @@ class Dropbox.Xhr
 
     switch @xhr.contentType
      when 'application/x-www-form-urlencoded'
-       @callback null, Dropbox.Xhr.urlDecode(text), metadata, headers
+       @callback null, Dropbox.Util.Xhr.urlDecode(text), metadata, headers
      when 'application/json', 'text/javascript'
        @callback null, JSON.parse(text), metadata, headers
      else

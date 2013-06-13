@@ -66,7 +66,7 @@ class Dropbox.AuthDriver
   # @param {function(String)} callback called with the state parameter value
   #   that should be used in the OAuth 2 authorization process
   getStateParam: (client, callback) ->
-    callback Dropbox.Oauth.randomAuthStateParam()
+    callback Dropbox.Util.Oauth.randomAuthStateParam()
 
   # If defined, called to process the /authorize redirect.
   #
@@ -74,7 +74,7 @@ class Dropbox.AuthDriver
   # step, meaning that an OAuth 2 state parameter value was loaded when the
   # Dropbox.Client object was constructed, or during a
   # Dropbox.Client.#setCredentials() call. This means that
-  # Dropbox.Driver#doAuthorize was called earlier, saved that state parameter,
+  # Dropbox.AuthDriver#doAuthorize was called earlier, saved that state parameter,
   # and did not complete the OAuth 2 process. This happens when the OAuth 2
   # process requires page reloads, e.g. if the authorization is done via
   # redirects.
@@ -131,6 +131,3 @@ class Dropbox.AuthDriver
     # (Implicit Grant, MAC tokens)
     'mac_key', 'mac_algorithm'
   ].sort()
-
-# Namespace for authentication drivers.
-Dropbox.Drivers = {}

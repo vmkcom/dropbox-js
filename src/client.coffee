@@ -19,12 +19,12 @@ class Dropbox.Client
     @fileServer = options.fileServer or @defaultFileServer()
     @downloadServer = options.downloadServer or @defaultDownloadServer()
 
-    @onXhr = new Dropbox.EventSource cancelable: true
-    @onError = new Dropbox.EventSource
-    @onAuthStepChange = new Dropbox.EventSource
+    @onXhr = new Dropbox.Util.EventSource cancelable: true
+    @onError = new Dropbox.Util.EventSource
+    @onAuthStepChange = new Dropbox.Util.EventSource
     @xhrOnErrorHandler = (error, callback) => @handleXhrError error, callback
 
-    @oauth = new Dropbox.Oauth options
+    @oauth = new Dropbox.Util.Oauth options
     @uid = options.uid or null
     @authStep = @oauth.step()
     @driver = null
@@ -36,32 +36,31 @@ class Dropbox.Client
 
   # Plugs in the OAuth / application integration code.
   #
-  # @param {DropboxAuthDriver} driver provides the integration between the
+  # @param {Dropbox.AuthDriver} driver provides the integration between the
   #   application and the Dropbox OAuth flow; most applications should be
-  #   able to use instances of Dropbox.Driver.Redirect, Dropbox.Driver.Popup,
-  #   or Dropbox.Driver.NodeServer
+  #   able to use one of the built-in auth drivers
   # @return {Dropbox.Client} this, for easy call chaining
   authDriver: (driver) ->
     @driver = driver
     @
 
-  # @property {Dropbox.EventSource<Dropbox.Xhr>} fires cancelable events every
-  #   time when a network request to the Dropbox API server is about to be
-  #   sent; if the event is canceled by returning a falsey value from a
-  #   listener, the network request is silently discarded; whenever possible,
-  #   listeners should restrict themselves to using the xhr property of the
-  #   Dropbox.Xhr instance passed to them; everything else in the Dropbox.Xhr
-  #   API is in flux
+  # @property {Dropbox.Util.EventSource<Dropbox.Util.Xhr>} fires cancelable
+  #   events every time when a network request to the Dropbox API server is
+  #   about to be sent; if the event is canceled by returning a falsey value
+  #   from a listener, the network request is silently discarded; whenever
+  #   possible, listeners should restrict themselves to using the xhr property
+  #   of the Dropbox.Util.Xhr instance passed to them; everything else in the
+  #   Dropbox.Util.Xhr API is in flux
   onXhr: null
 
-  # @property {Dropbox.EventSource<Dropbox.ApiError>} fires non-cancelable
+  # @property {Dropbox.Util.EventSource<Dropbox.ApiError>} fires non-cancelable
   #   events every time when a network request to the Dropbox API server
   #   results in an error
   onError: null
 
-  # @property {Dropbox.EventSource<Dropbox.Client>} fires non-cancelable events
-  #   every time this client's authStep property changes; this can be used to
-  #   update UI state
+  # @property {Dropbox.Util.EventSource<Dropbox.Client>} fires non-cancelable
+  #   events every time this client's authStep property changes; this can be
+  #   used to update UI state
   onAuthStepChange: null
 
   # The authenticated user's Dropbx user ID.
@@ -147,7 +146,7 @@ class Dropbox.Client
               if @client.authStep is DropboxClient.RESET
                 @oauth.setAuthStateParam stateParam
               _fsmNextStep()
-          @oauth.setAuthStateParam Dropbox.Oauth.randomAuthStateParam()
+          @oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
           _fsmNextStep()
 
         when DropboxClient.PARAM_SET
@@ -227,7 +226,7 @@ class Dropbox.Client
   #   null
   # @return {XMLHttpRequest} the XHR object used for this API call
   signOut: (callback) ->
-    xhr = new Dropbox.Xhr 'POST', @urls.signOut
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.signOut
     xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error) =>
       if error
@@ -272,7 +271,7 @@ class Dropbox.Client
     if options and options.httpCache
       httpCache = true
 
-    xhr = new Dropbox.Xhr 'GET', @urls.accountInfo
+    xhr = new Dropbox.Util.Xhr 'GET', @urls.accountInfo
     xhr.signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, userData) ->
       callback error, Dropbox.UserInfo.parse(userData), userData
@@ -316,13 +315,13 @@ class Dropbox.Client
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.Stat,
-  #   ?Dropbox.RangeInfo)} callback called with the result of
+  # @param {function(?Dropbox.ApiError, ?String, ?Dropbox.File.Stat,
+  #   ?Dropbox.Http.RangeInfo)} callback called with the result of
   #   the /files (GET) HTTP request; the second parameter is the contents of
-  #   the file, the third parameter is a Dropbox.Stat instance describing the
-  #   file, and the first parameter is null; if the start and/or length options
-  #   are specified, the fourth parameter describes the subset of bytes read
-  #   from the file
+  #   the file, the third parameter is a Dropbox.File.Stat instance describing
+  #   the file, and the first parameter is null; if the start and/or length
+  #   options are specified, the fourth parameter describes the subset of bytes
+  #   read from the file
   # @return {XMLHttpRequest} the XHR object used for this API call
   readFile: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -346,7 +345,7 @@ class Dropbox.Client
       else if options.buffer
         responseType = 'buffer'
       else if options.binary
-        responseType = 'b'  # See the Dropbox.Xhr.setResponseType docs
+        responseType = 'b'  # See the Dropbox.Util.Xhr.setResponseType docs
 
       if options.length
         if options.start?
@@ -361,7 +360,8 @@ class Dropbox.Client
 
       httpCache = true if options.httpCache
 
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.getFile}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@urls.getFile}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth @oauth, httpCache
     xhr.setResponseType responseType
     if rangeHeader
@@ -369,10 +369,10 @@ class Dropbox.Client
       xhr.reportResponseHeaders()
     @dispatchXhr xhr, (error, data, metadata, headers) ->
       if headers
-        rangeInfo = Dropbox.RangeInfo.parse headers['content-range']
+        rangeInfo = Dropbox.Http.RangeInfo.parse headers['content-range']
       else
         rangeInfo = null
-      callback error, data, Dropbox.Stat.parse(metadata), rangeInfo
+      callback error, data, Dropbox.File.Stat.parse(metadata), rangeInfo
 
   # Store a file into a user's Dropbox.
   #
@@ -385,24 +385,24 @@ class Dropbox.Client
   # @option options {String} lastVersionTag the identifier string for the
   #   version of the file's contents that was last read by this program, used
   #   for conflict resolution; for best results, use the versionTag attribute
-  #   value from the Dropbox.Stat instance provided by readFile
+  #   value from the Dropbox.File.Stat instance provided by readFile
   # @option options {String} parentRev alias for "lastVersionTag" that matches
   #   the HTTP API
   # @option options {Boolean} noOverwrite if set, the write will not overwrite
   #   a file with the same name that already exsits; instead the contents
   #   will be written to a similarly named file (e.g. "notes (1).txt"
   #   instead of "notes.txt")
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /files (POST) HTTP request; the second paramter is a
-  #   Dropbox.Stat instance describing the newly created file, and the first
-  #   parameter is null
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /files (POST) HTTP request; the second paramter is
+  #   a Dropbox.File.Stat instance describing the newly created file, and the
+  #   first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   writeFile: (path, data, options, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
       options = null
 
-    useForm = Dropbox.Xhr.canSendForms and typeof data is 'object'
+    useForm = Dropbox.Util.Xhr.canSendForms and typeof data is 'object'
     if useForm
       @writeFileUsingForm path, data, options, callback
     else
@@ -433,7 +433,8 @@ class Dropbox.Client
         params.parent_rev = options.parentRev or options.parent_rev
     # TODO: locale support would edit the params here
 
-    xhr = new Dropbox.Xhr 'POST', "#{@urls.postFile}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'POST',
+                               "#{@urls.postFile}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth(@oauth).setFileField('file', fileName,
         data, 'application/octet-stream')
 
@@ -442,7 +443,7 @@ class Dropbox.Client
     delete params.file
 
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # writeFile implementation that uses the /files_put API.
   #
@@ -460,23 +461,25 @@ class Dropbox.Client
       else if options.parentRev or options.parent_rev
         params.parent_rev = options.parentRev or options.parent_rev
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr 'POST', "#{@urls.putFile}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'POST',
+                               "#{@urls.putFile}/#{@urlEncodePath(path)}"
     xhr.setBody(data).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Atomic step in a resumable file upload.
   #
   # @param {String, ArrayBuffer, ArrayBufferView, Blob, File, Buffer} data the
   #   file contents fragment to be uploaded; if a File is passed, its name is
   #   ignored
-  # @param {?Dropbox.UploadCursor} cursor the cursor that tracks the state of
-  #   the resumable file upload; the cursor information will not be updated
-  #   when the API call completes
-  # @param {function(?Dropbox.ApiError, ?Dropbox.UploadCursor)} callback called
-  #   with the result of the /chunked_upload HTTP request; the second paramter
-  #   is a Dropbox.UploadCursor instance describing the progress of the upload
-  #   operation, and the first parameter is null if things go well
+  # @param {?Dropbox.Http.UploadCursor} cursor the cursor that tracks the
+  #   state of the resumable file upload; the cursor information will not be
+  #   updated when the API call completes
+  # @param {function(?Dropbox.ApiError, ?Dropbox.Http.UploadCursor)} callback
+  #   called with the result of the /chunked_upload HTTP request; the second
+  #   paramter is a Dropbox.Http.UploadCursor instance describing the progress
+  #   of the upload operation, and the first parameter is null if things go
+  #   well
   # @return {XMLHttpRequest} the XHR object used for this API call
   resumableUploadStep: (data, cursor, callback) ->
     if cursor
@@ -485,14 +488,14 @@ class Dropbox.Client
     else
       params = { offset: 0 }
 
-    xhr = new Dropbox.Xhr 'POST', @urls.chunkedUpload
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.chunkedUpload
     xhr.setBody(data).setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, cursor) ->
       if error and error.status is Dropbox.ApiError.INVALID_PARAM and
           error.response and error.response.upload_id and error.response.offset
-        callback null, Dropbox.UploadCursor.parse(error.response)
+        callback null, Dropbox.Http.UploadCursor.parse(error.response)
       else
-        callback error, Dropbox.UploadCursor.parse(cursor)
+        callback error, Dropbox.Http.UploadCursor.parse(cursor)
 
   # Finishes a resumable file upload.
   #
@@ -503,17 +506,17 @@ class Dropbox.Client
   # @option options {String} lastVersionTag the identifier string for the
   #   version of the file's contents that was last read by this program, used
   #   for conflict resolution; for best results, use the versionTag attribute
-  #   value from the Dropbox.Stat instance provided by readFile
+  #   value from the Dropbox.File.Stat instance provided by readFile
   # @option options {String} parentRev alias for "lastVersionTag" that matches
   #   the HTTP API
   # @option options {Boolean} noOverwrite if set, the write will not overwrite
   #   a file with the same name that already exsits; instead the contents
   #   will be written to a similarly named file (e.g. "notes (1).txt"
   #   instead of "notes.txt")
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /files (POST) HTTP request; the second paramter is a
-  #   Dropbox.Stat instance describing the newly created file, and the first
-  #   parameter is null
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /files (POST) HTTP request; the second paramter is
+  #   a Dropbox.File.Stat instance describing the newly created file, and the
+  #   first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   resumableUploadFinish: (path, cursor, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -531,11 +534,11 @@ class Dropbox.Client
         params.overwrite = 'false'
 
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr 'POST',
+    xhr = new Dropbox.Util.Xhr 'POST',
         "#{@urls.commitChunkedUpload}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Reads the metadata of a file or folder in a user's Dropbox.
   #
@@ -561,18 +564,18 @@ class Dropbox.Client
   #   a folder's contents; if this value is specified and it matches the
   #   folder's contents, the call will fail with a 304 (Contents not changed)
   #   error code; a folder's version identifier can be obtained from the
-  #   versionTag attribute of a Dropbox.Stat instance describing it
+  #   versionTag attribute of a Dropbox.File.Stat instance describing it
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?Dropbox.Stat, ?Array<Dropbox.Stat>)}
-  #   callback called with the result of the /metadata HTTP request; if the
-  #   call succeeds, the second parameter is a Dropbox.Stat instance
-  #   describing the file / folder, and the first parameter is null;
-  #   if the readDir option is true and the call succeeds, the third
-  #   parameter is an array of Dropbox.Stat instances describing the folder's
-  #   entries
+  # @param {function(?Dropbox.ApiError, ?Dropbox.File.Stat,
+  #   ?Array<Dropbox.File.Stat>)} callback called with the result of the
+  #   /metadata HTTP request; if the call succeeds, the second parameter is a
+  #   Dropbox.File.Stat instance describing the file / folder, and the first
+  #   parameter is null; if the readDir option is true and the call succeeds,
+  #   the third parameter is an array of Dropbox.File.Stat instances describing
+  #   the folder's entries
   # @return {XMLHttpRequest} the XHR object used for this API call
   stat: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -597,12 +600,14 @@ class Dropbox.Client
     params.include_deleted ||= 'false'
     params.list ||= 'false'
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.metadata}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@urls.metadata}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, metadata) ->
-      stat = Dropbox.Stat.parse metadata
+      stat = Dropbox.File.Stat.parse metadata
       if metadata?.contents
-        entries = (Dropbox.Stat.parse(entry) for entry in metadata.contents)
+        entries = for entry in metadata.contents
+          Dropbox.File.Stat.parse(entry)
       else
         entries = undefined
       callback error, stat, entries
@@ -626,19 +631,19 @@ class Dropbox.Client
   #   option is specified, and its value matches the folder's version tag,
   #   the call will fail with a 304 (Contents not changed) error code
   #   instead of returning the contents; a folder's version identifier can be
-  #   obtained from the versionTag attribute of a Dropbox.Stat instance
+  #   obtained from the versionTag attribute of a Dropbox.File.Stat instance
   #   describing it
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?Array<String>, ?Dropbox.Stat,
-  #   ?Array<Dropbox.Stat>)} callback called with the result of the /metadata
-  #   HTTP request; if the call succeeds, the second parameter is an array
-  #   containing the names of the files and folders in the given folder, the
-  #   third parameter is a Dropbox.Stat instance describing the folder, the
-  #   fourth parameter is an array of Dropbox.Stat instances describing the
-  #   folder's entries, and the first parameter is null
+  # @param {function(?Dropbox.ApiError, ?Array<String>, ?Dropbox.File.Stat,
+  #   ?Array<Dropbox.File.Stat>)} callback called with the result of the
+  #   /metadata HTTP request; if the call succeeds, the second parameter is an
+  #   array containing the names of the files and folders in the given folder,
+  #   the third parameter is a Dropbox.File.Stat instance describing the
+  #   folder, the fourth parameter is an array of Dropbox.File.Stat instances
+  #   describing the folder's entries, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readdir: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -686,10 +691,10 @@ class Dropbox.Client
   #   Dropbox's shortner; the download and downloadHack options imply long
   # @option options {Boolean} longUrl synonym for long; makes life easy for
   #     RhinoJS users
-  # @param {function(?Dropbox.ApiError, ?Dropbox.PublicUrl)} callback called
-  #   with the result of the /shares or /media HTTP request; if the call
-  #   succeeds, the second parameter is a Dropbox.PublicUrl instance, and the
-  #   first parameter is null
+  # @param {function(?Dropbox.ApiError, ?Dropbox.File.PublicUrl)} callback
+  #   called with the result of the /shares or /media HTTP request; if the call
+  #   succeeds, the second parameter is a Dropbox.File.PublicUrl instance, and
+  #   the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeUrl: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -719,11 +724,12 @@ class Dropbox.Client
         url = "#{@urls.media}/#{path}"
 
     # TODO: locale support would edit the params here
-    xhr = new Dropbox.Xhr('POST', url).setParams(params).signWithOauth @oauth
+    xhr = new Dropbox.Util.Xhr('POST', url).setParams(params).
+                                            signWithOauth @oauth
     @dispatchXhr xhr, (error, urlData) =>
       if useDownloadHack and urlData?.url
         urlData.url = urlData.url.replace @authServer, @downloadServer
-      callback error, Dropbox.PublicUrl.parse(urlData, isDirect)
+      callback error, Dropbox.File.PublicUrl.parse(urlData, isDirect)
 
   # Retrieves the revision history of a file in a user's Dropbox.
   #
@@ -738,10 +744,10 @@ class Dropbox.Client
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
-  #   with the result of the /revisions HTTP request; if the call succeeds,
-  #   the second parameter is an array with one Dropbox.Stat instance per
-  #   file version, and the first parameter is null
+  # @param {function(?Dropbox.ApiError, ?Array<Dropbox.File.Stat>)} callback
+  #   called with the result of the /revisions HTTP request; if the call
+  #   succeeds, the second parameter is an array with one Dropbox.File.Stat
+  #   instance per file version, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   history: (path, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -756,11 +762,12 @@ class Dropbox.Client
       if options.httpCache
         httpCache = true
 
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.revisions}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@urls.revisions}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, versions) ->
       if versions
-        stats = (Dropbox.Stat.parse(metadata) for metadata in versions)
+        stats = (Dropbox.File.Stat.parse(metadata) for metadata in versions)
       else
         stats = undefined
       callback error, stats
@@ -822,10 +829,10 @@ class Dropbox.Client
   #   not available in IE <= 9
   # @option options {Boolean} buffer if true, the file's contents  will be
   #   passed to the callback in a node.js Buffer; this only works on node.js
-  # @param {function(?Dropbox.ApiError, ?Object, ?Dropbox.Stat)} callback
+  # @param {function(?Dropbox.ApiError, ?Object, ?Dropbox.File.Stat)} callback
   #   called with the result of the /thumbnails HTTP request; if the call
   #   succeeds, the second parameter is the image data as a String or Blob,
-  #   the third parameter is a Dropbox.Stat instance describing the
+  #   the third parameter is a Dropbox.File.Stat instance describing the
   #   thumbnailed file, and the first argument is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   readThumbnail: (path, options, callback) ->
@@ -842,12 +849,13 @@ class Dropbox.Client
     xhr = @thumbnailXhr path, options
     xhr.setResponseType responseType
     @dispatchXhr xhr, (error, data, metadata) ->
-      callback error, data, Dropbox.Stat.parse(metadata)
+      callback error, data, Dropbox.File.Stat.parse(metadata)
 
   # Sets up an XHR for reading a thumbnail for a file in the user's Dropbox.
   #
   # @see Dropbox.Client#thumbnailUrl
-  # @return {Dropbox.Xhr} an XHR request configured for fetching the thumbnail
+  # @return {Dropbox.Util.Xhr} an XHR request configured for fetching the
+  #   thumbnail
   thumbnailXhr: (path, options) ->
     params = {}
     if options
@@ -859,7 +867,8 @@ class Dropbox.Client
         # Can we do something nicer here?
         params.size = options.size
 
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.thumbnails}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@urls.thumbnails}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth(@oauth)
 
   # Reverts a file's contents to a previous version.
@@ -873,16 +882,17 @@ class Dropbox.Client
   #   application's folder
   # @param {String} versionTag the tag of the version that the file will be
   #   reverted to; maps to the "rev" parameter in the HTTP API
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /restore HTTP request; if the call succeeds, the
-  #   second parameter is a Dropbox.Stat instance describing the file after
-  #   the revert operation, and the first parameter is null
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /restore HTTP request; if the call succeeds, the
+  #   second parameter is a Dropbox.File.Stat instance describing the file
+  #   after the revert operation, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   revertFile: (path, versionTag, callback) ->
-    xhr = new Dropbox.Xhr 'POST', "#{@urls.restore}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'POST',
+                               "#{@urls.restore}/#{@urlEncodePath(path)}"
     xhr.setParams(rev: versionTag).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Alias for "revertFile" that matches the HTTP API.
   restore: (path, versionTag, callback) ->
@@ -908,10 +918,10 @@ class Dropbox.Client
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
   #   request repeatedly (polling?)
-  # @param {function(?Dropbox.ApiError, ?Array<Dropbox.Stat>)} callback called
-  #   with the result of the /search HTTP request; if the call succeeds, the
-  #   second parameter is an array with one Dropbox.Stat instance per search
-  #   result, and the first parameter is null
+  # @param {function(?Dropbox.ApiError, ?Array<Dropbox.File.Stat>)} callback
+  #   called with the result of the /search HTTP request; if the call succeeds,
+  #   the second parameter is an array with one Dropbox.File.Stat instance per
+  #   search result, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   findByName: (path, namePattern, options, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -928,11 +938,11 @@ class Dropbox.Client
       if options.httpCache
         httpCache = true
 
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.search}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET', "#{@urls.search}/#{@urlEncodePath(path)}"
     xhr.setParams(params).signWithOauth @oauth, httpCache
     @dispatchXhr xhr, (error, results) ->
       if results
-        stats = (Dropbox.Stat.parse(metadata) for metadata in results)
+        stats = (Dropbox.File.Stat.parse(metadata) for metadata in results)
       else
         stats = undefined
       callback error, stats
@@ -946,16 +956,17 @@ class Dropbox.Client
   # @param {String} path the path to the file whose contents will be
   #   referenced, relative to the uesr's Dropbox or to the application's
   #   folder
-  # @param {function(?Dropbox.ApiError, ?Dropbox.CopyReference)} callback
+  # @param {function(?Dropbox.ApiError, ?Dropbox.File.CopyReference)} callback
   #   called with the result of the /copy_ref HTTP request; if the call
-  #   succeeds, the second parameter is a Dropbox.CopyReference instance, and
-  #   the first parameter is null
+  #   succeeds, the second parameter is a Dropbox.File.CopyReference instance,
+  #   and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
-    xhr = new Dropbox.Xhr 'GET', "#{@urls.copyRef}/#{@urlEncodePath(path)}"
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@urls.copyRef}/#{@urlEncodePath(path)}"
     xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error, refData) ->
-      callback error, Dropbox.CopyReference.parse(refData)
+      callback error, Dropbox.File.CopyReference.parse(refData)
 
   # Alias for "makeCopyReference" that matches the HTTP API.
   copyRef: (path, callback) ->
@@ -968,15 +979,16 @@ class Dropbox.Client
   # to obtain all the changes that happened in the user's Dropbox (or
   # application directory) between the two calls.
   #
-  # @param {Dropbox.PulledChanges, String} cursor the result of a previous
+  # @param {Dropbox.Http.PulledChanges, String} cursor the result of a previous
   #   call to pullChanges, or a string containing a tag representing the
   #   Dropbox state that is used as the baseline for the change list; this
-  #   should either be the Dropbox.PulledChanges obtained from a previous call
-  #   to pullChanges, the return value of Dropbox.PulledChanges#cursor, or null
-  #   / ommitted on the first call to pullChanges
-  # @param {function(?Dropbox.ApiError, ?Dropbox.PulledChanges)} callback
+  #   should either be the Dropbox.Http.PulledChanges obtained from a previous
+  #   call to pullChanges, the return value of
+  #   Dropbox.Http.PulledChanges#cursor, or null / ommitted on the first call
+  #   to pullChanges
+  # @param {function(?Dropbox.ApiError, ?Dropbox.Http.PulledChanges)} callback
   #   called with the result of the /delta HTTP request; if the call
-  #   succeeds, the second parameter is a Dropbox.PulledChanges describing
+  #   succeeds, the second parameter is a Dropbox.Http.PulledChanges describing
   #   the changes to the user's Dropbox since the pullChanges call that
   #   produced the given cursor, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
@@ -993,10 +1005,10 @@ class Dropbox.Client
     else
       params = {}
 
-    xhr = new Dropbox.Xhr 'POST', @urls.delta
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.delta
     xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, deltaInfo) ->
-      callback error, Dropbox.PulledChanges.parse(deltaInfo)
+      callback error, Dropbox.Http.PulledChanges.parse(deltaInfo)
 
   # Alias for "pullChanges" that matches the HTTP API.
   delta: (cursor, callback) ->
@@ -1006,33 +1018,33 @@ class Dropbox.Client
   #
   # @param {String} path the path of the folder that will be created, relative
   #   to the user's Dropbox or to the application's folder
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /fileops/create_folder HTTP request; if the call
-  #   succeeds, the second parameter is a Dropbox.Stat instance describing
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /fileops/create_folder HTTP request; if the call
+  #   succeeds, the second parameter is a Dropbox.File.Stat instance describing
   #   the newly created folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   mkdir: (path, callback) ->
-    xhr = new Dropbox.Xhr 'POST', @urls.fileopsCreateFolder
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsCreateFolder
     xhr.setParams(root: 'auto', path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Removes a file or diretory from a user's Dropbox.
   #
   # @param {String} path the path of the file to be read, relative to the
   #   user's Dropbox or to the application's folder
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /fileops/delete HTTP request; if the call succeeds,
-  #   the second parameter is a Dropbox.Stat instance describing the removed
-  #   file or folder, and the first parameter is null
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /fileops/delete HTTP request; if the call
+  #   succeeds, the second parameter is a Dropbox.File.Stat instance describing
+  #   the removed file or folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   remove: (path, callback) ->
-    xhr = new Dropbox.Xhr 'POST', @urls.fileopsDelete
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsDelete
     xhr.setParams(root: 'auto', path: @normalizePath(path)).
         signWithOauth(@oauth)
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # node.js-friendly alias for "remove".
   unlink: (path, callback) ->
@@ -1051,17 +1063,18 @@ class Dropbox.Client
   # copy references. The CopyReference constructor can be used to get instances
   # out of copy reference strings, or out of their JSON representations.
   #
-  # @param {String, Dropbox.CopyReference} from the path of the file or folder
-  #   that will be copied, or a Dropbox.CopyReference instance obtained by
-  #   calling makeCopyRef or Dropbox.CopyReference.parse; if this is a path, it
-  #   is relative to the user's Dropbox or to the application's folder
+  # @param {String, Dropbox.File.CopyReference} from the path of the file or
+  #   folder that will be copied, or a Dropbox.File.CopyReference instance
+  #   obtained by calling makeCopyRef or Dropbox.File.CopyReference.parse; if
+  #   this is a path, it is relative to the user's Dropbox or to the
+  #   application's folder
   # @param {String} toPath the path that the file or folder will have after the
   #   method call; the path is relative to the user's Dropbox or to the
   #   application folder
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /fileops/copy HTTP request; if the call succeeds, the
-  #   second parameter is a Dropbox.Stat instance describing the file or folder
-  #   created by the copy operation, and the first parameter is null
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /fileops/copy HTTP request; if the call succeeds,
+  #   the second parameter is a Dropbox.File.Stat instance describing the file
+  #   or folder created by the copy operation, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   copy: (from, toPath, callback) ->
     if (not callback) and (typeof options is 'function')
@@ -1069,16 +1082,16 @@ class Dropbox.Client
       options = null
 
     params = { root: 'auto', to_path: @normalizePath(toPath) }
-    if from instanceof Dropbox.CopyReference
+    if from instanceof Dropbox.File.CopyReference
       params.from_copy_ref = from.tag
     else
       params.from_path = @normalizePath from
     # TODO: locale support would edit the params here
 
-    xhr = new Dropbox.Xhr 'POST', @urls.fileopsCopy
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsCopy
     xhr.setParams(params).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Moves a file or folder to a different location in a user's Dropbox.
   #
@@ -1087,9 +1100,9 @@ class Dropbox.Client
   # @param {String} toPath the path that the file or folder will have after
   #   the method call; the path is relative to the user's Dropbox or to the
   #   application's folder
-  # @param {?function(?Dropbox.ApiError, ?Dropbox.Stat)} callback called with
-  #   the result of the /fileops/move HTTP request; if the call succeeds, the
-  #   second parameter is a Dropbox.Stat instance describing the moved
+  # @param {?function(?Dropbox.ApiError, ?Dropbox.File.Stat)} callback called
+  #   with the result of the /fileops/move HTTP request; if the call succeeds,
+  #   the second parameter is a Dropbox.File.Stat instance describing the moved
   #   file or folder at its new location, and the first parameter is
   #   null
   # @return {XMLHttpRequest} the XHR object used for this API call
@@ -1098,12 +1111,12 @@ class Dropbox.Client
       callback = options
       options = null
 
-    xhr = new Dropbox.Xhr 'POST', @urls.fileopsMove
+    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsMove
     xhr.setParams(
         root: 'auto', from_path: @normalizePath(fromPath),
         to_path: @normalizePath(toPath)).signWithOauth @oauth
     @dispatchXhr xhr, (error, metadata) ->
-      callback error, Dropbox.Stat.parse(metadata) if callback
+      callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Removes all login information.
   #
@@ -1219,7 +1232,7 @@ class Dropbox.Client
   # This is called internally by the other client functions, and should not be
   # used outside the {Dropbox.Client} class.
   urlEncodePath: (path) ->
-    Dropbox.Xhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
+    Dropbox.Util.Xhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
 
   # Normalizes a Dropbox path for API requests.
   #
@@ -1246,7 +1259,7 @@ class Dropbox.Client
   #   order to perform an /oauth2/authorize request
   authorizeUrl: () ->
     params = @oauth.authorizeUrlParams @driver.authType(), @driver.url()
-    @urls.authorize + "?" + Dropbox.Xhr.urlEncode(params)
+    @urls.authorize + "?" + Dropbox.Util.Xhr.urlEncode(params)
 
   # Exchanges an OAuth 2 authorization code with an access token.
   #
@@ -1257,7 +1270,7 @@ class Dropbox.Client
   #   /oauth/access_token HTTP request
   getAccessToken: (callback) ->
     params = @oauth.accessTokenParams @driver.url()
-    xhr = new Dropbox.Xhr('POST', @urls.token).setParams(params).
+    xhr = new Dropbox.Util.Xhr('POST', @urls.token).setParams(params).
         addOauthParams(@oauth)
     @dispatchXhr xhr, callback
 
@@ -1266,7 +1279,7 @@ class Dropbox.Client
   # @private
   # This is a low-level method called by other client methods.
   #
-  # @param {Dropbox.Xhr} xhr wrapper for the XHR to be sent
+  # @param {Dropbox.Util.Xhr} xhr wrapper for the XHR to be sent
   # @param {function(?Dropbox.ApiError, ?Object)} callback called with the
   #   outcome of the XHR
   # @return {XMLHttpRequest} the native XHR object used to make the request
@@ -1282,7 +1295,7 @@ class Dropbox.Client
   # Called when an XHR issued by this client fails.
   #
   # @private
-  # This is a low-level method set as the onError handler for Dropbox.Xhr
+  # This is a low-level method set as the onError handler for Dropbox.Util.Xhr
   # instances set up by this client.
   #
   # @param {Dropbox.ApiError} error the XHR error

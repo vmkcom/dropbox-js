@@ -2,7 +2,7 @@
 
 `dropbox.js` ships with the OAuth drivers below.
 
-### Dropbox.Drivers.Redirect
+### Dropbox.AuthDriver.Redirect
 
 The recommended built-in driver for browser applications completes the OAuth
 token authorization step by redirecting the browser to the Dropbox page that
@@ -28,10 +28,10 @@ The [checkbox.js](../samples/checkbox.js) sample application uses
 `rememberUser`, and implements signing out as described above.
 
 
-### Dropbox.Drivers.Popup
+### Dropbox.AuthDriver.Popup
 
 This driver may be useful for browser applications that can't handle the
-redirections peformed by `Dropbox.Drivers.Redirect`. This driver avoids
+redirections peformed by `Dropbox.AuthDriver.Redirect`. This driver avoids
 changing the location of the application's browser window by popping up a
 separate window, and loading the Dropbox authorization page in that window.
 
@@ -44,10 +44,10 @@ event listener.
 To use the popup driver, create a page on your site that contains the
 [receiver code](../test/html/oauth_receiver.html),
 change the code to reflect the location of `dropbox.js` on your site, and point
-the `Dropbox.Drivers.Popup` constructor to it.
+the `Dropbox.AuthDriver.Popup` constructor to it.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Popup({
+client.authDriver(new Dropbox.AuthDriver.Popup({
     receiverUrl: "https://url.to/oauth_receiver.html"}));
 ```
 
@@ -63,7 +63,7 @@ If you have a good reason to disable the behavior above, set the `useQuery`
 option to true.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Popup({
+client.authDriver(new Dropbox.AuthDriver.Popup({
     receiverUrl: "https://url.to/receiver.html", useQuery: true}));
 ```
 
@@ -71,7 +71,7 @@ The popup driver implements the `rememberUser` option with the same semantics
 and caveats as the redirecting driver.
 
 
-### Dropbox.Drivers.Chrome
+### Dropbox.AuthDriver.Chrome
 
 Google Chrome [extensions](http://developer.chrome.com/extensions/) and
 [applications](http://developer.chrome.com/apps/) are supported by a driver
@@ -89,7 +89,7 @@ to reflect the paths to `dropbox.js` and to the receiver script file
 Point the driver constructor to the receiver page:
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Chrome({
+client.authDriver(new Dropbox.AuthDriver.Chrome({
   receiverPath: "path/to/chrome_oauth_receiver.html"}));
 ```
 
@@ -99,14 +99,14 @@ UI should include a method for the user to sign out of Dropbox, which can be
 implemented by calling the `signOut` instance method of `Dropbox.Client`.
 
 
-### Dropbox.Drivers.Cordova
+### Dropbox.AuthDriver.Cordova
 
 This driver uses Cordova's
 [InAppBrowser](http://cordova.apache.org/docs/en/2.4.0/cordova_inappbrowser_inappbrowser.md.html#InAppBrowser)
 to open a popup-like activity that completes the OAuth authorization.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Cordova());
+client.authDriver(new Dropbox.AuthDriver.Cordova());
 ```
 
 This driver implements the `rememberUser` option with the same semantics and
@@ -119,7 +119,7 @@ it from working on Android, so a cross-platform application should use the
 Cordova-specific driver.
 
 
-### Dropbox.Drivers.NodeServer
+### Dropbox.AuthDriver.NodeServer
 
 This driver is designed for use in the automated test suites of node.js
 applications. It completes the OAuth token authorization step by opening the

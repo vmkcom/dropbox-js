@@ -108,7 +108,7 @@ class TokenStash
     return if @_authDriver
 
     Dropbox = require '../../../lib/dropbox'
-    @_authDriver = new Dropbox.Drivers.NodeServer tls: @_tlsOptions
+    @_authDriver = new Dropbox.AuthDriver.NodeServer tls: @_tlsOptions
 
   # Shuts down the node.js server behind the authentication server.
   killAuth: ->

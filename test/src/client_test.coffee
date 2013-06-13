@@ -171,7 +171,7 @@ buildClientTests = (clientKeys) ->
 
       it 'uses Authorization headers', (done) ->
         @client.getUserInfo httpCache: true, (error, userInfo, rawUserInfo) =>
-          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
             expect(@xhr.url).to.contain 'oauth_nonce'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
@@ -192,7 +192,7 @@ buildClientTests = (clientKeys) ->
       @newFolder = "#{@testFolder}/test'folder"
       @client.mkdir @newFolder, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFolder
         expect(stat.isFolder).to.equal true
         @client.stat @newFolder, (error, stat) =>
@@ -211,8 +211,8 @@ buildClientTests = (clientKeys) ->
       @client.readFile @textFile, (error, data, stat) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
 
           # TODO(pwnall): enable after API contents server bug is fixed
           #if clientKeys.key is testFullDropboxKeys.key
@@ -224,65 +224,65 @@ buildClientTests = (clientKeys) ->
         done()
 
     it 'reads the beginning of a text file', (done) ->
-      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 0, length: 10,
           (error, data, stat, rangeInfo) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData.substring(0, 10)
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @textFile
             expect(stat.isFile).to.equal true
-            expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+            expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
             expect(rangeInfo.start).to.equal 0
             expect(rangeInfo.end).to.equal 9
             expect(rangeInfo.size).to.equal @textFileData.length
             done()
 
     it 'reads the middle of a text file', (done) ->
-      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 8, length: 10,
           (error, data, stat, rangeInfo) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData.substring(8, 18)
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @textFile
             expect(stat.isFile).to.equal true
-            expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+            expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
             expect(rangeInfo.start).to.equal 8
             expect(rangeInfo.end).to.equal 17
             expect(rangeInfo.size).to.equal @textFileData.length
             done()
 
     it 'reads the end of a text file via the start: option', (done) ->
-      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, start: 10, (error, data, stat, rangeInfo) =>
         expect(error).to.equal null
         expect(data).to.equal @textFileData.substring(10)
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
-        expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+        expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
         expect(rangeInfo.start).to.equal 10
         expect(rangeInfo.end).to.equal @textFileData.length - 1
         expect(rangeInfo.size).to.equal @textFileData.length
         done()
 
     it 'reads the end of a text file via the length: option', (done) ->
-      return done() if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
 
       @client.readFile @textFile, length: 10, (error, data, stat, rangeInfo) =>
         expect(error).to.equal null
         expect(data).to.
             equal @textFileData.substring(@textFileData.length - 10)
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
         if @node_js
           # The Dropbox API server doesn't whitelist Content-Range for CORS.
-          expect(rangeInfo).to.be.instanceOf Dropbox.RangeInfo
+          expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
           expect(rangeInfo.start).to.equal @textFileData.length - 10
           expect(rangeInfo.end).to.equal @textFileData.length - 1
           expect(rangeInfo.size).to.equal @textFileData.length
@@ -293,8 +293,8 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         bytes = (data.charCodeAt i for i in [0...data.length])
         expect(bytes).to.deep.equal @imageFileBytes
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         done()
@@ -307,8 +307,8 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal jsonString
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
           done()
@@ -318,8 +318,8 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, blob: true, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
           onBufferAvailable = (buffer) =>
@@ -345,8 +345,8 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf ArrayBuffer
         expect(buffer.byteLength).to.equal @imageFileBytes.length
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
@@ -359,7 +359,7 @@ buildClientTests = (clientKeys) ->
       @client.readFile @imageFile, buffer: true, (error, buffer, stat) =>
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf Buffer
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @imageFile
         expect(stat.isFile).to.equal true
         bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
@@ -371,9 +371,9 @@ buildClientTests = (clientKeys) ->
         @listenerXhr = null
         @callbackCalled = false
 
-      it 'calls the listener with a Dropbox.Xhr argument', (done) ->
+      it 'calls the listener with a Dropbox.Util.Xhr argument', (done) ->
         @client.onXhr.addListener (xhr) =>
-          expect(xhr).to.be.instanceOf Dropbox.Xhr
+          expect(xhr).to.be.instanceOf Dropbox.Util.Xhr
           @listenerXhr = xhr
           true
 
@@ -384,7 +384,7 @@ buildClientTests = (clientKeys) ->
 
       it 'calls the listener before firing the XHR', (done) ->
         @client.onXhr.addListener (xhr) =>
-          unless Dropbox.Xhr.ieXdr  # IE's XHR doesn't have readyState
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XHR doesn't have readyState
             expect(xhr.xhr.readyState).to.equal 1
           expect(@callbackCalled).to.equal false
           @listenerXhr = xhr
@@ -392,7 +392,7 @@ buildClientTests = (clientKeys) ->
 
         @client.readFile @textFile, (error, data, stat) =>
           @callbackCalled = true
-          expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
+          expect(@listenerXhr).to.be.instanceOf Dropbox.Util.Xhr
           expect(error).to.equal null
           expect(data).to.equal @textFileData
           done()
@@ -407,7 +407,7 @@ buildClientTests = (clientKeys) ->
 
         @client.readFile @textFile, (error, data, stat) =>
           @callbackCalled = true
-          expect(@listenerXhr).to.be.instanceOf Dropbox.Xhr
+          expect(@listenerXhr).to.be.instanceOf Dropbox.Util.Xhr
           done()
 
     describe 'with httpCache', ->
@@ -418,15 +418,15 @@ buildClientTests = (clientKeys) ->
 
       it 'reads a text file using Authorization headers', (done) ->
         @client.readFile @textFile, httpCache: true, (error, data, stat) =>
-          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
             expect(@xhr.url).to.contain 'oauth_nonce'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @textFile
             expect(stat.isFile).to.equal true
           done()
@@ -443,7 +443,7 @@ buildClientTests = (clientKeys) ->
       @newFileData = "Another plaintext file #{Math.random().toString(36)}."
       @client.writeFile @newFile, @newFileData, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         # TODO(pwnall): enable after API contents server bug is fixed
@@ -454,8 +454,8 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
           done()
@@ -465,14 +465,14 @@ buildClientTests = (clientKeys) ->
       @newFileData = ''
       @client.writeFile @newFile, @newFileData, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
           done()
@@ -489,7 +489,7 @@ buildClientTests = (clientKeys) ->
         @newBlob = buildBlob [newBuffer], type: 'image/png'
       @client.writeFile @newFile, @newBlob, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         expect(stat.size).to.equal @newBlob.size
@@ -498,7 +498,7 @@ buildClientTests = (clientKeys) ->
             (error, buffer, stat) =>
               expect(error).to.equal null
               expect(buffer).to.be.instanceOf ArrayBuffer
-              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
@@ -520,7 +520,7 @@ buildClientTests = (clientKeys) ->
         @newFileObject = file
         @client.writeFile @newFile, @newFileObject, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
           expect(stat.size).to.equal @newFileObject.size
@@ -529,7 +529,7 @@ buildClientTests = (clientKeys) ->
               (error, buffer, stat) =>
                 expect(error).to.equal null
                 expect(buffer).to.be.instanceOf ArrayBuffer
-                expect(stat).to.be.instanceOf Dropbox.Stat
+                expect(stat).to.be.instanceOf Dropbox.File.Stat
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
                 view = new Uint8Array buffer
@@ -560,7 +560,7 @@ buildClientTests = (clientKeys) ->
         newBytes[i] = @imageFileBytes[i]
       @client.writeFile @newFile, @newBuffer, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         expect(stat.size).to.equal @newBuffer.byteLength
@@ -569,7 +569,7 @@ buildClientTests = (clientKeys) ->
             (error, buffer, stat) =>
               expect(error).to.equal null
               expect(buffer).to.be.instanceOf ArrayBuffer
-              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
@@ -585,7 +585,7 @@ buildClientTests = (clientKeys) ->
         @newBytes[i] = @imageFileBytes[i]
       @client.writeFile @newFile, @newBytes, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         expect(stat.size).to.equal @newBytes.byteLength
@@ -594,7 +594,7 @@ buildClientTests = (clientKeys) ->
             (error, buffer, stat) =>
               expect(error).to.equal null
               expect(buffer).to.be.instanceOf ArrayBuffer
-              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               view = new Uint8Array buffer
@@ -610,7 +610,7 @@ buildClientTests = (clientKeys) ->
         @newBuffer.writeUInt8  @imageFileBytes[i], i
       @client.writeFile @newFile, @newBuffer, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         expect(stat.isFile).to.equal true
         expect(stat.size).to.equal @newBuffer.length
@@ -618,7 +618,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, buffer: true, (error, buffer, stat) =>
           expect(error).to.equal null
           expect(buffer).to.be.instanceOf Buffer
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
           bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
@@ -667,16 +667,16 @@ buildClientTests = (clientKeys) ->
       line2 = "This is the second fragment\n"
       @client.resumableUploadStep line1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal line1.length
         @client.resumableUploadStep line2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal line1.length + line2.length
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
             # TODO(pwnall): enable after API contents server bug is fixed
@@ -687,8 +687,8 @@ buildClientTests = (clientKeys) ->
             @client.readFile @newFile, (error, data, stat) =>
               expect(error).to.equal null
               expect(data).to.equal line1 + line2
-              unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-                expect(stat).to.be.instanceOf Dropbox.Stat
+              unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+                expect(stat).to.be.instanceOf Dropbox.File.Stat
                 expect(stat.path).to.equal @newFile
                 expect(stat.isFile).to.equal true
                 # TODO(pwnall): enable after API contents server bug is fixed
@@ -705,23 +705,23 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
       @client.resumableUploadStep @arrayBuffer1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal @length1
         @client.resumableUploadStep @arrayBuffer2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
             @client.readFile @newFile, arrayBuffer: true,
                 (error, buffer, stat) =>
                   expect(error).to.equal null
                   expect(buffer).to.be.instanceOf ArrayBuffer
-                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat).to.be.instanceOf Dropbox.File.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
@@ -736,23 +736,23 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
       @client.resumableUploadStep @arrayBuffer1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal @length1
         @client.resumableUploadStep @arrayBuffer2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
             @client.readFile @newFile, arrayBuffer: true,
                 (error, buffer, stat) =>
                   expect(error).to.equal null
                   expect(buffer).to.be.instanceOf ArrayBuffer
-                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat).to.be.instanceOf Dropbox.File.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
@@ -767,23 +767,23 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/test resumable node buffer upload.png"
       @client.resumableUploadStep @buffer1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal @length1
         @client.resumableUploadStep @buffer2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
             @client.readFile @newFile, buffer: true,
                 (error, buffer, stat) =>
                   expect(error).to.equal null
                   expect(buffer).to.be.instanceOf Buffer
-                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat).to.be.instanceOf Dropbox.File.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
@@ -797,23 +797,23 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/test resumable blob upload.png"
       @client.resumableUploadStep @blob1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal @length1
         @client.resumableUploadStep @blob2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal @length1 + @length2
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadFinish @newFile, cursor2, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
             @client.readFile @newFile, arrayBuffer: true,
                 (error, buffer, stat) =>
                   expect(error).to.equal null
                   expect(buffer).to.be.instanceOf ArrayBuffer
-                  expect(stat).to.be.instanceOf Dropbox.Stat
+                  expect(stat).to.be.instanceOf Dropbox.File.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                   view = new Uint8Array buffer
@@ -823,7 +823,7 @@ buildClientTests = (clientKeys) ->
 
     it 'recovers from out-of-sync correctly', (done) ->
       # IE's XDR doesn't return anything on errors, so we can't do recovery.
-      return done() if Dropbox.Xhr.ieXdr
+      return done() if Dropbox.Util.Xhr.ieXdr
       @timeout 20 * 1000  # This sequence is slow on the current API server.
 
       @newFile = "#{@testFolder}/test resumable upload out of sync.txt"
@@ -831,41 +831,41 @@ buildClientTests = (clientKeys) ->
       line2 = "This is the second fragment\n"
       @client.resumableUploadStep line1, null, (error, cursor1) =>
         expect(error).to.equal null
-        expect(cursor1).to.be.instanceOf Dropbox.UploadCursor
+        expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor
         expect(cursor1.offset).to.equal line1.length
         cursor1.offset += 10
         @client.resumableUploadStep line2, cursor1, (error, cursor2) =>
           expect(error).to.equal null
-          expect(cursor2).to.be.instanceOf Dropbox.UploadCursor
+          expect(cursor2).to.be.instanceOf Dropbox.Http.UploadCursor
           expect(cursor2.offset).to.equal line1.length
           expect(cursor2.tag).to.equal cursor1.tag
           @client.resumableUploadStep line2, cursor2, (error, cursor3) =>
             expect(error).to.equal null
-            expect(cursor3).to.be.instanceOf Dropbox.UploadCursor
+            expect(cursor3).to.be.instanceOf Dropbox.Http.UploadCursor
             expect(cursor3.offset).to.equal line1.length + line2.length
             expect(cursor3.tag).to.equal cursor1.tag
             @client.resumableUploadFinish @newFile, cursor3, (error, stat) =>
               expect(error).to.equal null
-              expect(stat).to.be.instanceOf Dropbox.Stat
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isFile).to.equal true
               @client.readFile @newFile, (error, data, stat) =>
                 expect(error).to.equal null
                 expect(data).to.equal line1 + line2
-                unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-                  expect(stat).to.be.instanceOf Dropbox.Stat
+                unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+                  expect(stat).to.be.instanceOf Dropbox.File.Stat
                   expect(stat.path).to.equal @newFile
                   expect(stat.isFile).to.equal true
                 done()
 
     it 'reports errors correctly', (done) ->
       @newFile = "#{@testFolder}/test resumable upload error.txt"
-      badCursor = new Dropbox.UploadCursor 'trollcursor'
+      badCursor = new Dropbox.Http.UploadCursor 'trollcursor'
       badCursor.offset = 42
       @client.resumableUploadStep @textFileData, badCursor, (error, cursor) =>
         expect(cursor).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
         done()
 
@@ -873,7 +873,7 @@ buildClientTests = (clientKeys) ->
     it 'retrieves a Stat for a file', (done) ->
       @client.stat @textFile, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
         expect(stat.versionTag).to.equal @textFileTag
@@ -887,7 +887,7 @@ buildClientTests = (clientKeys) ->
     it 'retrieves a Stat for a folder', (done) ->
       @client.stat @testFolder, (error, stat, entries) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
         expect(stat.size).to.equal 0
@@ -901,12 +901,12 @@ buildClientTests = (clientKeys) ->
     it 'retrieves a Stat and entries for a folder', (done) ->
       @client.stat @testFolder, { readDir: true }, (error, stat, entries) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @testFolder
         expect(stat.isFolder).to.equal true
         expect(entries).to.be.ok
         expect(entries).to.have.length 2
-        expect(entries[0]).to.be.instanceOf Dropbox.Stat
+        expect(entries[0]).to.be.instanceOf Dropbox.File.Stat
         expect(entries[0].path).not.to.equal @testFolder
         expect(entries[0].path).to.have.string @testFolder
         done()
@@ -920,7 +920,7 @@ buildClientTests = (clientKeys) ->
         expect(entries).to.equal.null
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(listenerError).to.equal error
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error).to.have.property 'status'
           expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
         done()
@@ -933,13 +933,13 @@ buildClientTests = (clientKeys) ->
 
       it 'retrieves a Stat for a file using Authorization headers', (done) ->
         @client.stat @textFile, httpCache: true, (error, stat) =>
-          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
             expect(@xhr.url).to.contain 'oauth_nonce'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @textFile
           expect(stat.isFile).to.equal true
           expect(stat.versionTag).to.equal @textFileTag
@@ -959,7 +959,7 @@ buildClientTests = (clientKeys) ->
         expect(entries[0]).to.be.a 'string'
         expect(entries[0]).not.to.have.string '/'
         expect(entries[0]).to.match /^(test-binary-image.png)|(test-file.txt)$/
-        expect(dir_stat).to.be.instanceOf Dropbox.Stat
+        expect(dir_stat).to.be.instanceOf Dropbox.File.Stat
         expect(dir_stat.path).to.equal @testFolder
         expect(dir_stat.isFolder).to.equal true
         if clientKeys.key is testFullDropboxKeys.key
@@ -968,7 +968,7 @@ buildClientTests = (clientKeys) ->
           expect(dir_stat.inAppFolder).to.equal true
         expect(entry_stats).to.be.ok
         expect(entry_stats).to.have.length 2
-        expect(entry_stats[0]).to.be.instanceOf Dropbox.Stat
+        expect(entry_stats[0]).to.be.instanceOf Dropbox.File.Stat
         expect(entry_stats[0].path).not.to.equal @testFolder
         expect(entry_stats[0].path).to.have.string @testFolder
         done()
@@ -982,7 +982,7 @@ buildClientTests = (clientKeys) ->
       it 'retrieves a folder Stat and entries using Authorization', (done) ->
         @client.readdir @testFolder, httpCache: true,
             (error, entries, dir_stat, entry_stats) =>
-              if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+              if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
                 expect(@xhr.url).to.contain 'oauth_nonce'
               else
                 expect(@xhr.headers).to.have.key 'Authorization'
@@ -994,12 +994,12 @@ buildClientTests = (clientKeys) ->
               expect(entries[0]).not.to.have.string '/'
               expect(entries[0]).to.match(
                   /^(test-binary-image.png)|(test-file.txt)$/)
-              expect(dir_stat).to.be.instanceOf Dropbox.Stat
+              expect(dir_stat).to.be.instanceOf Dropbox.File.Stat
               expect(dir_stat.path).to.equal @testFolder
               expect(dir_stat.isFolder).to.equal true
               expect(entry_stats).to.be.ok
               expect(entry_stats).to.have.length 2
-              expect(entry_stats[0]).to.be.instanceOf Dropbox.Stat
+              expect(entry_stats[0]).to.be.instanceOf Dropbox.File.Stat
               expect(entry_stats[0].path).not.to.equal @testFolder
               expect(entry_stats[0].path).to.have.string @testFolder
               done()
@@ -1009,7 +1009,7 @@ buildClientTests = (clientKeys) ->
       @client.history @textFile, (error, versions) =>
         expect(error).to.equal null
         expect(versions).to.have.length 1
-        expect(versions[0]).to.be.instanceOf Dropbox.Stat
+        expect(versions[0]).to.be.instanceOf Dropbox.File.Stat
         expect(versions[0].path).to.equal @textFile
         expect(versions[0].size).to.equal @textFileData.length
         expect(versions[0].versionTag).to.equal @textFileTag
@@ -1022,7 +1022,7 @@ buildClientTests = (clientKeys) ->
       @client.history @textFile, limit: 0, (error, versions) =>
         expect(error).to.be.instanceOf Dropbox.ApiError
         expect(listenerError).to.equal error
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
           expect(error.status).to.be.within 400, 499
         expect(versions).not.to.be.ok
         done()
@@ -1035,14 +1035,14 @@ buildClientTests = (clientKeys) ->
 
       it 'gets a list of revisions using Authorization headers', (done) ->
         @client.history @textFile, httpCache: true, (error, versions) =>
-          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
             expect(@xhr.url).to.contain 'oauth_nonce'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
           expect(error).to.equal null
           expect(versions).to.have.length 1
-          expect(versions[0]).to.be.instanceOf Dropbox.Stat
+          expect(versions[0]).to.be.instanceOf Dropbox.File.Stat
           expect(versions[0].path).to.equal @textFile
           expect(versions[0].size).to.equal @textFileData.length
           expect(versions[0].versionTag).to.equal @textFileTag
@@ -1059,7 +1059,7 @@ buildClientTests = (clientKeys) ->
       @newFile = "#{@testFolder}/copy of test-file.txt"
       @client.copy @textFile, @newFile, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFile
         if clientKeys.key is testFullDropboxKeys.key
           expect(stat.inAppFolder).to.equal false
@@ -1068,14 +1068,14 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
           @client.readFile @textFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
+            unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @textFile
               expect(stat.versionTag).to.equal @textFileTag
             done()
@@ -1087,15 +1087,15 @@ buildClientTests = (clientKeys) ->
       return done() unless @newFile
       @client.remove @newFile, (error, stat) -> done()
 
-    it 'creates a Dropbox.CopyReference that copies the file', (done) ->
+    it 'creates a Dropbox.File.CopyReference that copies the file', (done) ->
       @newFile = "#{@testFolder}/ref copy of test-file.txt"
 
       @client.makeCopyReference @textFile, (error, copyRef) =>
         expect(error).to.equal null
-        expect(copyRef).to.be.instanceOf Dropbox.CopyReference
+        expect(copyRef).to.be.instanceOf Dropbox.File.CopyReference
         @client.copy copyRef, @newFile, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isFile).to.equal true
           if clientKeys.key is testFullDropboxKeys.key
@@ -1105,8 +1105,8 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
+            unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
             done()
 
@@ -1127,7 +1127,7 @@ buildClientTests = (clientKeys) ->
       @moveTo = "#{@testFolder}/moved test-file.txt"
       @client.move @moveFrom, @moveTo, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @moveTo
         expect(stat.isFile).to.equal true
         if clientKeys.key is testFullDropboxKeys.key
@@ -1137,16 +1137,16 @@ buildClientTests = (clientKeys) ->
         @client.readFile @moveTo, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @textFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-            expect(stat).to.be.instanceOf Dropbox.Stat
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @moveTo
           @client.readFile @moveFrom, (error, data, stat) ->
             expect(error).to.be.ok
-            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+            unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
               expect(error).to.have.property 'status'
               expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
             expect(data).to.equal undefined
-            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+            unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
               expect(stat).to.equal undefined
             done()
 
@@ -1164,7 +1164,7 @@ buildClientTests = (clientKeys) ->
     it 'deletes a folder', (done) ->
       @client.remove @newFolder, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFolder
         if clientKeys.key is testFullDropboxKeys.key
           expect(stat.inAppFolder).to.equal false
@@ -1172,18 +1172,18 @@ buildClientTests = (clientKeys) ->
           expect(stat.inAppFolder).to.equal true
         @client.stat @newFolder, { removed: true }, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.isRemoved).to.equal true
           done()
 
     it 'deletes a folder when called as unlink', (done) ->
       @client.unlink @newFolder, (error, stat) =>
         expect(error).to.equal null
-        expect(stat).to.be.instanceOf Dropbox.Stat
+        expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @newFolder
         @client.stat @newFolder, { removed: true }, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.isRemoved).to.equal true
           done()
 
@@ -1193,12 +1193,12 @@ buildClientTests = (clientKeys) ->
         @newFile = "#{@testFolder}/file revert test.txt"
         @client.copy @textFile, @newFile, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @newFile
           @versionTag = stat.versionTag
           @client.remove @newFile, (error, stat) =>
             expect(error).to.equal null
-            expect(stat).to.be.instanceOf Dropbox.Stat
+            expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             done()
 
@@ -1209,7 +1209,7 @@ buildClientTests = (clientKeys) ->
       it 'reverts the file to a previous version', (done) ->
         @client.revertFile @newFile, @versionTag, (error, stat) =>
           expect(error).to.equal null
-          expect(stat).to.be.instanceOf Dropbox.Stat
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @newFile
           expect(stat.isRemoved).to.equal false
           if clientKeys.key is testFullDropboxKeys.key
@@ -1219,8 +1219,8 @@ buildClientTests = (clientKeys) ->
           @client.readFile @newFile, (error, data, stat) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
-            unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-              expect(stat).to.be.instanceOf Dropbox.Stat
+            unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+              expect(stat).to.be.instanceOf Dropbox.File.Stat
               expect(stat.path).to.equal @newFile
               expect(stat.isRemoved).to.equal false
             done()
@@ -1231,7 +1231,7 @@ buildClientTests = (clientKeys) ->
       @client.search '/', namePattern, (error, matches) =>
         expect(error).to.equal null
         expect(matches).to.have.length 1
-        expect(matches[0]).to.be.instanceOf Dropbox.Stat
+        expect(matches[0]).to.be.instanceOf Dropbox.File.Stat
         expect(matches[0].path).to.equal @testFolder
         expect(matches[0].isFolder).to.equal true
         if clientKeys.key is testFullDropboxKeys.key
@@ -1261,14 +1261,14 @@ buildClientTests = (clientKeys) ->
       it 'locates the test folder using Authorize headers', (done) ->
         namePattern = @testFolder.substring 5
         @client.search '/', namePattern, httpCache: true, (error, matches) =>
-          if Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers
+          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
             expect(@xhr.url).to.contain 'oauth_nonce'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
           expect(error).to.equal null
           expect(matches).to.have.length 1
-          expect(matches[0]).to.be.instanceOf Dropbox.Stat
+          expect(matches[0]).to.be.instanceOf Dropbox.File.Stat
           expect(matches[0].path).to.equal @testFolder
           expect(matches[0].isFolder).to.equal true
           done()
@@ -1278,7 +1278,7 @@ buildClientTests = (clientKeys) ->
       it 'returns a shortened Dropbox URL', (done) ->
         @client.makeUrl @textFile, (error, urlInfo) ->
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).to.contain '//db.tt/'
           done()
@@ -1286,7 +1286,7 @@ buildClientTests = (clientKeys) ->
       it 'returns a shortened Dropbox URL when given empty options', (done) ->
         @client.makeUrl @textFile, {}, (error, urlInfo) ->
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).to.contain '//db.tt/'
           done()
@@ -1295,13 +1295,13 @@ buildClientTests = (clientKeys) ->
       it 'returns an URL to a preview page', (done) ->
         @client.makeUrl @textFile, { long: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
           # The preview server does not return CORS headers.
           return done() unless @node_js
-          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr = new Dropbox.Util.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.contain '<!DOCTYPE html>'
@@ -1311,7 +1311,7 @@ buildClientTests = (clientKeys) ->
       it 'returns an URL to a preview page', (done) ->
         @client.makeUrl @textFile, { longUrl: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).not.to.contain '//db.tt/'
           done()
@@ -1320,11 +1320,11 @@ buildClientTests = (clientKeys) ->
       it 'gets a direct download URL', (done) ->
         @client.makeUrl @textFile, { download: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal true
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
-          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr = new Dropbox.Util.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
@@ -1334,12 +1334,12 @@ buildClientTests = (clientKeys) ->
       it 'gets a direct long-lived download URL', (done) ->
         @client.makeUrl @textFile, { downloadHack: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
           expect(urlInfo.isDirect).to.equal true
           expect(urlInfo.url).not.to.contain '//db.tt/'
           expect(urlInfo.expiresAt - Date.now()).to.be.above 86400000
 
-          xhr = new Dropbox.Xhr 'GET', urlInfo.url
+          xhr = new Dropbox.Util.Xhr 'GET', urlInfo.url
           xhr.prepare().send (error, data) =>
             expect(error).to.equal null
             expect(data).to.equal @textFileData
@@ -1363,7 +1363,7 @@ buildClientTests = (clientKeys) ->
 
       @client.pullChanges (error, changes) =>
         expect(error).to.equal null
-        expect(changes).to.be.instanceOf Dropbox.PulledChanges
+        expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
         expect(changes.blankSlate).to.equal true
 
         # Calls pullChanges until it's done listing the user's Dropbox.
@@ -1386,11 +1386,11 @@ buildClientTests = (clientKeys) ->
 
             @client.pullChanges changes, (error, changes) =>
               expect(error).to.equal null
-              expect(changes).to.be.instanceof Dropbox.PulledChanges
+              expect(changes).to.be.instanceof Dropbox.Http.PulledChanges
               expect(changes.blankSlate).to.equal false
               expect(changes.changes).to.have.length.greaterThan 0
               change = changes.changes[changes.changes.length - 1]
-              expect(change).to.be.instanceOf Dropbox.PullChange
+              expect(change).to.be.instanceOf Dropbox.Http.PullChange
               expect(change.path).to.equal @newFile
               expect(change.wasRemoved).to.equal false
               expect(change.stat.path).to.equal @newFile
@@ -1409,8 +1409,8 @@ buildClientTests = (clientKeys) ->
         expect(error).to.equal null
         expect(data).to.be.a 'string'
         expect(data).to.contain 'PNG'
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           #expect(stat.isFile).to.equal true
           #if clientKeys.key is testFullDropboxKeys.key
@@ -1425,8 +1425,8 @@ buildClientTests = (clientKeys) ->
       @client.readThumbnail @imageFile, options, (error, blob, stat) =>
         expect(error).to.equal null
         expect(blob).to.be.instanceOf Blob
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         onBufferAvailable = (buffer) ->
@@ -1454,8 +1454,8 @@ buildClientTests = (clientKeys) ->
       @client.readThumbnail @imageFile, options, (error, buffer, stat) =>
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf ArrayBuffer
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
@@ -1471,8 +1471,8 @@ buildClientTests = (clientKeys) ->
       @client.readThumbnail @imageFile, options, (error, buffer, stat) =>
         expect(error).to.equal null
         expect(buffer).to.be.instanceOf Buffer
-        unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
-          expect(stat).to.be.instanceOf Dropbox.Stat
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          expect(stat).to.be.instanceOf Dropbox.File.Stat
           expect(stat.path).to.equal @imageFile
           expect(stat.isFile).to.equal true
         length = buffer.length
@@ -1658,7 +1658,7 @@ buildClientTests = (clientKeys) ->
         expect(@client.authStep).to.equal Dropbox.Client.AUTHORIZED
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.be.ok
-          unless Dropbox.Xhr.ieXdr
+          unless Dropbox.Util.Xhr.ieXdr
             expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
             expect(error.response).to.have.property 'error'
             expect(error.response.error).to.have.property 'error_description'
@@ -1747,7 +1747,7 @@ describe 'Dropbox.Client', ->
                 authStepChanges.push 'onError'
               invalidClient.getUserInfo (error, userInfo) ->
                 expect(error).to.be.ok
-                unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do error codes.
+                unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do error codes.
                   expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
                   expect(invalidClient.authError).to.equal error
                   expect(invalidClient.isAuthenticated()).to.equal false

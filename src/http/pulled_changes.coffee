@@ -1,14 +1,16 @@
 # Wraps the result of pullChanges, describing the changes in a user's Dropbox.
-class Dropbox.PulledChanges
-  # Creates a new Dropbox.PulledChanges instance from a /delta API call result.
+#
+# @see Dropbox.Client#pullChanges
+class Dropbox.Http.PulledChanges
+  # Creates a Dropbox.Http.PulledChanges from a /delta API call result.
   #
   # @param {?Object} deltaInfo the parsed JSON of a /delta API call result
-  # @return {?Dropbox.PulledChanges} a Dropbox.PulledChanges instance wrapping
-  #   the given information; if the parameter does not look like parsed JSON,
-  #   it is returned as is
+  # @return {?Dropbox.Http.PulledChanges} a Dropbox.Http.PulledChanges instance
+  #   wrapping the given information; if the parameter does not look like
+  #   parsed JSON, it is returned as is
   @parse: (deltaInfo) ->
     if deltaInfo and typeof deltaInfo is 'object'
-      new Dropbox.PulledChanges deltaInfo
+      new Dropbox.Http.PulledChanges deltaInfo
     else
       deltaInfo
 
@@ -23,7 +25,7 @@ class Dropbox.PulledChanges
   #   call
   cursorTag: undefined
 
-  # @property {Array<Dropbox.PullChange> an array with one entry for each
+  # @property {Array<Dropbox.Http.PullChange> an array with one entry for each
   #   change to the user's Dropbox returned by a pullChanges call.
   changes: undefined
 
@@ -43,11 +45,11 @@ class Dropbox.PulledChanges
   #   of this PulledChanges instance
   cursor: -> @cursorTag
 
-  # Creates a new Dropbox.PulledChanges instance from a /delta API call result.
+  # Creates a Dropbox.Http.PulledChanges from a /delta API call result.
   #
   # @private
-  # This constructor is used by Dropbox.PulledChanges, and should not be called
-  # directly.
+  # This constructor is used by Dropbox.Http.PulledChanges, and should not be
+  # called directly.
   #
   # @param {Object} deltaInfo the parsed JSON of a /delta API call result
   constructor: (deltaInfo) ->
@@ -56,22 +58,25 @@ class Dropbox.PulledChanges
     @shouldPullAgain = deltaInfo.has_more
     @shouldBackOff = not @shouldPullAgain
     if deltaInfo.cursor and deltaInfo.cursor.length
-      @changes = (Dropbox.PullChange.parse entry for entry in deltaInfo.entries)
+      @changes = for entry in deltaInfo.entries
+        Dropbox.Http.PullChange.parse entry
     else
       @changes = []
 
 # Wraps a single change in a pullChanges result.
-class Dropbox.PullChange
-  # Creates a Dropbox.PullChange instance wrapping an entry in a /delta result.
+#
+# @see Dropbox.Client#pullChanges
+class Dropbox.Http.PullChange
+  # Creates a Dropbox.Http.PullChange instance wrapping an entry in a /delta result.
   #
   # @param {?Object} entry the parsed JSON of a single entry in a /delta API
   #   call result
-  # @return {?Dropbox.PullChange} a Dropbox.PullChange instance wrapping the
+  # @return {?Dropbox.Http.PullChange} a Dropbox.Http.PullChange instance wrapping the
   #   given entry of a /delta API call; if the parameter does not look like
   #   parsed JSON, it is returned as is
   @parse: (entry) ->
     if entry and typeof entry is 'object'
-      new Dropbox.PullChange entry
+      new Dropbox.Http.PullChange entry
     else
       entry
 
@@ -84,21 +89,21 @@ class Dropbox.PullChange
   #   separate changes expressing for the files or sub-folders
   wasRemoved: undefined
 
-  # @property {?Dropbox.Stat} a Stat instance containing updated information for
+  # @property {?Dropbox.File.Stat} a Stat instance containing updated information for
   #   the file or folder; this is null if the change is a deletion
   stat: undefined
 
-  # Creates a Dropbox.PullChange instance wrapping an entry in a /delta result.
+  # Creates a Dropbox.Http.PullChange instance wrapping an entry in a /delta result.
   #
   # @private
-  # This constructor is used by Dropbox.PullChange.parse, and should not be
+  # This constructor is used by Dropbox.Http.PullChange.parse, and should not be
   # called directly.
   #
   # @param {Object} entry the parsed JSON of a single entry in a /delta API
   #   call result
   constructor: (entry) ->
     @path = entry[0]
-    @stat = Dropbox.Stat.parse entry[1]
+    @stat = Dropbox.File.Stat.parse entry[1]
     if @stat
       @wasRemoved = false
     else

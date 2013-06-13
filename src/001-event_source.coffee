@@ -1,5 +1,5 @@
 # Event dispatch following a publisher-subscriber (PubSub) model.
-class Dropbox.EventSource
+class Dropbox.Util.EventSource
   # Sets up an event source (publisher).
   #
   # @param {?Object} options one or more of the options below
@@ -20,7 +20,7 @@ class Dropbox.EventSource
   #   the event is cancelable, the function can return false to cancel the
   #   event, or any other value to allow it to propagate; the return value is
   #   ignored for non-cancelable events
-  # @return {Dropbox.EventSource} this, for easy call chaining
+  # @return {Dropbox.Util.EventSource} this, for easy call chaining
   addListener: (listener) ->
     unless typeof listener is 'function'
       throw new TypeError 'Invalid listener type; expected function'
@@ -38,7 +38,7 @@ class Dropbox.EventSource
   #
   # @param {function(Object)} listener function that was previously passed in
   #   an addListener call
-  # @return {Dropbox.EventSource} this, for easy call chaining
+  # @return {Dropbox.Util.EventSource} this, for easy call chaining
   removeListener: (listener) ->
     if @_listeners.indexOf
       # IE9+

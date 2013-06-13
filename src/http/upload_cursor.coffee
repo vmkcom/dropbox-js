@@ -1,5 +1,5 @@
 # Tracks the progress of a resumable upload.
-class Dropbox.UploadCursor
+class Dropbox.Http.UploadCursor
   # Creates an UploadCursor instance from an API response.
   #
   # @param {?Object, ?String} cursorData the parsed JSON describing the status
@@ -7,7 +7,7 @@ class Dropbox.UploadCursor
   @parse: (cursorData) ->
     if cursorData and (typeof cursorData is 'object' or
                        typeof cursorData is 'string')
-      new Dropbox.UploadCursor cursorData
+      new Dropbox.Http.UploadCursor cursorData
     else
       cursorData
 
@@ -23,7 +23,7 @@ class Dropbox.UploadCursor
   # JSON representation of this cursor.
   #
   # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.UploadCursor#parse to obtain an identical UploadCursor instance
+  #   Dropbox.Http.UploadCursor#parse to obtain an identical UploadCursor instance
   json: ->
     # NOTE: the assignment only occurs if
     @_json ||=
@@ -32,7 +32,7 @@ class Dropbox.UploadCursor
   # Creates an UploadCursor instance from a raw reference or API response.
   #
   # This constructor should only be called directly to obtain a cursor for a
-  # new file upload. Dropbox.UploadCursor#parse should be called instead
+  # new file upload. Dropbox.Http.UploadCursor#parse should be called instead
   #
   # @param {?Object, ?String} cursorData the parsed JSON describing a copy
   #   reference, or the reference string
@@ -45,7 +45,7 @@ class Dropbox.UploadCursor
   #
   # @param {?Object, ?String} cursorData the parsed JSON describing a copy
   #   reference, or the reference string
-  # @return {Dropbox.UploadCursor} this
+  # @return {Dropbox.Http.UploadCursor} this
   replace: (cursorData) ->
     if typeof cursorData is 'object'
       @tag = cursorData.upload_id or null

@@ -2,7 +2,7 @@
 #
 # Inheriting from this class makes a driver use HTML5 localStorage to preserve
 # OAuth tokens across page reloads.
-class Dropbox.Drivers.BrowserBase
+class Dropbox.AuthDriver.BrowserBase
   # Sets up the OAuth driver.
   #
   # Subclasses should pass the options object they receive to the superclass
@@ -72,7 +72,7 @@ class Dropbox.Drivers.BrowserBase
   #
   # @param {Dropbox.Client} client the client instance that is running the
   #     authorization process
-  # @return {Dropbox.Driver} this, for easy call chaining
+  # @return {Dropbox.AuthDriver} this, for easy call chaining
   setStorageKey: (client) ->
     # NOTE: the storage key is dependent on the app hash so that multiple apps
     #       hosted off the same server don't step on eachother's toes
@@ -86,7 +86,7 @@ class Dropbox.Drivers.BrowserBase
   #
   # @param {Object} credentials the result of a Drobpox.Client#credentials call
   # @param {function()} callback called when the storing operation is complete
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   storeCredentials: (credentials, callback) ->
     localStorage.setItem @storageKey, JSON.stringify(credentials)
     callback()
@@ -99,9 +99,9 @@ class Dropbox.Drivers.BrowserBase
   #
   # @param {function(?Object)} callback supplied with the credentials object
   #   stored by a previous call to
-  #   Dropbox.Drivers.BrowserBase#storeCredentials; null if no credentials were
-  #   stored, or if the previously stored credentials were deleted
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  #   Dropbox.AuthDriver.BrowserBase#storeCredentials; null if no credentials
+  #   were stored, or if the previously stored credentials were deleted
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   loadCredentials: (callback) ->
     jsonString = localStorage.getItem @storageKey
     unless jsonString
@@ -121,7 +121,7 @@ class Dropbox.Drivers.BrowserBase
   # onAuthStepChange calls this method during the authentication flow.
   #
   # @param {function()} callback called after the credentials are deleted
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   forgetCredentials: (callback) ->
     localStorage.removeItem @storageKey
     callback()
@@ -134,7 +134,7 @@ class Dropbox.Drivers.BrowserBase
   # @return {?String} the state parameter value received from the /authorize
   # redirect, or null if the URL is not the result of an /authorize redirect
   locationStateParam: (url) ->
-    location = url or Dropbox.Drivers.BrowserBase.currentLocation()
+    location = url or Dropbox.AuthDriver.BrowserBase.currentLocation()
 
     # Extract the state.
     match = @stateRe.exec location
@@ -150,7 +150,7 @@ class Dropbox.Drivers.BrowserBase
 
 
 # OAuth driver that uses a redirect and localStorage to complete the flow.
-class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
+class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
   # Sets up the redirect-based OAuth driver.
   #
   # @param {?Object} options the advanced settings below
@@ -163,7 +163,7 @@ class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
   #   single application
   constructor: (options) ->
     super options
-    @receiverUrl = Dropbox.Drivers.BrowserBase.currentLocation()
+    @receiverUrl = Dropbox.AuthDriver.BrowserBase.currentLocation()
 
   # URL of the current page, since the user will be sent right back.
   url: ->
@@ -177,15 +177,15 @@ class Dropbox.Drivers.Redirect extends Dropbox.Drivers.BrowserBase
   # Processes a redirect.
   resumeAuthorize: (stateParam, client, callback) ->
     if @locationStateParam() is stateParam
-      callback Dropbox.Oauth.queryParamsFromUrl(
-        Dropbox.Drivers.BrowserBase.currentLocation())
+      callback Dropbox.Util.Oauth.queryParamsFromUrl(
+        Dropbox.AuthDriver.BrowserBase.currentLocation())
     else
       @forgetCredentials ->
         client.reset()
         callback()
 
 # OAuth driver that uses a popup window and postMessage to complete the flow.
-class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
+class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
   # Sets up a popup-based OAuth driver.
   #
   # @param {?Object} options one of the settings below; leave out the argument
@@ -212,7 +212,6 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   doAuthorize: (authUrl, stateParam, client, callback) ->
-    console.log ['doAuthorize', stateParam, client.authStep]
     @listenForMessage stateParam, callback
     @openWindow authUrl
 
@@ -230,10 +229,10 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
       if options.receiverUrl
         return options.receiverUrl
       else if options.receiverFile
-        fragments = Dropbox.Drivers.BrowserBase.currentLocation().split '/'
+        fragments = Dropbox.AuthDriver.BrowserBase.currentLocation().split '/'
         fragments[fragments.length - 1] = options.receiverFile
         return fragments.join('/')
-    Dropbox.Drivers.BrowserBase.currentLocation()
+    Dropbox.AuthDriver.BrowserBase.currentLocation()
 
   # Creates a popup window.
   #
@@ -273,23 +272,20 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
   # @param {function()} called when the received message matches the token
   listenForMessage: (stateParam, callback) ->
     listener = (event) =>
-      console.log ['message', event.data or event]
-
       if event.data
         # Message coming from postMessage.
         data = event.data
       else
-        # Message coming from Dropbox.EventSource.
+        # Message coming from Dropbox.Util.EventSource.
         data = event
 
       if @locationStateParam(data) is stateParam
         stateParam = false  # Avoid having this matched in the future.
         window.removeEventListener 'message', listener
-        Dropbox.Drivers.Popup.onMessage.removeListener listener
-        console.log ['callback', Dropbox.Oauth.queryParamsFromUrl(data)]
-        callback Dropbox.Oauth.queryParamsFromUrl(data)
+        Dropbox.AuthDriver.Popup.onMessage.removeListener listener
+        callback Dropbox.Util.Oauth.queryParamsFromUrl(data)
     window.addEventListener 'message', listener, false
-    Dropbox.Drivers.Popup.onMessage.addListener listener
+    Dropbox.AuthDriver.Popup.onMessage.addListener listener
 
   # Communicates with the driver from the OAuth receiver page.
   @oauthReceiver: ->
@@ -304,11 +300,11 @@ class Dropbox.Drivers.Popup extends Dropbox.Drivers.BrowserBase
           # IE 9 doesn't support opener.postMessage for popup windows.
         try
           # postMessage doesn't work in IE, but direct object access does.
-          opener.Dropbox.Drivers.Popup.onMessage.dispatch(
+          opener.Dropbox.AuthDriver.Popup.onMessage.dispatch(
               window.location.href)
         catch frameError
           # Hopefully postMessage worked.
       window.close()
 
   # Works around postMessage failures on Internet Explorer.
-  @onMessage = new Dropbox.EventSource
+  @onMessage = new Dropbox.Util.EventSource

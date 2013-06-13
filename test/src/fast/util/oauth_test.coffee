@@ -1,4 +1,4 @@
-describe 'Dropbox.Oauth', ->
+describe 'Dropbox.Util.Oauth', ->
   beforeEach ->
     @method = 'GET'
     @url = '/photos'
@@ -145,7 +145,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth key: 'client-id'
+      @oauth = new Dropbox.Util.Oauth key: 'client-id'
 
     describe '#credentials', ->
       it 'returns the app key', ->
@@ -176,7 +176,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key and secret', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth key: 'client-id', secret: 'client-secret'
+      @oauth = new Dropbox.Util.Oauth key: 'client-id', secret: 'client-secret'
 
     describe '#credentials', ->
       it 'returns the app key', ->
@@ -209,7 +209,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key and state param', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
           key: 'client-id', oauthStateParam: 'oauth-state')
 
     describe '#credentials', ->
@@ -269,7 +269,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key + secret and state param', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
         key: 'client-id', secret: 'client-secret',
         oauthStateParam: 'oauth-state')
 
@@ -332,7 +332,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key and authorization code', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth key: 'client-id', oauthCode: 'auth-code'
+      @oauth = new Dropbox.Util.Oauth key: 'client-id', oauthCode: 'auth-code'
 
     describe '#credentials', ->
       it 'returns the app key and authorization code', ->
@@ -373,7 +373,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key + secret and authorization code', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
         key: 'client-id', secret: 'client-secret', oauthCode: 'auth-code')
 
     describe '#credentials', ->
@@ -417,7 +417,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key and Bearer token', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth key: 'client-id', token: 'access-token'
+      @oauth = new Dropbox.Util.Oauth key: 'client-id', token: 'access-token'
 
     describe '#credentials', ->
       it 'returns the app key and access token', ->
@@ -445,7 +445,7 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key + secret and Bearer token', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
         key: 'client-id', secret: 'client-secret', token: 'access-token')
 
     describe '#credentials', ->
@@ -474,10 +474,10 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key and MAC token', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
           key: 'client-id', token: 'access-token',
           tokenKey: 'token-key', tokenKid: 'token-kid')
-      @stub = sinon.stub Dropbox.Oauth, 'timestamp'
+      @stub = sinon.stub Dropbox.Util.Oauth, 'timestamp'
       @stub.returns @timestamp
 
     afterEach ->
@@ -513,10 +513,10 @@ describe 'Dropbox.Oauth', ->
 
   describe 'with an app key + secret and MAC token', ->
     beforeEach ->
-      @oauth = new Dropbox.Oauth(
+      @oauth = new Dropbox.Util.Oauth(
         key: 'client-id', secret: 'client-secret', token: 'access-token',
         tokenKey: 'token-key', tokenKid: 'token-kid')
-      @stub = sinon.stub Dropbox.Oauth, 'timestamp'
+      @stub = sinon.stub Dropbox.Util.Oauth, 'timestamp'
       @stub.returns @timestamp
 
     afterEach ->
@@ -553,44 +553,45 @@ describe 'Dropbox.Oauth', ->
   describe '#queryParamsFromUrl', ->
     it 'extracts simple query params', ->
       url = 'http://localhost:8911/oauth_redirect?param1=value1&param2=value2'
-      expect(Dropbox.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
           param1: 'value1', param2: 'value2')
 
     it 'extracts simple fragment params', ->
       url = 'http://localhost:8911/oauth_redirect#param1=value1&param2=value2'
-      expect(Dropbox.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
           param1: 'value1', param2: 'value2')
 
     it 'extracts simple fragment query params', ->
       url = 'http://localhost:8911/oauth_redirect#?param1=value1&param2=value2'
-      expect(Dropbox.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
           param1: 'value1', param2: 'value2')
 
     it 'extracts simple query and fragment params', ->
       url = 'http://localhost:8911/oauth_redirect?param1=value1#param2=value2'
-      expect(Dropbox.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
           param1: 'value1', param2: 'value2')
 
     it 'extracts percent-encoded query params', ->
       url = 'http://localhost:8911/oauth_redirect?p%20=v%20'
-      expect(Dropbox.Oauth.queryParamsFromUrl(url)).to.deep.equal 'p ': 'v '
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+          'p ': 'v ')
 
   describe '.timestamp', ->
     it 'returns a number', ->
-      expect(Dropbox.Oauth.timestamp()).to.be.a 'number'
+      expect(Dropbox.Util.Oauth.timestamp()).to.be.a 'number'
 
     it 'returns non-decreasing values', ->
-      ts = (Dropbox.Oauth.timestamp() for i in [0..100])
+      ts = (Dropbox.Util.Oauth.timestamp() for i in [0..100])
       for i in [1..100]
         expect(ts[i - i]).to.be.lte(ts[i])
 
   describe '.randomAuthStateParam', ->
     it 'returns a short string', ->
-      expect(Dropbox.Oauth.randomAuthStateParam()).to.be.a 'string'
-      expect(Dropbox.Oauth.randomAuthStateParam().length).to.be.below 64
+      expect(Dropbox.Util.Oauth.randomAuthStateParam()).to.be.a 'string'
+      expect(Dropbox.Util.Oauth.randomAuthStateParam().length).to.be.below 64
 
     it 'returns different values', ->
-      values = (Dropbox.Oauth.randomAuthStateParam() for i in [0..100])
+      values = (Dropbox.Util.Oauth.randomAuthStateParam() for i in [0..100])
       values.sort()
       for i in [1..100]
         expect(values[i - 1]).not.to.equal(values[i])

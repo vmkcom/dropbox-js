@@ -1,4 +1,4 @@
-describe 'Dropbox.Drivers.Chrome', ->
+describe 'Dropbox.AuthDriver.Chrome', ->
   beforeEach ->
     @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
     @client = new Dropbox.Client testKeys
@@ -7,7 +7,7 @@ describe 'Dropbox.Drivers.Chrome', ->
     beforeEach ->
       return unless @chrome_app
       @path = 'test/html/redirect_driver_test.html'
-      @driver = new Dropbox.Drivers.Chrome receiverPath: @path
+      @driver = new Dropbox.AuthDriver.Chrome receiverPath: @path
 
     it 'produces a chrome-extension:// url', ->
       return unless @chrome_app
@@ -23,13 +23,13 @@ describe 'Dropbox.Drivers.Chrome', ->
     beforeEach ->
       return unless @chrome_app
       @client = new Dropbox.Client testKeys
-      @driver = new Dropbox.Drivers.Chrome scope: 'some_scope'
+      @driver = new Dropbox.AuthDriver.Chrome scope: 'some_scope'
 
     it 'produces the credentials passed to storeCredentials', (done) ->
       return done() unless @chrome_app
       goldCredentials = @client.credentials()
       @driver.storeCredentials goldCredentials, =>
-        @driver = new Dropbox.Drivers.Chrome scope: 'some_scope'
+        @driver = new Dropbox.AuthDriver.Chrome scope: 'some_scope'
         @driver.loadCredentials (credentials) ->
           expect(credentials).to.deep.equal goldCredentials
           done()
@@ -38,7 +38,7 @@ describe 'Dropbox.Drivers.Chrome', ->
       return done() unless @chrome_app
       @driver.storeCredentials @client.credentials(), =>
         @driver.forgetCredentials =>
-          @driver = new Dropbox.Drivers.Chrome scope: 'some_scope'
+          @driver = new Dropbox.AuthDriver.Chrome scope: 'some_scope'
           @driver.loadCredentials (credentials) ->
             expect(credentials).to.equal null
             done()
@@ -46,7 +46,7 @@ describe 'Dropbox.Drivers.Chrome', ->
     it 'produces null if a different scope is provided', (done) ->
       return done() unless @chrome_app
       @driver.storeCredentials @client.credentials(), =>
-        @driver = new Dropbox.Drivers.Chrome scope: 'other_scope'
+        @driver = new Dropbox.AuthDriver.Chrome scope: 'other_scope'
         @driver.loadCredentials (credentials) ->
           expect(credentials).to.equal null
           done()
@@ -58,7 +58,7 @@ describe 'Dropbox.Drivers.Chrome', ->
 
       client = new Dropbox.Client testKeys
       client.reset()
-      authDriver = new Dropbox.Drivers.Chrome(
+      authDriver = new Dropbox.AuthDriver.Chrome(
           receiverPath: 'test/html/chrome_oauth_receiver.html',
           scope: 'chrome_integration')
       client.authDriver authDriver

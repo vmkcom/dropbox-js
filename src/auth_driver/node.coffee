@@ -1,7 +1,7 @@
 # OAuth driver that redirects the browser to a node app to complete the flow.
 #
 # This is useful for testing node.js libraries and applications.
-class Dropbox.Drivers.NodeServer
+class Dropbox.AuthDriver.NodeServer
   # Starts up the node app that intercepts the browser redirect.
   #
   # @param {?Object} options one or more of the options below

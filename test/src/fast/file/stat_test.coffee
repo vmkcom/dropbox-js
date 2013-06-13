@@ -1,4 +1,4 @@
-describe 'Dropbox.Stat', ->
+describe 'Dropbox.File.Stat', ->
   describe '.parse', ->
     describe 'on the API file example', ->
       beforeEach ->
@@ -18,7 +18,7 @@ describe 'Dropbox.Stat', ->
           "mime_type": "application/pdf",
           "revision": 220823
         }
-        @stat = Dropbox.Stat.parse metadata
+        @stat = Dropbox.File.Stat.parse metadata
 
       it 'parses the path correctly', ->
         expect(@stat).to.have.property 'path'
@@ -83,7 +83,7 @@ describe 'Dropbox.Stat', ->
             ]).to.contain(@stat.clientModifiedAt.toUTCString())
 
       it 'round-trips through json / parse correctly', ->
-        newStat = Dropbox.Stat.parse @stat.json()
+        newStat = Dropbox.File.Stat.parse @stat.json()
         expect(newStat).to.deep.equal @stat
 
 
@@ -105,7 +105,7 @@ describe 'Dropbox.Stat', ->
           "root": "dropbox",
           "revision": 29007
         }
-        @stat = Dropbox.Stat.parse metadata
+        @stat = Dropbox.File.Stat.parse metadata
 
       it 'parses path correctly', ->
         expect(@stat).to.have.property 'path'
@@ -166,14 +166,14 @@ describe 'Dropbox.Stat', ->
         expect(@stat.clientModifiedAt).to.equal null
 
       it 'round-trips through json / parse correctly', ->
-        newStat = Dropbox.Stat.parse @stat.json()
+        newStat = Dropbox.File.Stat.parse @stat.json()
         expect(newStat).to.deep.equal @stat
 
     it 'passes null through', ->
-      expect(Dropbox.Stat.parse(null)).to.equal null
+      expect(Dropbox.File.Stat.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.Stat.parse(undefined)).to.equal undefined
+      expect(Dropbox.File.Stat.parse(undefined)).to.equal undefined
 
     describe 'on a contrived file/path example', ->
       beforeEach ->
@@ -191,7 +191,7 @@ describe 'Dropbox.Stat', ->
           "mime_type": "application/pdf",
           "revision": 220823
         }
-        @stat = Dropbox.Stat.parse metadata
+        @stat = Dropbox.File.Stat.parse metadata
 
       it 'parses the path correctly', ->
         expect(@stat).to.have.property 'path'

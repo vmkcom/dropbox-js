@@ -1,8 +1,8 @@
-describe 'Dropbox.RangeInfo', ->
+describe 'Dropbox.Http.RangeInfo', ->
   describe '.parse', ->
     describe 'on the first RFC 2616 example', ->
       beforeEach ->
-        @range = Dropbox.RangeInfo.parse 'bytes 0-499/1234'
+        @range = Dropbox.Http.RangeInfo.parse 'bytes 0-499/1234'
 
       it 'parses correctly', ->
         expect(@range).to.have.property 'start'
@@ -14,7 +14,7 @@ describe 'Dropbox.RangeInfo', ->
 
     describe 'on the third RFC 2616 example', ->
       beforeEach ->
-        @range = Dropbox.RangeInfo.parse 'bytes 500-1233/1234'
+        @range = Dropbox.Http.RangeInfo.parse 'bytes 500-1233/1234'
 
       it 'parses correctly', ->
         expect(@range).to.have.property 'start'
@@ -26,7 +26,7 @@ describe 'Dropbox.RangeInfo', ->
 
     describe 'on the last RFC 2616 example', ->
       beforeEach ->
-        @range = Dropbox.RangeInfo.parse 'bytes 21010-47021/47022'
+        @range = Dropbox.Http.RangeInfo.parse 'bytes 21010-47021/47022'
 
       it 'parses correctly', ->
         expect(@range).to.have.property 'start'
@@ -38,7 +38,7 @@ describe 'Dropbox.RangeInfo', ->
 
     describe 'on an example missing the size', ->
       beforeEach ->
-        @range = Dropbox.RangeInfo.parse 'bytes 0-9/*'
+        @range = Dropbox.Http.RangeInfo.parse 'bytes 0-9/*'
 
       it 'parses correctly', ->
         expect(@range).to.have.property 'start'

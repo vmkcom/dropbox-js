@@ -1,14 +1,14 @@
-describe 'Dropbox.Drivers.Cordova', ->
+describe 'Dropbox.AuthDriver.Cordova', ->
   describe '#url', ->
     beforeEach ->
-      @stub = sinon.stub Dropbox.Drivers.BrowserBase, 'currentLocation'
+      @stub = sinon.stub Dropbox.AuthDriver.BrowserBase, 'currentLocation'
       @stub.returns 'http://test:123/a/path/file.htmx'
 
     afterEach ->
       @stub.restore()
 
     it 'does not use an auth URL', ->
-      driver = new Dropbox.Drivers.Cordova
+      driver = new Dropbox.AuthDriver.Cordova
       expect(driver.url('oauth token')).to.equal null
 
   describe '#loadCredentials', ->
@@ -17,14 +17,14 @@ describe 'Dropbox.Drivers.Cordova', ->
       @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
       return if @node_js or @chrome_app
       @client = new Dropbox.Client testKeys
-      @driver = new Dropbox.Drivers.Cordova scope: 'some_scope'
+      @driver = new Dropbox.AuthDriver.Cordova scope: 'some_scope'
       @driver.setStorageKey @client
 
     it 'produces the credentials passed to storeCredentials', (done) ->
       return done() if @node_js or @chrome_app
       goldCredentials = @client.credentials()
       @driver.storeCredentials goldCredentials, =>
-        @driver = new Dropbox.Drivers.Cordova scope: 'some_scope'
+        @driver = new Dropbox.AuthDriver.Cordova scope: 'some_scope'
         @driver.setStorageKey @client
         @driver.loadCredentials (credentials) ->
           expect(credentials).to.deep.equal goldCredentials
@@ -34,7 +34,7 @@ describe 'Dropbox.Drivers.Cordova', ->
       return done() if @node_js or @chrome_app
       @driver.storeCredentials @client.credentials(), =>
         @driver.forgetCredentials =>
-          @driver = new Dropbox.Drivers.Cordova scope: 'some_scope'
+          @driver = new Dropbox.AuthDriver.Cordova scope: 'some_scope'
           @driver.setStorageKey @client
           @driver.loadCredentials (credentials) ->
             expect(credentials).to.equal null
@@ -44,7 +44,7 @@ describe 'Dropbox.Drivers.Cordova', ->
       return done() if @node_js or @chrome_app
       @driver.setStorageKey @client
       @driver.storeCredentials @client.credentials(), =>
-        @driver = new Dropbox.Drivers.Cordova scope: 'other_scope'
+        @driver = new Dropbox.AuthDriver.Cordova scope: 'other_scope'
         @driver.setStorageKey @client
         @driver.loadCredentials (credentials) ->
           expect(credentials).to.equal null
@@ -60,7 +60,7 @@ describe 'Dropbox.Drivers.Cordova', ->
 
       client = new Dropbox.Client testKeys
       client.reset()
-      authDriver = new Dropbox.Drivers.Cordova(
+      authDriver = new Dropbox.AuthDriver.Cordova(
           scope: 'cordova-integration', rememberUser: false)
       client.authDriver authDriver
       client.authenticate (error, client) =>
@@ -85,7 +85,7 @@ describe 'Dropbox.Drivers.Cordova', ->
 
       client = new Dropbox.Client testKeys
       client.reset()
-      authDriver = new Dropbox.Drivers.Cordova(
+      authDriver = new Dropbox.AuthDriver.Cordova(
           scope: 'cordova-integration', rememberUser: true)
       client.authDriver authDriver
       authDriver.setStorageKey client

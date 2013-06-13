@@ -1,14 +1,15 @@
 # The result of stat-ing a file or directory in a user's Dropbox.
-class Dropbox.Stat
+class Dropbox.File.Stat
   # Creates a Stat instance from a raw "metadata" response.
   #
   # @param {?Object} metadata the result of parsing JSON API responses that are
   #   called "metadata" in the API documentation
-  # @return {?Dropbox.Stat} a Stat instance wrapping the given API response;
-  #   parameters that aren't parsed JSON objects are returned as they are
+  # @return {?Dropbox.File.Stat} an instance wrapping the given API
+  #   response; parameters that aren't parsed JSON objects are returned without
+  #   any processing
   @parse: (metadata) ->
     if metadata and typeof metadata is 'object'
-      new Dropbox.Stat metadata
+      new Dropbox.File.Stat metadata
     else
       metadata
 
@@ -76,14 +77,14 @@ class Dropbox.Stat
   # JSON representation of this file / folder's metadata
   #
   # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.Stat#parse to obtain an identical Stat instance
+  #   Dropbox.File.Stat#parse to obtain an identical Stat instance
   json: ->
     @_json
 
   # Creates a Stat instance from a raw "metadata" response.
   #
   # @private
-  # This constructor is used by Dropbox.Stat.parse, and should not be called
+  # This constructor is used by Dropbox.File.Stat.parse, and should not be called
   # directly.
   #
   # @param {Object} metadata the result of parsing JSON API responses that are

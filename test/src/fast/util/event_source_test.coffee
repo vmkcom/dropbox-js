@@ -1,7 +1,7 @@
-describe 'Dropbox.EventSource', ->
+describe 'Dropbox.Util.EventSource', ->
   beforeEach ->
-    @source = new Dropbox.EventSource
-    @cancelable = new Dropbox.EventSource cancelable: true
+    @source = new Dropbox.Util.EventSource
+    @cancelable = new Dropbox.Util.EventSource cancelable: true
 
     # 3 listeners, 1 and 2 are already hooked up
     @event1 = null

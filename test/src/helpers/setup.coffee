@@ -9,7 +9,7 @@ if global? and require? and module? and (not cordova?)
   exports.sinon = require 'sinon'
   exports.sinonChai = require 'sinon-chai'
 
-  exports.authDriver = new Dropbox.Drivers.NodeServer port: 8912
+  exports.authDriver = new Dropbox.AuthDriver.NodeServer port: 8912
 
   TokenStash = require './token_stash.js'
   stash = new TokenStash()
@@ -25,7 +25,7 @@ if global? and require? and module? and (not cordova?)
   imageServer = null
   exports.testImageServerOn = ->
     imageServer =
-        new Dropbox.Drivers.NodeServer port: 8913, favicon: testIconPath
+        new Dropbox.AuthDriver.NodeServer port: 8913, favicon: testIconPath
   exports.testImageServerOff = ->
     imageServer.closeServer()
     imageServer = null
@@ -35,7 +35,7 @@ else
   if chrome? and chrome.runtime
     # Chrome app
     exports = window
-    exports.authDriver = new Dropbox.Drivers.Chrome(
+    exports.authDriver = new Dropbox.AuthDriver.Chrome(
         receiverPath: 'test/html/chrome_oauth_receiver.html',
         scope: 'helper-chrome')
     # Hack-implement "rememberUser: false" in the Chrome driver.
@@ -52,10 +52,10 @@ else
       exports = window
       if cordova?
         # Cordova WebView.
-        exports.authDriver = new Dropbox.Drivers.Cordova
+        exports.authDriver = new Dropbox.AuthDriver.Cordova
       else
         # Browser
-        exports.authDriver = new Dropbox.Drivers.Popup(
+        exports.authDriver = new Dropbox.AuthDriver.Popup(
             receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
       exports.testImageUrl = '../../test/binary/dropbox.png'
 

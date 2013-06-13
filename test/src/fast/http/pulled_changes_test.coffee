@@ -1,4 +1,4 @@
-describe 'Dropbox.PulledChanges', ->
+describe 'Dropbox.Http.PulledChanges', ->
   describe '.parse', ->
     describe 'on a sample response', ->
       beforeEach ->
@@ -30,7 +30,7 @@ describe 'Dropbox.PulledChanges', ->
             ]
           ]
         }
-        @changes = Dropbox.PulledChanges.parse deltaInfo
+        @changes = Dropbox.Http.PulledChanges.parse deltaInfo
 
       it 'parses blankSlate correctly', ->
         expect(@changes).to.have.property 'blankSlate'
@@ -51,19 +51,19 @@ describe 'Dropbox.PulledChanges', ->
       it 'parses changes correctly', ->
         expect(@changes).to.have.property 'changes'
         expect(@changes.changes).to.have.length 2
-        expect(@changes.changes[0]).to.be.instanceOf Dropbox.PullChange
+        expect(@changes.changes[0]).to.be.instanceOf Dropbox.Http.PullChange
         expect(@changes.changes[0].path).to.equal '/Getting_Started.pdf'
-        expect(@changes.changes[1]).to.be.instanceOf Dropbox.PullChange
+        expect(@changes.changes[1]).to.be.instanceOf Dropbox.Http.PullChange
         expect(@changes.changes[1].path).to.equal '/Public'
 
     it 'passes null through', ->
-      expect(Dropbox.PulledChanges.parse(null)).to.equal null
+      expect(Dropbox.Http.PulledChanges.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.PulledChanges.parse(undefined)).to.equal undefined
+      expect(Dropbox.Http.PulledChanges.parse(undefined)).to.equal undefined
 
 
-describe 'Dropbox.PullChange', ->
+describe 'Dropbox.Http.PullChange', ->
   describe '.parse', ->
     describe 'on a modification change', ->
       beforeEach ->
@@ -84,7 +84,7 @@ describe 'Dropbox.PullChange', ->
             "revision": 220823
           }
         ]
-        @changes = Dropbox.PullChange.parse entry
+        @changes = Dropbox.Http.PullChange.parse entry
 
       it 'parses path correctly', ->
         expect(@changes).to.have.property 'path'
@@ -96,7 +96,7 @@ describe 'Dropbox.PullChange', ->
 
       it 'parses stat correctly', ->
         expect(@changes).to.have.property 'stat'
-        expect(@changes.stat).to.be.instanceOf Dropbox.Stat
+        expect(@changes.stat).to.be.instanceOf Dropbox.File.Stat
         expect(@changes.stat.path).to.equal @changes.path
 
     describe 'on a deletion change', ->
@@ -105,7 +105,7 @@ describe 'Dropbox.PullChange', ->
           "/Public",
           null
         ]
-        @changes = Dropbox.PullChange.parse entry
+        @changes = Dropbox.Http.PullChange.parse entry
 
       it 'parses path correctly', ->
         expect(@changes).to.have.property 'path'
@@ -120,9 +120,9 @@ describe 'Dropbox.PullChange', ->
         expect(@changes.stat).to.equal null
 
     it 'passes null through', ->
-      expect(Dropbox.PullChange.parse(null)).to.equal null
+      expect(Dropbox.Http.PullChange.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.PullChange.parse(undefined)).to.equal undefined
+      expect(Dropbox.Http.PullChange.parse(undefined)).to.equal undefined
 
 

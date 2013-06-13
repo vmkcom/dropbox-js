@@ -21,15 +21,15 @@ if chrome?
     do ->
       pageHack = (page) ->
         if page.Dropbox
-          Dropbox.Drivers.Chrome::onMessage =
-              page.Dropbox.Drivers.Chrome.onMessage
-          Dropbox.Drivers.Chrome::sendMessage =
-              page.Dropbox.Drivers.Chrome.sendMessage
+          Dropbox.AuthDriver.Chrome::onMessage =
+              page.Dropbox.AuthDriver.Chrome.onMessage
+          Dropbox.AuthDriver.Chrome::sendMessage =
+              page.Dropbox.AuthDriver.Chrome.sendMessage
         else
           page.Dropbox = Dropbox
-          Dropbox.Drivers.Chrome::onMessage = new Dropbox.EventSource
-          Dropbox.Drivers.Chrome::sendMessage =
-              (m) -> Dropbox.Drivers.Chrome::onMessage.dispatch m
+          Dropbox.AuthDriver.Chrome::onMessage = new Dropbox.Util.EventSource
+          Dropbox.AuthDriver.Chrome::sendMessage =
+              (m) -> Dropbox.AuthDriver.Chrome::onMessage.dispatch m
 
       if chrome.extension and chrome.extension.getBackgroundPage
         if page = chrome.extension.getBackgroundPage()
@@ -39,15 +39,15 @@ if chrome?
         return chrome.runtime.getBackgroundPage (page) -> pageHack page
 
 # OAuth driver specialized for Chrome apps and extensions.
-class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
-  # @property {Chrome.Event<Object>, Dropbox.EventSource<Object>} fires
-  #   non-cancelable events when Dropbox.Drivers.Chrome#sendMessage is called;
-  #   the message is a parsed JSON object
+class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
+  # @property {Chrome.Event<Object>, Dropbox.Util.EventSource<Object>} fires
+  #   non-cancelable events when Dropbox.AuthDriver.Chrome#sendMessage is
+  #   called; the message is a parsed JSON object
   onMessage: DropboxChromeOnMessage
 
   # Sends a message across the Chrome extension / application.
   #
-  # This causes Dropbox.Drivers.Chrome#onMessage to fire an event containing
+  # This causes Dropbox.AuthDriver.Chrome#onMessage to fire an event containing
   # the message
   #
   # @param {Object} message an object that can be serialized to JSON
@@ -122,8 +122,8 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   #
   # @param {String} url the URL that will be loaded in the popup window
   # @param {function(Object)} callback called with a handle that can be passed
-  #   to Dropbox.Driver.Chrome#closeWindow
-  # @return {Dropbox.Driver.Chrome} this
+  #   to Dropbox.AuthDriver.Chrome#closeWindow
+  # @return {Dropbox.AuthDriver.Chrome} this
   openWindow: (url, callback) ->
     if chrome.tabs and chrome.tabs.create
       chrome.tabs.create url: url, active: true, pinned: false, (tab) ->
@@ -152,7 +152,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # @param {String} token the token string that must be received from the tab
   # @param {Object} window a JavaScript object whose "handle" property is a
   #   window handle passed to the callback of a
-  #   Dropbox.Driver.Chrome#openWindow call
+  #   Dropbox.AuthDriver.Chrome#openWindow call
   # @param {function()} called when the received message matches the token
   listenForMessage: (token, window, callback) ->
     listener = (message, sender) =>
@@ -177,7 +177,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   #
   # @param {Object} credentials the result of a Drobpox.Client#credentials call
   # @param {function()} callback called when the storing operation is complete
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   storeCredentials: (credentials, callback) ->
     items= {}
     items[@storageKey] = credentials
@@ -191,9 +191,9 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   #
   # @param {function(?Object)} callback supplied with the credentials object
   #   stored by a previous call to
-  #   Dropbox.Drivers.BrowserBase#storeCredentials; null if no credentials were
-  #   stored, or if the previously stored credentials were deleted
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  #   Dropbox.AuthDriver.BrowserBase#storeCredentials; null if no credentials
+  #   were stored, or if the previously stored credentials were deleted
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   loadCredentials: (callback) ->
     chrome.storage.local.get @storageKey, (items) =>
       callback items[@storageKey] or null
@@ -205,7 +205,7 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # onAuthStepChange calls this method during the authentication flow.
   #
   # @param {function()} callback called after the credentials are deleted
-  # @return {Dropbox.Drivers.BrowserBase} this, for easy call chaining
+  # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   forgetCredentials: (callback) ->
     chrome.storage.local.remove @storageKey, callback
     @
@@ -213,6 +213,6 @@ class Dropbox.Drivers.Chrome extends Dropbox.Drivers.BrowserBase
   # Communicates with the driver from the OAuth receiver page.
   @oauthReceiver: ->
     window.addEventListener 'load', ->
-      driver = new Dropbox.Drivers.Chrome()
+      driver = new Dropbox.AuthDriver.Chrome()
       driver.sendMessage dropbox_oauth_receiver_href: window.location.href
       window.close() if window.close

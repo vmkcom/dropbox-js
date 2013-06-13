@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Dropbox.Drivers.Redirect integration test</title>
+    <title>Dropbox.AuthDriver.Redirect integration test</title>
     <script src="../../lib/dropbox.js"></script>
     <script src="../../test/token/token.browser.js"></script>
     <script type="text/javascript">
@@ -14,7 +14,7 @@
           delete window.testFullDropboxKeys['secret'];
           var client = new Dropbox.Client(window.testFullDropboxKeys);
           client.reset();
-          client.authDriver(new Dropbox.Drivers.Redirect(
+          client.authDriver(new Dropbox.AuthDriver.Redirect(
               {scope: "redirect-integration"}));
           console.log("about to auth");
           client.authenticate(function(error, _client) {
@@ -28,7 +28,7 @@
               // IE doesn't support opener.postMessage for popups.
             }
             try {
-              opener.Dropbox.Drivers.Popup.onMessage.dispatch(json);
+              opener.Dropbox.AuthDriver.Popup.onMessage.dispatch(json);
             } catch(frameError) {
             }
             window.close();

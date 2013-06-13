@@ -98,7 +98,7 @@ build = (callback) ->
   commands = []
 
   # Ignoring ".coffee" when sorting.
-  # We want "driver.coffee" to sort before "driver-browser.coffee"
+  # We want "auth_driver.coffee" to sort before "auth_driver/browser.coffee"
   source_files = glob.sync 'src/**/*.coffee'
   source_files.sort (a, b) ->
     a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
@@ -265,6 +265,7 @@ run = (command, callback) ->
     process.exit 1
   process.on 'SIGHUP', -> cmd.kill()
   cmd.on 'exit', (code) -> callback() if callback? and code is 0
+  null
 
 download = ([url, file], callback) ->
   if fs.existsSync file

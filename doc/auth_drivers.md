@@ -76,7 +76,7 @@ Implementations should call the `credentials` and `setCredentials` methods on
 the client to control the OAuth process.
 
 See the
-[Dropbox.Drivers.Chrome source](../src/drivers/chrome.coffee)
+[Dropbox.AuthDriver.Chrome source](../src/auth_driver/chrome.coffee)
 for a sample implementation of `onAuthStepChange`.
 
 

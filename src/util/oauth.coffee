@@ -1,5 +1,5 @@
 # Stripped-down OAuth 2 implementation that works with the Dropbox API server.
-class Dropbox.Oauth
+class Dropbox.Util.Oauth
   # Creates an Oauth instance that manages an application's key and token data.
   #
   # @param {Object} options the following properties
@@ -22,7 +22,7 @@ class Dropbox.Oauth
 
   # Resets the credentials used by this Oauth instance.
   #
-  # @see Dropbox.Oauth#constructor for options
+  # @see Dropbox.Util.Oauth#constructor for options
   setCredentials: (options) ->
     unless options.key
       throw new Error 'No API key supplied'
@@ -46,8 +46,8 @@ class Dropbox.Oauth
   # The credentials used by this Oauth instance.
   #
   # @return {Object<String, String>} an object that can be passed into
-  #   Dropbox.Oauth#constructor or into Dropbox.Oauth#reset to obtain a new
-  #   instance that uses the same credentials
+  #   Dropbox.Util.Oauth#constructor or into Dropbox.Util.Oauth#reset to obtain
+  #   a new instance that uses the same credentials
   credentials: ->
     returnValue = { key: @_id }
     returnValue.secret = @_secret if @_secret
@@ -102,7 +102,7 @@ class Dropbox.Oauth
 
   # @private
   # This should only be called by Dropbox.Client#authenticate. All other code
-  # should use Dropbox.Oauth#checkAuthStateParam.
+  # should use Dropbox.Util.Oauth#checkAuthStateParam.
   #
   # @return {String} the "state" query parameter set by setAuthStateParam
   authStateParam: ->
@@ -216,7 +216,7 @@ class Dropbox.Oauth
   #
   # @param {String} responseType one of the /authorize response types
   #   implemented by dropbox.js
-  # @param {String?} redirectUrl the URL that the user's browser should be
+  # @param {?String} redirectUrl the URL that the user's browser should be
   #   redirected to in order to perform an /oauth2/authorize request
   # @return {Object<String, String>} the query parameters for the
   #   /oauth2/authorize URL
@@ -234,7 +234,7 @@ class Dropbox.Oauth
 
   # The query parameters to be used in an /oauth2/token URL.
   #
-  # @param {String?} redirectUrl the URL that the user's browser was redirected
+  # @param {?String} redirectUrl the URL that the user's browser was redirected
   #   to after performing the /oauth2/authorize request; this must be the same
   #   as the redirectUrl parameter passed to authorizeUrlParams
   # @return {Object<String, String>} the query parameters for the /oauth2/token
@@ -279,11 +279,12 @@ class Dropbox.Oauth
   #   query parameters in the HTTP request URL
   # @return {Object<String, String>} the MAC authenticator attributes
   macParams: (method, url, params) ->
-    macParams = { kid: @_tokenKid, ts: Dropbox.Oauth.timestamp() }
+    macParams = { kid: @_tokenKid, ts: Dropbox.Util.Oauth.timestamp() }
 
     # TODO(pwnall): upgrade to the OAuth 2 MAC tokens algorithm
-    string = method.toUpperCase() + '&' + Dropbox.Xhr.urlEncodeValue(url) +
-      '&' + Dropbox.Xhr.urlEncodeValue(Dropbox.Xhr.urlEncode(params))
+    string = method.toUpperCase() + '&' +
+      Dropbox.Util.Xhr.urlEncodeValue(url) + '&' +
+      Dropbox.Util.Xhr.urlEncodeValue(Dropbox.Util.Xhr.urlEncode(params))
     macParams.mac = base64HmacSha1 string, @_tokenKey
 
     macParams
@@ -330,5 +331,5 @@ class Dropbox.Oauth
 
 # Date.now() workaround for Internet Explorer 8.
 unless Date.now?
-  Dropbox.OAuth.timestamp = ->
+  Dropbox.Util.Oauth.timestamp = ->
     Math.floor((new Date()).getTime() / 1000)

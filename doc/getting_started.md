@@ -106,11 +106,11 @@ writing an OAuth driver, and to learn about all the drivers that ship with
 The following snippet will set up the recommended driver.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.Redirect());
+client.authDriver(new Dropbox.AuthDriver.Redirect());
 ```
 
 The [built-in OAuth drivers](built_in.md) describes some useful options that
-you can pass to the `Dropbox.Drivers.Redirect` constructor.
+you can pass to the `Dropbox.AuthDriver.Redirect` constructor.
 
 ### node.js Setup
 
@@ -118,7 +118,7 @@ Single-process node.js applications should create one driver to authenticate
 all the clients.
 
 ```javascript
-client.authDriver(new Dropbox.Drivers.NodeServer(8191));
+client.authDriver(new Dropbox.AuthDriver.NodeServer(8191));
 ```
 
 The [built-in OAuth drivers doc](built_in.md) has useful tips on using the
@@ -129,7 +129,7 @@ The [built-in OAuth drivers doc](built_in.md) has useful tips on using the
 At this time, the setup for Chrome applications and extensions is a bit more
 involved than the one-liners above.
 
-The `Dropbox.Drivers.Chrome` section in the
+The `Dropbox.AuthDriver.Chrome` section in the
 [built-in OAuth drivers doc](built_in.md) has a step-by-step process for
 setting up the Chrome OAuth driver.
 

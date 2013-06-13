@@ -1,5 +1,5 @@
 # OAuth driver that uses a Cordova InAppBrowser to complete the flow.
-class Dropbox.Drivers.Cordova extends Dropbox.Drivers.BrowserBase
+class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
   # Sets up an OAuth driver for Cordova applications.
   #
   # @param {?Object} options one of the settings below; leave out the argument

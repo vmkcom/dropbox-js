@@ -1,4 +1,4 @@
-describe 'Dropbox.UploadCursor', ->
+describe 'Dropbox.Http.UploadCursor', ->
   describe '.parse', ->
     describe 'on the API example', ->
       beforeEach ->
@@ -7,7 +7,7 @@ describe 'Dropbox.UploadCursor', ->
           "offset": 31337,
           "expires": "Tue, 19 Jul 2011 21:55:38 +0000"
         }
-        @cursor = Dropbox.UploadCursor.parse cursorData
+        @cursor = Dropbox.Http.UploadCursor.parse cursorData
 
       it 'parses tag correctly', ->
         expect(@cursor).to.have.property 'tag'
@@ -26,13 +26,13 @@ describe 'Dropbox.UploadCursor', ->
             ]).to.contain(@cursor.expiresAt.toUTCString())
 
       it 'round-trips through json / parse correctly', ->
-        newCursor = Dropbox.UploadCursor.parse @cursor.json()
+        newCursor = Dropbox.Http.UploadCursor.parse @cursor.json()
         expect(newCursor).to.deep.equal @cursor
 
     describe 'on a reference string', ->
       beforeEach ->
         rawRef = 'v0k84B0AT9fYkfMUp0sBTA'
-        @cursor = Dropbox.UploadCursor.parse rawRef
+        @cursor = Dropbox.Http.UploadCursor.parse rawRef
 
       it 'parses tag correctly', ->
         expect(@cursor).to.have.property 'tag'
@@ -48,20 +48,20 @@ describe 'Dropbox.UploadCursor', ->
         expect(@cursor.expiresAt - (new Date())).to.be.below 1000
 
       it 'round-trips through json / parse correctly', ->
-        newCursor = Dropbox.UploadCursor.parse @cursor.json()
+        newCursor = Dropbox.Http.UploadCursor.parse @cursor.json()
         newCursor.json()  # Get _json populated for newCursor.
         expect(newCursor).to.deep.equal @cursor
 
     it 'passes null through', ->
-      expect(Dropbox.CopyReference.parse(null)).to.equal null
+      expect(Dropbox.Http.UploadCursor.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.CopyReference.parse(undefined)).to.equal undefined
+      expect(Dropbox.Http.UploadCursor.parse(undefined)).to.equal undefined
 
   describe '.constructor', ->
     describe 'with no arguments', ->
       beforeEach ->
-        @cursor = new Dropbox.UploadCursor
+        @cursor = new Dropbox.Http.UploadCursor
 
       it 'sets up tag correctly', ->
         expect(@cursor).to.have.property 'tag'
@@ -76,13 +76,13 @@ describe 'Dropbox.UploadCursor', ->
         expect(@cursor.expiresAt - (new Date())).to.be.below 1000
 
       it 'round-trips through json / parse correctly', ->
-        newCursor = Dropbox.UploadCursor.parse @cursor.json()
+        newCursor = Dropbox.Http.UploadCursor.parse @cursor.json()
         newCursor.json()  # Get _json populated for newCursor.
         expect(newCursor).to.deep.equal @cursor
 
   describe '.replace', ->
     beforeEach ->
-      @cursor = new Dropbox.UploadCursor
+      @cursor = new Dropbox.Http.UploadCursor
 
     describe 'on the API example', ->
       beforeEach ->
@@ -110,5 +110,5 @@ describe 'Dropbox.UploadCursor', ->
             ]).to.contain(@cursor.expiresAt.toUTCString())
 
       it 'round-trips through json / parse correctly', ->
-        newCursor = Dropbox.UploadCursor.parse @cursor.json()
+        newCursor = Dropbox.Http.UploadCursor.parse @cursor.json()
         expect(newCursor).to.deep.equal @cursor
