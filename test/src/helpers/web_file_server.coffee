@@ -13,6 +13,10 @@ class WebFileServer
   openBrowser: (appName) ->
     open @testUrl(), appName
 
+  # The root URL for XHR tests.
+  testOrigin: ->
+    "https://localhost:#{@port}"
+
   # The URL that should be used to start the tests.
   testUrl: ->
     "https://localhost:#{@port}/test/html/browser_test.html"

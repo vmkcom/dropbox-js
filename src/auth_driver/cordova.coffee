@@ -4,15 +4,21 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
   #
   # @param {?Object} options one of the settings below; leave out the argument
   #   to use the current location for redirecting
-  # @option options {Boolean} rememberUser if true, the user's OAuth tokens are
-  #   saved in localStorage; if you use this, you MUST provide a UI item that
-  #   calls signOut() on Dropbox.Client, to let the user "log out" of the
-  #   application
+  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
+  #   are not saved in localStorage; true by default
   # @option options {String} scope embedded in the localStorage key that holds
   #   the authentication data; useful for having multiple OAuth tokens in a
   #   single application
   constructor: (options) ->
-    @rememberUser = options?.rememberUser or false
+    if options
+      @rememberUser = if 'rememberUser' of options
+        options.rememberUser
+      else
+        true
+      @scope = options.scope or 'default'
+    else
+      @rememberUser = true
+      @scope = 'default'
     @scope = options?.scope or 'default'
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
@@ -41,4 +47,3 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
 
   # This driver does not use a redirect page.
   url: -> null
-

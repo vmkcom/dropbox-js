@@ -16,8 +16,7 @@ describe 'Dropbox.AuthDriver.Chrome', ->
     it 'produces an URL with the correct suffix', ->
       return unless @chrome_app
       url = @driver.url 'oauth token'
-      suffix = @path + '?_dropboxjs_scope=default&dboauth_token=oauth%20token'
-      expect(url.substring(url.length - suffix.length)).to.equal suffix
+      expect(url.substring(url.length - @path.length)).to.equal @path
 
   describe '#loadCredentials', ->
     beforeEach ->
@@ -60,7 +59,7 @@ describe 'Dropbox.AuthDriver.Chrome', ->
       client.reset()
       authDriver = new Dropbox.AuthDriver.Chrome(
           receiverPath: 'test/html/chrome_oauth_receiver.html',
-          scope: 'chrome_integration')
+          rememberUser: false, scope: 'chrome_integration')
       client.authDriver authDriver
       authDriver.forgetCredentials ->
         client.authenticate (error, client) ->
@@ -81,3 +80,9 @@ describe 'Dropbox.AuthDriver.Chrome', ->
                 expect(error).to.equal null
                 expect(userInfo).to.be.instanceOf Dropbox.UserInfo
                 done()
+
+    it 'should be the default driver on Chrome', ->
+      return unless @chrome_app
+      client = new Dropbox.Client testKeys
+      Dropbox.AuthDriver.autoConfigure client
+      expect(client.driver).to.be.instanceOf Dropbox.AuthDriver.Chrome

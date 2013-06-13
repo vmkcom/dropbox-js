@@ -104,7 +104,10 @@ class Dropbox.Client
       interactive = true
 
     unless @driver or @authStep is DropboxClient.DONE
-      throw new Error 'Call authDriver to set an authentication driver'
+      Dropbox.AuthDriver.autoConfigure @
+      unless @driver
+        throw new Error(
+            "OAuth driver auto-configuration failed. Call authDriver.")
 
     if @authStep is DropboxClient.ERROR
       throw new Error 'Client got in an error state. Call reset() to reuse it!'

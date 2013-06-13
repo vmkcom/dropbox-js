@@ -9,7 +9,8 @@ exports.chai = require 'chai'
 exports.sinon = require 'sinon'
 exports.sinonChai = require 'sinon-chai'
 
-exports.testXhrServer = 'https://localhost:8912'
+webFileServer = require './web_file_server.js'
+exports.testXhrServer = webFileServer.testOrigin()
 
 # Shared setup.
 exports.assert = exports.chai.assert

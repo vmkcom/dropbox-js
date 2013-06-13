@@ -37,7 +37,7 @@ else
     exports = window
     exports.authDriver = new Dropbox.AuthDriver.Chrome(
         receiverPath: 'test/html/chrome_oauth_receiver.html',
-        scope: 'helper-chrome')
+        rememberUser: false, scope: 'helper-chrome')
     # Hack-implement "rememberUser: false" in the Chrome driver.
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null
@@ -52,11 +52,13 @@ else
       exports = window
       if cordova?
         # Cordova WebView.
-        exports.authDriver = new Dropbox.AuthDriver.Cordova
+        exports.authDriver = new Dropbox.AuthDriver.Cordova(
+            rememberUser: false)
       else
         # Browser
         exports.authDriver = new Dropbox.AuthDriver.Popup(
-            receiverFile: 'oauth_receiver.html', scope: 'helper-popup')
+            receiverFile: 'oauth_receiver.html', rememberUser: false,
+            scope: 'helper-popup')
       exports.testImageUrl = '../../test/binary/dropbox.png'
 
   exports.testImageServerOn = -> null

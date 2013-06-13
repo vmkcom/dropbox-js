@@ -7,7 +7,7 @@ describe 'Dropbox.AuthDriver.BrowserBase', ->
   describe 'with rememberUser: false', ->
     beforeEach (done) ->
       return done() if @node_js or @chrome_app
-      @driver = new Dropbox.AuthDriver.BrowserBase
+      @driver = new Dropbox.AuthDriver.BrowserBase rememberUser: false
       @driver.setStorageKey @client
       @driver.forgetCredentials done
 
@@ -86,6 +86,11 @@ describe 'Dropbox.AuthDriver.Redirect', ->
       driver = new Dropbox.AuthDriver.Redirect()
       expect(driver.url()).to.equal 'http://test/file?a=true'
 
+    it 'removes the fragment from the location', ->
+      @stub.returns 'http://test/file?a=true#deadfragment'
+      driver = new Dropbox.AuthDriver.Redirect()
+      expect(driver.url()).to.equal 'http://test/file?a=true'
+
   describe '#loadCredentials', ->
     beforeEach ->
       @node_js = module? and module.exports? and require?
@@ -145,6 +150,8 @@ describe 'Dropbox.AuthDriver.Redirect', ->
         expect(error).to.equal null
         expect(credentials).to.have.property 'uid'
         expect(credentials.uid).to.be.a 'string'
+        expect(credentials).to.have.property 'token'
+        expect(credentials.token).to.be.a 'string'
         window.removeEventListener 'message', listener
         Dropbox.AuthDriver.Popup.onMessage.removeListener listener
         done()
@@ -153,6 +160,12 @@ describe 'Dropbox.AuthDriver.Redirect', ->
       Dropbox.AuthDriver.Popup.onMessage.addListener listener
       (new Dropbox.AuthDriver.Popup()).openWindow(
           '/test/html/redirect_driver_test.html')
+
+    it 'should be the default driver on browsers', ->
+      return if @node_js or @chrome_app or @cordova
+      client = new Dropbox.Client testKeys
+      Dropbox.AuthDriver.autoConfigure client
+      expect(client.driver).to.be.instanceOf Dropbox.AuthDriver.Redirect
 
 describe 'Dropbox.AuthDriver.Popup', ->
   describe '#url', ->

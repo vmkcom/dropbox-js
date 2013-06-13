@@ -73,9 +73,8 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
     super options
     receiverPath = (options and options.receiverPath) or
         'chrome_oauth_receiver.html'
-    @rememberUser = true
     @useQuery = true
-    [@receiverUrl, @receiverUrl2] = @computeUrl @expandUrl(receiverPath)
+    @receiverUrl = @expandUrl receiverPath
     @storageKey = "dropbox_js_#{@scope}_credentials"
 
   # Saves token information when appropriate.
@@ -99,7 +98,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
         callback()
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
-  doAuthorize: (authUrl, token, tokenSecret, callback) ->
+  doAuthorize: (authUrl, stateParam, client, callback) ->
     if chrome.identity?.launchWebAuthFlow
       # Apps V2 after the identity API hits stable?
       chrome.identity.launchWebAuthFlow url: authUrl, interactive: true,
@@ -115,7 +114,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
     else
       # Extensions and Apps V1.
       window = handle: null
-      @listenForMessage token, window, callback
+      @listenForMessage stateParam, window, callback
       @openWindow authUrl, (handle) -> window.handle = handle
 
   # Creates a popup window.
@@ -144,17 +143,18 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
     @
 
   # URL of the redirect receiver page that messages the app / extension.
-  url: (token) ->
-    @receiverUrl + encodeURIComponent(token)
+  url: ->
+    @receiverUrl
 
   # Listens for a postMessage from a previously opened tab.
   #
-  # @param {String} token the token string that must be received from the tab
+  # @param {String} stateParam the state parameter passed to the OAuth 2
+  #   /authorize endpoint
   # @param {Object} window a JavaScript object whose "handle" property is a
   #   window handle passed to the callback of a
   #   Dropbox.AuthDriver.Chrome#openWindow call
-  # @param {function()} called when the received message matches the token
-  listenForMessage: (token, window, callback) ->
+  # @param {function()} called when the received message matches stateParam
+  listenForMessage: (stateParam, window, callback) ->
     listener = (message, sender) =>
       # Reject messages not coming from the OAuth receiver window.
       if sender and sender.tab
@@ -164,10 +164,12 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
       # Reject improperly formatted messages.
       return unless message.dropbox_oauth_receiver_href
 
-      if @locationToken(message.dropbox_oauth_receiver_href) is token
+      receiverHref = message.dropbox_oauth_receiver_href
+      if @locationStateParam(receiverHref) is stateParam
+        stateParam = false  # Avoid having this matched in the future.
         @closeWindow window.handle if window.handle
         @onMessage.removeListener listener
-        callback()
+        callback Dropbox.Util.Oauth.queryParamsFromUrl(data)
     @onMessage.addListener listener
 
   # Stores a Dropbox.Client's credentials to local storage.
@@ -214,5 +216,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
   @oauthReceiver: ->
     window.addEventListener 'load', ->
       driver = new Dropbox.AuthDriver.Chrome()
-      driver.sendMessage dropbox_oauth_receiver_href: window.location.href
+      pageUrl = window.location.href
+      window.location.hash = ''  # Remove the token from the browser history.
+      driver.sendMessage dropbox_oauth_receiver_href: pageUrl
       window.close() if window.close
