@@ -1,10 +1,9 @@
 async = require 'async'
-{spawn, exec} = require 'child_process'
 fs = require 'fs'
 glob = require 'glob'
-log = console.log
 path = require 'path'
 remove = require 'remove'
+spawn = require('child_process').spawn
 
 # Node 0.6 compatibility hack.
 unless fs.existsSync
@@ -252,20 +251,25 @@ tokens = (callback) ->
   tokenStash.get ->
     callback() if callback?
 
+_current_cmd = null
 run = (command, callback) ->
   if /^win/i.test(process.platform)  # Awful windows hacks.
     command = command.replace(/\//g, '\\')
     cmd = spawn 'cmd', ['/C', command]
   else
     cmd = spawn '/bin/sh', ['-c', command]
+  _current_cmd = cmd
   cmd.stdout.on 'data', (data) -> process.stdout.write data
   cmd.stderr.on 'data', (data) -> process.stderr.write data
-  cmd.on 'error', ->
-    console.log "Non-zero exit code running\n    #{command}"
-    process.exit 1
-  process.on 'SIGHUP', -> cmd.kill()
-  cmd.on 'exit', (code) -> callback() if callback? and code is 0
+  cmd.on 'exit', (code) ->
+    _current_cmd = null
+    if code isnt 0
+      console.log "Non-zero exit code #{code} running\n    #{command}"
+      process.exit 1
+    callback() if callback? and code is 0
   null
+process.on 'SIGHUP', ->
+  _current_cmd.kill() if _current_cmd isnt null
 
 download = ([url, file], callback) ->
   if fs.existsSync file
