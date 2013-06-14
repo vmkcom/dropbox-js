@@ -70,7 +70,10 @@ class WebFileServer
     # Simulate receiving an OAuth 2 access token.
     @app.post '/form_encoded', (request, response) ->
       body = 'access_token=test%20token&token_type=bearer'
-      response.header 'Content-Type', 'application/x-www-form-urlencoded'
+      contentType = 'application/x-www-form-urlencoded'
+      if charset = request.param('charset')
+        contentType += "; charset=#{charset}"
+      response.header 'Content-Type', contentType
       response.header 'Content-Length', body.length.toString()
       response.end body
 
@@ -78,7 +81,10 @@ class WebFileServer
     @app.post '/json_encoded', (request, response) ->
       body = JSON.stringify(
           uid: 42, country: 'US', display_name: 'John P. User')
-      response.header 'Content-Type', 'application/json'
+      contentType = 'application/json'
+      if charset = request.param('charset')
+        contentType += "; charset=#{charset}"
+      response.header 'Content-Type', contentType
       response.header 'Content-Length', body.length.toString()
       response.end body
 

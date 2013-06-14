@@ -538,7 +538,12 @@ class Dropbox.Util.Xhr
       return true
 
     text = if @xhr.responseText? then @xhr.responseText else @xhr.response
-    switch @xhr.getResponseHeader('Content-Type')
+
+    contentType = @xhr.getResponseHeader 'Content-Type'
+    if contentType
+      offset = contentType.indexOf ';'
+      contentType = contentType.substring(0, offset) if offset isnt -1
+    switch contentType
        when 'application/x-www-form-urlencoded'
          @callback null, Dropbox.Util.Xhr.urlDecode(text), metadata, headers
        when 'application/json', 'text/javascript'

@@ -577,6 +577,15 @@ Content-Transfer-Encoding: binary\r
         expect(data.token_type).to.equal 'bearer'
         done()
 
+    it 'processes form-urlencoded+charset data correctly', (done) ->
+      url = testXhrServer + '/form_encoded?charset=utf8'
+      xhr = new Dropbox.Util.Xhr 'POST', url
+      xhr.prepare().send (error, data) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'access_token'
+        expect(data.access_token).to.equal 'test token'
+        done()
+
     it 'processes JSON-encoded data correctly', (done) ->
       url = testXhrServer + '/json_encoded'
       xhr = new Dropbox.Util.Xhr 'POST', url
@@ -588,6 +597,15 @@ Content-Transfer-Encoding: binary\r
         expect(data.country).to.equal 'US'
         expect(data).to.have.property 'display_name'
         expect(data.display_name).to.equal 'John P. User'
+        done()
+
+    it 'processes JSON-encoded+charset data correctly', (done) ->
+      url = testXhrServer + '/json_encoded?charset=utf8'
+      xhr = new Dropbox.Util.Xhr 'POST', url
+      xhr.prepare().send (error, data) ->
+        expect(error).to.not.be.ok
+        expect(data).to.have.property 'uid'
+        expect(data.uid).to.equal 42
         done()
 
     it 'processes data correctly when using setCallback', (done) ->
