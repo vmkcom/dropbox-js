@@ -103,14 +103,16 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
       # Apps V2 after the identity API hits stable?
       chrome.identity.launchWebAuthFlow url: authUrl, interactive: true,
           (redirectUrl) =>
-            if @locationToken(redirectUrl) is token
-              callback()
+            if @locationStateParam(redirectUrl) is stateParam
+              stateParam = false  # Avoid having this matched in the future.
+              callback Dropbox.Util.Oauth.queryParamsFromUrl(redirectUrl)
     else if chrome.experimental?.identity?.launchWebAuthFlow
       # Apps V2 with identity in experimental
       chrome.experimental.identity.launchWebAuthFlow
           url: authUrl, interactive: true, (redirectUrl) =>
-            if @locationToken(redirectUrl) is token
-              callback()
+            if @locationStateParam(redirectUrl) is stateParam
+              stateParam = false  # Avoid having this matched in the future.
+              callback Dropbox.Util.Oauth.queryParamsFromUrl(redirectUrl)
     else
       # Extensions and Apps V1.
       window = handle: null
@@ -169,7 +171,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
         stateParam = false  # Avoid having this matched in the future.
         @closeWindow window.handle if window.handle
         @onMessage.removeListener listener
-        callback Dropbox.Util.Oauth.queryParamsFromUrl(data)
+        callback Dropbox.Util.Oauth.queryParamsFromUrl(receiverHref)
     @onMessage.addListener listener
 
   # Stores a Dropbox.Client's credentials to local storage.

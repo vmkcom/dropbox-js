@@ -96,6 +96,9 @@ task 'cordovatest', ->
 build = (callback) ->
   commands = []
 
+  remove.removeSync 'tmp', ignoreMissing: true
+  fs.mkdirSync 'tmp'
+
   # Ignoring ".coffee" when sorting.
   # We want "auth_driver.coffee" to sort before "auth_driver/browser.coffee"
   source_files = glob.sync 'src/**/*.coffee'
@@ -174,11 +177,13 @@ testChromeApp = (callback) ->
   fs.mkdirSync 'test/chrome_profile' unless fs.existsSync 'test/chrome_profile'
 
   # TODO(pwnall): remove experimental flag when the identity API gets stable
-  command = "\"#{chromeCommand()}\" --load-extension=test/chrome_app " +
+  command = "\"#{chromeCommand()}\" " +
+      '--load-extension=test/chrome_app ' +
+      '--app-id nibiohflpcgopggnnboelamnhcnnpinm ' +
       '--enable-experimental-extension-apis ' +
       '--user-data-dir=test/chrome_profile --no-default-browser-check ' +
       '--no-first-run --no-service-autorun --disable-default-apps ' +
-      '--homepage=about:blank --v=-1'
+      '--homepage=about:blank --v=-1 '
 
   run command, ->
     callback() if callback

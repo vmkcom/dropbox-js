@@ -16,5 +16,6 @@
     "launch": {
       "local_path": "test/html/browser_test.html"
     }
-  }
+  },
+  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDGow2xqUlZJjm+/L86H4Cuyxnqrzv12xWUFCDkWS0LvKQUjJPcuElltI+JMvAcYXBSNHyGySwKGoU+LbugQWgxAxz/6lsR1a/TwqA9hNrYqeKowIW1YY4siLeggYQh/qAF2Kbe0xcOte0EyUN1nmUM5GU4ARHA2gIWFtI7a/pA1QIDAQAB"
 }
