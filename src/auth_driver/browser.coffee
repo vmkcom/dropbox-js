@@ -297,6 +297,23 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
     window.addEventListener 'message', listener, false
     Dropbox.AuthDriver.Popup.onMessage.addListener listener
 
+  # The origin of a location, in the context  of the same-origin policy.
+  #
+  # @param {String} location the URL whose origin is computed
+  # @return {String} the location's origin
+  @locationOrigin: (location) ->
+    # file:// URLs -- the origin is the whole path
+    match = /^(file:\/\/[^\?\#]*)(\?|\#|$)/.exec location
+    return match[1] if match
+
+    # xxx:// URLs -- the origin is the scheme and the first path segment
+    # e.g. http://, https://
+    match = /^([^\:]+\:\/\/[^\/\?\#]*)(\/|\?|\#|$)/.exec location
+    return match[1] if match
+
+    # e.g., data: URLs -- the origin is everything
+    location
+
   # Communicates with the driver from the OAuth receiver page.
   @oauthReceiver: ->
     window.addEventListener 'load', ->
@@ -307,7 +324,8 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
         opener or= window.parent
       if opener
         try
-          opener.postMessage pageUrl, '*'
+          pageOrigin = window.location.origin or locationOrigin(pageUrl)
+          opener.postMessage pageUrl, pageOrigin
         catch ieError
           # IE 9 doesn't support opener.postMessage for popup windows.
         try

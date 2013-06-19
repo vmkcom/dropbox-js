@@ -237,6 +237,33 @@ describe 'Dropbox.AuthDriver.Popup', ->
           expect(credentials).to.equal null
           done()
 
+  describe '#locationOrigin', ->
+    testCases = [
+      # http
+      ['http://www.dropbox.com', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/path', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com?query=true', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com#hash=true', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/?query=true', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/#hash', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/path?query=true', 'http://www.dropbox.com'],
+      ['http://www.dropbox.com/path#hash', 'http://www.dropbox.com'],
+      ['https://www.dropbox.com/', 'https://www.dropbox.com'],
+      ['http://www.dropbox.com:80', 'http://www.dropbox.com:80'],
+      ['http://www.dropbox.com:80/', 'http://www.dropbox.com:80'],
+      # file
+      ['file://some_file', 'file://some_file'],
+      ['file://path/to/file', 'file://path/to/file'],
+      ['file://path/to/file?query=true', 'file://path/to/file'],
+      ['file://path/to/file#fragment', 'file://path/to/file'],
+    ]
+    for testCase in testCases
+      do (testCase) ->
+        it "works for #{testCase[0]}", ->
+          expect(Dropbox.AuthDriver.Popup.locationOrigin(testCase[0])).to.
+              equal(testCase[1])
+
   describe 'integration', ->
     beforeEach ->
       @node_js = module? and module.exports? and require?

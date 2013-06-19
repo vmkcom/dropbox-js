@@ -20,6 +20,9 @@
             var message = [error || null, _client && _client.credentials()];
             var json = JSON.stringify(message);
             try {
+              // NOTE: postMessage to '*' is acceptable for a test case, but
+              //       not for production code, as it can leak data; see
+              //       Dropbox.AuthDriver.Popup for a secure implementation
               opener.postMessage(json, '*');
             } catch(ieError) {
               // IE doesn't support opener.postMessage for popups.
