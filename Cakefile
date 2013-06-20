@@ -24,13 +24,12 @@ task 'test', ->
               "--require test/js/helpers/setup.js #{test_cases.join(' ')}"
 
 task 'fasttest', ->
-  vendor ->
-    build ->
-      ssl_cert ->
-        test_cases = glob.sync 'test/js/fast/**/*_test.js'
-        test_cases.sort()  # Consistent test case order.
-        run 'node_modules/.bin/mocha --colors --slow 200 --timeout 20000 ' +
-            "--require test/js/helpers/fast_setup.js #{test_cases.join(' ')}"
+  build ->
+    ssl_cert ->
+      test_cases = glob.sync 'test/js/fast/**/*_test.js'
+      test_cases.sort()  # Consistent test case order.
+      run 'node_modules/.bin/mocha --colors --slow 200 --timeout 20000 ' +
+          "--require test/js/helpers/fast_setup.js #{test_cases.join(' ')}"
 
 task 'webtest', ->
   vendor ->

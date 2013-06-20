@@ -143,6 +143,64 @@ describe 'Dropbox.Util.Oauth', ->
         it 'does not change the step', ->
           expect(@oauth.step()).to.equal @oldStep
 
+  buildKeylessTransitionTests = ->
+    describe '#setAuthStateParam', ->
+      it 'throws an exception', ->
+        expect(=> @oauth.setAuthStateParam('oauth-state')).to.throw(
+            Error, /no api key/i)
+
+    describe '#processRedirectParams', ->
+      it 'throws an exception when the query params contain a code', ->
+        expect(=> @oauth.processRedirectParams(code: 'authorization-code')).
+            to.throw(Error, /no api key/i)
+
+      it 'returns true when the query params contain a token', ->
+        expect(@oauth.processRedirectParams(
+            token_type: 'bearer', access_token: 'access-token')).
+            to.equal true
+
+      it 'throws an exception on unimplemented token types', ->
+        expect(=> @oauth.processRedirectParams(token_type: 'unimplemented')).
+            to.throw(Error, /unimplemented token/i)
+
+      it "returns false when the query params don't contain a code/token", ->
+        expect(@oauth.processRedirectParams(random_param: 'random')).
+            to.equal false
+
+      describe 'with a Bearer token', ->
+        beforeEach ->
+          @oauth.processRedirectParams(
+              token_type: 'bearer', access_token: 'bearer-token')
+
+        it 'makes #step return DONE', ->
+          expect(@oauth.step()).to.equal Dropbox.Client.DONE
+
+        it 'adds the token to credentials', ->
+          expect(@oauth.credentials()).to.deep.equal(token: 'bearer-token')
+
+      describe 'with a MAC token', ->
+        beforeEach ->
+          @oauth.processRedirectParams(
+              token_type: 'mac', access_token: 'mac-token',
+              kid: 'mac-server-kid', mac_key: 'mac-token-key',
+              mac_algorithm: 'hmac-sha-1')
+
+        it 'makes #step() return DONE', ->
+          expect(@oauth.step()).to.equal Dropbox.Client.DONE
+
+        it 'adds the token to credentials', ->
+          expect(@oauth.credentials()).to.deep.equal(
+              token: 'mac-token', tokenKid: 'mac-server-kid',
+              tokenKey: 'mac-token-key')
+
+      describe 'without a code or token', ->
+        beforeEach ->
+          @oldStep = @oauth.step()
+          @oauth.processRedirectParams random_param: 'random'
+
+        it 'does not change the auth step', ->
+          expect(@oauth.step()).to.equal @oldStep
+
   describe 'with an app key', ->
     beforeEach ->
       @oauth = new Dropbox.Util.Oauth key: 'client-id'
@@ -472,6 +530,33 @@ describe 'Dropbox.Util.Oauth', ->
 
     buildSecretTransitionTests()
 
+  describe 'with a Bearer token', ->
+    beforeEach ->
+      @oauth = new Dropbox.Util.Oauth token: 'access-token'
+
+    describe '#credentials', ->
+      it 'returns the access token', ->
+        expect(@oauth.credentials()).to.deep.equal token: 'access-token'
+
+    describe '#step', ->
+      it 'returns DONE', ->
+        expect(@oauth.step()).to.equal Dropbox.Client.DONE
+
+    describe '#authHeader', ->
+      it 'uses HTTP Bearer auth', ->
+        expect(@oauth.authHeader(@method, @url, @params)).to.equal(
+            'Bearer access-token')
+
+    describe '#addAuthParams', ->
+      it 'returns the given object', ->
+        expect(@oauth.addAuthParams(@method, @url, @params)).to.equal @params
+
+      it 'adds the access token', ->
+        expect(@oauth.addAuthParams(@method, @url, @params)).to.deep.equal(
+            access_token: 'access-token', answer: 42, other: 43)
+
+    buildKeylessTransitionTests()
+
   describe 'with an app key and MAC token', ->
     beforeEach ->
       @oauth = new Dropbox.Util.Oauth(
@@ -549,6 +634,44 @@ describe 'Dropbox.Util.Oauth', ->
             answer: 42, other: 43)
 
     buildSecretTransitionTests()
+
+  describe 'with a MAC token', ->
+    beforeEach ->
+      @oauth = new Dropbox.Util.Oauth(
+          token: 'access-token', tokenKey: 'token-key', tokenKid: 'token-kid')
+      @stub = sinon.stub Dropbox.Util.Oauth, 'timestamp'
+      @stub.returns @timestamp
+
+    afterEach ->
+      @stub.restore()
+
+    describe '#credentials', ->
+      it 'returns the app key and access token', ->
+        expect(@oauth.credentials()).to.deep.equal(
+            token: 'access-token', tokenKey: 'token-key',
+            tokenKid: 'token-kid')
+
+    describe '#step', ->
+      it 'returns DONE', ->
+        expect(@oauth.step()).to.equal Dropbox.Client.DONE
+
+    describe '#authHeader', ->
+      it 'uses HTTP MAC auth', ->
+        expect(@oauth.authHeader(@method, @url, @params)).to.equal(
+            'MAC kid=token-kid ts=1370129543574 access_token=access-token ' +
+            'mac=tlkfjonwKYiWU0Yf5EYwyDQfpJs=')
+
+    describe '#addAuthParams', ->
+      it 'returns the given object', ->
+        expect(@oauth.addAuthParams(@method, @url, @params)).to.equal @params
+
+      it 'adds the access token and signature', ->
+        expect(@oauth.addAuthParams(@method, @url, @params)).to.deep.equal(
+            access_token: 'access-token', kid: 'token-kid',
+            mac: 'tlkfjonwKYiWU0Yf5EYwyDQfpJs=', ts: 1370129543574,
+            answer: 42, other: 43)
+
+    buildKeylessTransitionTests()
 
   describe '#queryParamsFromUrl', ->
     it 'extracts simple query params', ->

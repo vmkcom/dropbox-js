@@ -221,7 +221,14 @@ describe 'Dropbox.Client', ->
           expect('callback_should_not_be_called').to.equal false
           done()
 
-    describe '#constructor', ->
-      it 'raises an Error if initialized without an API key / secret', ->
-        expect(-> new Dropbox.Client(token: '123')).to.
-            throw(Error, /no api key/i)
+  describe '#constructor', ->
+    it 'works with an access token and no API key', ->
+      client = new Dropbox.Client token: '123'
+      expect(client.authStep).to.equal Dropbox.Client.DONE
+
+    it 'works with an API key', ->
+      client = new Dropbox.Client key: 'key'
+      expect(client.authStep).to.equal Dropbox.Client.RESET
+
+    it 'throws an exception if initialized without an API key or token', ->
+      expect(-> new Dropbox.Client({})).to.throw(Error, /no api key/i)

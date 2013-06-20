@@ -24,10 +24,12 @@ class Dropbox.Util.Oauth
   #
   # @see Dropbox.Util.Oauth#constructor for options
   setCredentials: (options) ->
-    unless options.key
-      throw new Error 'No API key supplied'
-
-    @_id = options.key
+    if options.key
+      @_id = options.key
+    else
+      unless options.token
+        throw new Error 'No API key supplied'
+      @_id = null
     @_secret = options.secret or null
     @_appHash = null
     @_loaded = true
@@ -49,7 +51,8 @@ class Dropbox.Util.Oauth
   #   Dropbox.Util.Oauth#constructor or into Dropbox.Util.Oauth#reset to obtain
   #   a new instance that uses the same credentials
   credentials: ->
-    returnValue = { key: @_id }
+    returnValue = {}
+    returnValue.key = @_id if @_id
     returnValue.secret = @_secret if @_secret
     if @_token isnt null
       returnValue.token = @_token
@@ -83,6 +86,8 @@ class Dropbox.Util.Oauth
   #
   # @param {String} stateParam the value of the "state" parameter
   setAuthStateParam: (stateParam) ->
+    if @_id is null
+      throw new Error('No API key supplied, cannot do authorization')
     @reset()
     @_loaded = false
     @_stateParam = stateParam
@@ -126,6 +131,8 @@ class Dropbox.Util.Oauth
   # @see draft-ietf-oauth-v2-http-mac for OAuth 2.0 MAC Tokens
   processRedirectParams: (queryParams) ->
     if queryParams.code
+      if @_id is null
+        throw new Error('No API key supplied, cannot do Authorization Codes')
       @reset()
       @_loaded = false
       @_authCode = queryParams.code
