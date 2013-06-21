@@ -200,7 +200,7 @@ class Dropbox.Client
   #
   # This should be called when the user explictly signs off from your
   # application, to meet the users' expectation that after they sign off, their
-  # access tokens will be persisted on the machine.
+  # access tokens will not be persisted on the machine.
   #
   # @param {?function(?Dropbox.ApiError)} callback called when
   #   the authentication completes; if successful, the error parameter is
