@@ -93,8 +93,6 @@ task 'cordovatest', ->
         testCordovaApp()
 
 build = (callback) ->
-  commands = []
-
   remove.removeSync 'tmp', ignoreMissing: true
   fs.mkdirSync 'tmp'
 
@@ -104,27 +102,35 @@ build = (callback) ->
   source_files.sort (a, b) ->
     a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
 
-  # Compile without --join for decent error messages.
-  commands.push 'node node_modules/coffee-script/bin/coffee --output tmp ' +
-                '--compile ' + source_files.join(' ')
   # TODO(pwnall): add --map after --compile when CoffeeScript #2779 is fixed
   #               and the .map file isn't useless
-  commands.push 'node node_modules/coffee-script/bin/coffee --output lib ' +
-                "--compile --join dropbox.js #{source_files.join(' ')}"
-  # Minify the javascript, for browser distribution.
-  commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
-      '--compress --mangle --output dropbox.min.js ' +
-      '--source-map dropbox.min.map dropbox.js'
+  command = 'node node_modules/coffee-script/bin/coffee --output lib ' +
+      "--compile --join dropbox.js #{source_files.join(' ')}"
 
-  # Tests are supposed to be independent, so the build order doesn't matter.
-  test_dirs = glob.sync 'test/src/**/'
-  for test_dir in test_dirs
-    out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
-    test_files = glob.sync path.join(test_dir, '*.coffee')
-    commands.push "node node_modules/coffee-script/bin/coffee " +
-                  "--output #{out_dir} --compile #{test_files.join(' ')}"
-  async.forEachSeries commands, run, ->
-    callback() if callback
+  run command, noExit: true, noOutput: true, (exitCode) ->
+    commands = []
+
+    if exitCode isnt 0
+      # The build failed.
+      # Compile without --join for decent error messages.
+      commands.push 'node node_modules/coffee-script/bin/coffee ' +
+          '--output tmp --compile ' + source_files.join(' ')
+    else
+      # Minify the javascript, for browser distribution.
+      commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
+          '--compress --mangle --output dropbox.min.js ' +
+          '--source-map dropbox.min.map dropbox.js'
+
+      # Tests are supposed to be independent, so the build order doesn't matter.
+      test_dirs = glob.sync 'test/src/**/'
+      for test_dir in test_dirs
+        out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
+        test_files = glob.sync path.join(test_dir, '*.coffee')
+        commands.push "node node_modules/coffee-script/bin/coffee " +
+                      "--output #{out_dir} --compile #{test_files.join(' ')}"
+
+    async.forEachSeries commands, run, ->
+      callback() if callback
 
 webtest = (callback) ->
   webFileServer = require './test/js/helpers/web_file_server.js'
@@ -256,22 +262,28 @@ tokens = (callback) ->
     callback() if callback?
 
 _current_cmd = null
-run = (command, callback) ->
+run = (command, options, callback) ->
+  if typeof options is 'function' and typeof 'callback' is 'undefined'
+    callback = options
+    options = {}
   if /^win/i.test(process.platform)  # Awful windows hacks.
     command = command.replace(/\//g, '\\')
     cmd = spawn 'cmd', ['/C', command]
   else
     cmd = spawn '/bin/sh', ['-c', command]
   _current_cmd = cmd
-  cmd.stdout.on 'data', (data) -> process.stdout.write data
-  cmd.stderr.on 'data', (data) -> process.stderr.write data
+  cmd.stdout.on 'data', (data) ->
+    process.stdout.write data unless options.noOutput
+  cmd.stderr.on 'data', (data) ->
+    process.stderr.write data unless options.noOutput
   cmd.on 'exit', (code) ->
     _current_cmd = null
-    if code isnt 0
+    if code isnt 0 and !options.noExit
       console.log "Non-zero exit code #{code} running\n    #{command}"
       process.exit 1
-    callback() if callback? and code is 0
+    callback(code) if callback?
   null
+
 process.on 'SIGHUP', ->
   _current_cmd.kill() if _current_cmd isnt null
 
