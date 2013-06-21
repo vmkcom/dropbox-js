@@ -1076,7 +1076,7 @@ class Dropbox.Client
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
-  # Removes a file or diretory from a user's Dropbox.
+  # Removes a file or directory from a user's Dropbox.
   #
   # @param {String} path the path of the file to be read, relative to the
   #   user's Dropbox or to the application's folder
