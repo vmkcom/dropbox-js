@@ -263,9 +263,11 @@ tokens = (callback) ->
 
 _current_cmd = null
 run = (command, options, callback) ->
-  if typeof options is 'function' and typeof 'callback' is 'undefined'
+  if !callback and typeof options is 'function'
     callback = options
     options = {}
+  else
+    options or= {}
   if /^win/i.test(process.platform)  # Awful windows hacks.
     command = command.replace(/\//g, '\\')
     cmd = spawn 'cmd', ['/C', command]
