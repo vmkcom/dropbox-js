@@ -32,10 +32,7 @@ test/chrome_extension
 test/cordova_app
 
 # Documentation output.
-doc/*.html
-doc/assets
-doc/classes
-doc/files
+doc
 
 # Test app logos.
 test/app_icon

@@ -25,11 +25,8 @@ test/cordova_app
 test/js
 tmp/*.js
 
-# Documentation output.
-doc/*.html
-doc/assets
-doc/classes
-doc/files
+# Method-level documentation output.
+doc
 
 # Node packaging output.
 dropbox-*.tgz

@@ -1,7 +1,7 @@
 # Client Library for the Dropbox API
 
 This is a JavaScript client library for the Dropbox API,
-[written in CoffeeScript](./doc/coffee_faq.md), suitable for use in both modern
+[written in CoffeeScript](./guides/coffee_faq.md), suitable for use in both modern
 browsers and in server-side code running under [node.js](http://nodejs.org/).
 
 
@@ -24,12 +24,12 @@ Keep in mind that the versions above are not hard requirements.
 
 ## Installation and Usage
 
-The [getting started guide](./doc/getting_started.md) will help you get your
+The [getting started guide](./guides/getting_started.md) will help you get your
 first dropbox.js application up and running.
 
-The [code snippets doc](./doc/snippets.md) contains some JavaScript fragments
-that may be useful in the latter stages of application development. The
-[sample apps](./samples/) source code can be useful as a scaffold or as an
+The [code snippets guide](./guides/snippets.md) contains some JavaScript
+fragments that may be useful in the latter stages of application development.
+The [sample apps](./samples/) source code can be useful as a scaffold or as an
 illustration of how all the pieces fit together.
 
 The
@@ -54,11 +54,12 @@ API.
 
 ## Development
 
-This library is written in CoffeeScript. [This document](./doc/coffee_faq.md)
-can help you understand if that matters to you.
+The [development guide](./guides/development.md) will make your life easier if
+you need to change the source code.
 
-The [development guide](./doc/development.md) will make your life easier if you
-need to change the source code.
+This library is written in CoffeeScript.
+[These notes](./guides/coffee_faq.md) can help you understand if that matters
+to you.
 
 
 ## Platform-Specific Issues

@@ -16,7 +16,8 @@ Dropbox API servers, and because it adds less overhead to normal API requests.
 
 In return, the authorization process is more complex than its OAuth 1.0a
 equivalent, and the API that OAuth drivers have to implement has changed.
-[The auth drivers doc](doc/auth_drivers.md) describes the new interface.
+[The guide to OAuth drivers](guides/auth_drivers.md) describes the new
+interface.
 
 
 ## Class Renames

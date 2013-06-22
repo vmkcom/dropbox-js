@@ -20,16 +20,18 @@ task 'test', ->
         tokens ->
           test_cases = glob.sync 'test/js/**/*_test.js'
           test_cases.sort()  # Consistent test case order.
-          run 'node_modules/.bin/mocha --colors --slow 200 --timeout 20000 ' +
-              "--require test/js/helpers/setup.js #{test_cases.join(' ')}"
+          run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
+              '--timeout 20000 --require test/js/helpers/setup.js ' +
+              test_cases.join(' ')
 
 task 'fasttest', ->
   build ->
     ssl_cert ->
       test_cases = glob.sync 'test/js/fast/**/*_test.js'
       test_cases.sort()  # Consistent test case order.
-      run 'node_modules/.bin/mocha --colors --slow 200 --timeout 20000 ' +
-          "--require test/js/helpers/fast_setup.js #{test_cases.join(' ')}"
+      run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
+          '--timeout 20000 --require test/js/helpers/fast_setup.js ' +
+          test_cases.join(' ')
 
 task 'webtest', ->
   vendor ->
@@ -54,10 +56,18 @@ task 'tokens', ->
         process.exit 0
 
 task 'doc', ->
-  run 'node_modules/.bin/codo src'
+  remove.removeSync 'doc', ignoreMissing: true
+  fs.mkdirSync 'doc'
+  run 'node_modules/codo/bin/codo'
+
+task 'devdoc', ->
+  remove.removeSync 'doc', ignoreMissing: true
+  fs.mkdirSync 'doc'
+  run 'node_modules/codo/bin/codo --private'
 
 task 'extension', ->
-  run 'node_modules/.bin/coffee --compile test/chrome_extension/*.coffee'
+  run 'node node_modules/coffee-script/bin/coffee ' +
+      '--compile test/chrome_extension/*.coffee'
 
 task 'chrome', ->
   vendor ->

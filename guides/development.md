@@ -37,6 +37,33 @@ The build output is in the `lib/` directory. `dropbox.js` is the compiled
 library that ships in the npm package, and `dropbox.min.js` is a minified
 version, optimized for browser apps.
 
+### Documentation
+
+Building the API documentation requires CoffeeScript installed globally.
+
+```bash
+npm install -g coffee-script
+```
+
+The following command builds the documentation.
+
+```bash
+cake doc
+```
+
+The documentation can be viewed in any modern browser.
+
+```bash
+open doc/index.html
+```
+
+By default, the generated documentation does not include private methods. Being
+able to browse through these methods can be helpful when writing new code.
+
+```bash
+cake devdoc
+```
+
 
 ## Test
 

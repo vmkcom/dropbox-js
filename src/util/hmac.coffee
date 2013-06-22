@@ -6,7 +6,7 @@
 # @param {String} string the ASCII string to be signed
 # @param {String} key the HMAC key
 # @return {String} a base64-encoded HMAC of the given string and key
-base64HmacSha1 = (string, key) ->
+Dropbox.Util.hmac = (string, key) ->
   arrayToBase64 hmacSha1(stringToArray(string), stringToArray(key),
                          string.length, key.length)
 
@@ -14,7 +14,7 @@ base64HmacSha1 = (string, key) ->
 #
 # @param {String} string the ASCII string to be hashed
 # @return {String} a base64-encoded SHA1 hash of the given string
-base64Sha1 = (string) ->
+Dropbox.Util.sha1 = (string) ->
   arrayToBase64 sha1(stringToArray(string), string.length)
 
 # SHA1 and HMAC-SHA1 versions that use the node.js builtin crypto.
@@ -22,21 +22,22 @@ if typeof require isnt 'undefined'
   try
     crypto = require 'crypto'
     if crypto.createHmac and crypto.createHash
-      base64HmacSha1 = (string, key) ->
+      Dropbox.Util.hmac = (string, key) ->
         hmac = crypto.createHmac 'sha1', key
         hmac.update string
         hmac.digest 'base64'
-      base64Sha1 = (string) ->
+      Dropbox.Util.sha1 = (string) ->
         hash = crypto.createHash 'sha1'
         hash.update string
         hash.digest 'base64'
   catch requireError
     # The slow versions defined at the top of the file work everywhere.
-
-Dropbox.Util.hmac = base64HmacSha1
-Dropbox.Util.sha1 = base64Sha1
+    null
 
 # HMAC-SHA1 implementation.
+#
+# @private
+# This method is not exported.
 #
 # @param {Array} string the HMAC input, as an array of 32-bit numbers
 # @param {Array} key the HMAC input, as an array of 32-bit numbers
@@ -53,6 +54,9 @@ hmacSha1 = (string, key, length, keyLength) ->
   sha1 opad.concat(hash1), 64 + 20
 
 # SHA1 implementation.
+#
+# @private
+# This method is not exported.
 #
 # @param {Array} string the SHA1 input, as an array of 32-bit numbers; the
 #   computation trashes the array
@@ -129,6 +133,9 @@ xxx = (n) ->
 
 # Rotates a 32-bit word.
 #
+# @private
+# This method is not exported.
+#
 # @param {Number} value the 32-bit number to be rotated
 # @param {Number} count the number of bits (0..31) to rotate by
 # @return {Number} the rotated value
@@ -136,6 +143,9 @@ rotateLeft32 = (value, count) ->
   (value << count) | (value >>> (32 - count))
 
 # 32-bit unsigned addition.
+#
+# @private
+# This method is not exported.
 #
 # @param {Number} a, b the 32-bit numbers to be added modulo 2^32
 # @return {Number} the 32-bit representation of a + b
@@ -145,6 +155,9 @@ add32 = (a, b) ->
   (high << 16) | (low & 0xFFFF)
 
 # Converts a 32-bit number array into a base64-encoded string.
+#
+# @private
+# This method is not exported.
 #
 # @param {Array} an array of big-endian 32-bit numbers
 # @return {String} base64 encoding of the given array of numbers
