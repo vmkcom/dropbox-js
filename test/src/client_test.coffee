@@ -452,7 +452,7 @@ buildClientTests = (clientKeys) ->
         @client.readFile @newFile, (error, data, stat) =>
           expect(error).to.equal null
           expect(data).to.equal @newFileData
-          unless Dropbox.Xhr.ieXdr  # IE's XDR doesn't do headers.
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers.
             expect(stat).to.be.instanceOf Dropbox.File.Stat
             expect(stat.path).to.equal @newFile
             expect(stat.isFile).to.equal true
