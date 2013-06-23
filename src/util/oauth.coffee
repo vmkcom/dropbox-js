@@ -292,7 +292,7 @@ class Dropbox.Util.Oauth
     string = method.toUpperCase() + '&' +
       Dropbox.Util.Xhr.urlEncodeValue(url) + '&' +
       Dropbox.Util.Xhr.urlEncodeValue(Dropbox.Util.Xhr.urlEncode(params))
-    macParams.mac = base64HmacSha1 string, @_tokenKey
+    macParams.mac = Dropbox.Util.hmac string, @_tokenKey
 
     macParams
 
@@ -302,7 +302,7 @@ class Dropbox.Util.Oauth
   # @return {String} a string that uniquely identifies the OAuth application
   appHash: ->
     return @_appHash if @_appHash
-    @_appHash = base64Sha1(@_id).replace(/\=/g, '')
+    @_appHash = Dropbox.Util.sha1(@_id).replace(/\=/g, '')
 
   # Drops all user-specific OAuth information.
   #

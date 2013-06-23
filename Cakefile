@@ -1,5 +1,5 @@
 async = require 'async'
-fs = require 'fs'
+fs = require 'fs-extra'
 glob = require 'glob'
 path = require 'path'
 remove = require 'remove'
@@ -11,7 +11,12 @@ unless fs.existsSync
 
 
 task 'build', ->
-  build()
+  clean ->
+    build ->
+      buildPackage()
+
+task 'clean', ->
+  clean()
 
 task 'test', ->
   vendor ->
@@ -25,13 +30,14 @@ task 'test', ->
               test_cases.join(' ')
 
 task 'fasttest', ->
-  build ->
-    ssl_cert ->
-      test_cases = glob.sync 'test/js/fast/**/*_test.js'
-      test_cases.sort()  # Consistent test case order.
-      run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
-          '--timeout 20000 --require test/js/helpers/fast_setup.js ' +
-          test_cases.join(' ')
+  clean ->
+    build ->
+      ssl_cert ->
+        test_cases = glob.sync 'test/js/fast/**/*_test.js'
+        test_cases.sort()  # Consistent test case order.
+        run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
+            '--timeout 1000 --require test/js/helpers/fast_setup.js ' +
+            '--reporter min ' + test_cases.join(' ')
 
 task 'webtest', ->
   vendor ->
@@ -41,28 +47,26 @@ task 'webtest', ->
           webtest()
 
 task 'cert', ->
-  remove.removeSync 'test/ssl', ignoreMissing: true
+  fs.removeSync 'test/ssl' if fs.existsSync 'test/ssl'
   ssl_cert()
 
 task 'vendor', ->
-  remove.removeSync './test/vendor', ignoreMissing: true
+  fs.removeSync 'test/vendor' if fs.existsSync 'test/vendor'
   vendor()
 
 task 'tokens', ->
-  remove.removeSync './test/token', ignoreMissing: true
+  fs.removeSync './test/token' if fs.existsSync 'test/tokens'
   build ->
     ssl_cert ->
       tokens ->
         process.exit 0
 
 task 'doc', ->
-  remove.removeSync 'doc', ignoreMissing: true
-  fs.mkdirSync 'doc'
+  fs.mkdirSync 'doc' unless fs.existsSync 'doc'
   run 'node_modules/codo/bin/codo'
 
 task 'devdoc', ->
-  remove.removeSync 'doc', ignoreMissing: true
-  fs.mkdirSync 'doc'
+  fs.mkdirSync 'doc' unless fs.existsSync 'doc'
   run 'node_modules/codo/bin/codo --private'
 
 task 'extension', ->
@@ -103,9 +107,11 @@ task 'cordovatest', ->
         testCordovaApp()
 
 build = (callback) ->
-  remove.removeSync 'tmp', ignoreMissing: true
-  fs.mkdirSync 'tmp'
+  buildCode ->
+    buildTests ->
+      callback() if callback
 
+buildCode = (callback) ->
   # Ignoring ".coffee" when sorting.
   # We want "auth_driver.coffee" to sort before "auth_driver/browser.coffee"
   source_files = glob.sync 'src/**/*.coffee'
@@ -118,29 +124,57 @@ build = (callback) ->
       "--compile --join dropbox.js #{source_files.join(' ')}"
 
   run command, noExit: true, noOutput: true, (exitCode) ->
-    commands = []
-
-    if exitCode isnt 0
-      # The build failed.
-      # Compile without --join for decent error messages.
-      commands.push 'node node_modules/coffee-script/bin/coffee ' +
-          '--output tmp --compile ' + source_files.join(' ')
-    else
-      # Minify the javascript, for browser distribution.
-      commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
-          '--compress --mangle --output dropbox.min.js ' +
-          '--source-map dropbox.min.map dropbox.js'
-
-      # Tests are supposed to be independent, so the build order doesn't matter.
-      test_dirs = glob.sync 'test/src/**/'
-      for test_dir in test_dirs
-        out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
-        test_files = glob.sync path.join(test_dir, '*.coffee')
-        commands.push "node node_modules/coffee-script/bin/coffee " +
-                      "--output #{out_dir} --compile #{test_files.join(' ')}"
-
-    async.forEachSeries commands, run, ->
+    if exitCode is 0
       callback() if callback
+      return
+
+    # The build failed.
+    # Compile without --join for decent error messages.
+    fs.mkdirSync 'tmp' unless fs.existSync 'tmp'
+    commands = []
+    commands.push 'node node_modules/coffee-script/bin/coffee ' +
+        '--output tmp --compile ' + source_files.join(' ')
+    async.forEachSeries commands, run, ->
+      # run should exit on its own. This is mostly for clarity.
+      process.exit 1
+
+buildTests = (callback) ->
+  fs.mkdirSync 'test/js' unless fs.existsSync 'test/js'
+  commands = []
+  # Tests are supposed to be independent, so the build order doesn't matter.
+  test_dirs = glob.sync 'test/src/**/'
+  for test_dir in test_dirs
+    out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
+    test_files = glob.sync path.join(test_dir, '*.coffee')
+    commands.push "node node_modules/coffee-script/bin/coffee " +
+                  "--output #{out_dir} --compile #{test_files.join(' ')}"
+  async.forEachSeries commands, run, ->
+    callback() if callback
+
+clean = (callback) ->
+  dirs = [
+    'doc',
+    'test/js',
+    'tmp'
+  ]
+  cleanDir = (dirName) ->
+    fs.exists dirName, (exists) ->
+      unless exists
+        callback() if callback
+        return
+      fs.remove dirName, (error) ->
+        callback() if callback
+  async.forEachSeries dirs, cleanDir, ->
+    callback() if callback
+
+buildPackage = (callback) ->
+  # Minify the javascript, for browser distribution.
+  commands = []
+  commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
+      '--compress --mangle --output dropbox.min.js ' +
+      '--source-map dropbox.min.map dropbox.js'
+  async.forEachSeries commands, run, ->
+    callback() if callback
 
 webtest = (callback) ->
   webFileServer = require './test/js/helpers/web_file_server.js'
