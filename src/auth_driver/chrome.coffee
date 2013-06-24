@@ -90,7 +90,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
           callback()
       when Dropbox.Client.DONE
         @storeCredentials client.credentials(), callback
-      when Dropbox.Client.SIGNED_OFF
+      when Dropbox.Client.SIGNED_OUT
         @forgetCredentials callback
       when Dropbox.Client.ERROR
         @forgetCredentials callback

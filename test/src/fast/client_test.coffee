@@ -221,6 +221,52 @@ describe 'Dropbox.Client', ->
           expect('callback_should_not_be_called').to.equal false
           done()
 
+  describe '#signOut', ->
+    describe 'without a token', ->
+      beforeEach ->
+        @client.reset()
+      it 'throws an exception', ->
+        expect(=> @client.signOut()).to.throw(Error, /client.*user.*token/i)
+
+    describe 'with mustInvalidate', ->
+      beforeEach ->
+        @client.reset()
+        @client.setCredentials token: 'fake-token'
+        @onAuthStepChangeCalled = []
+        @client.authDriver onAuthStepChange: (client, callback) =>
+          @onAuthStepChangeCalled.push client.authStep
+          callback()
+        @xhrErrorStatus = 0
+        @client.dispatchXhr = (xhr, callback) =>
+          callback new Dropbox.ApiError(status: @xhrErrorStatus, 'POST', 'url')
+
+      describe 'unset', ->
+        it 'ignores API server errors', (done) ->
+          @client.signOff (error) =>
+            expect(error).to.equal null
+            expect(@onAuthStepChangeCalled).to.deep.equal(
+                [Dropbox.Client.SIGNED_OUT])
+            expect(@client.isAuthenticated()).to.equal false
+            done()
+
+      describe 'set to true', ->
+        it 'aborts on API server errors', (done) ->
+          @client.signOut mustInvalidate: true, (error) =>
+            expect(error).to.be.instanceOf Dropbox.ApiError
+            expect(error.status).to.equal 0
+            expect(@onAuthStepChangeCalled.length).to.equal 0
+            expect(@client.isAuthenticated()).to.equal true
+            done()
+
+        it 'succeeds if the API server says the token is invalid', (done) ->
+          @xhrErrorStatus = Dropbox.ApiError.INVALID_TOKEN
+          @client.signOff mustInvalidate: true, (error) =>
+            expect(error).to.equal null
+            expect(@onAuthStepChangeCalled).to.deep.equal(
+                [Dropbox.Client.SIGNED_OUT])
+            expect(@client.isAuthenticated()).to.equal false
+            done()
+
   describe '#constructor', ->
     it 'works with an access token and no API key', ->
       client = new Dropbox.Client token: '123'

@@ -61,10 +61,13 @@ else
             scope: 'helper-popup')
       exports.testImageUrl = '../../test/binary/dropbox.png'
 
+      # NOTE: not all browsers suppot location.origin
+      exports.testXhrServer =
+          Dropbox.AuthDriver.Popup.locationOrigin(exports.location)
+
   exports.testImageServerOn = -> null
   exports.testImageServerOff = -> null
 
-  exports.testXhrServer = exports.location.origin
 
   # NOTE: browser-side apps should not use API secrets, so we remove them
   exports.testKeys.__secret = exports.testKeys.secret

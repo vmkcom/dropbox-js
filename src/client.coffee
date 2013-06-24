@@ -107,7 +107,7 @@ class Dropbox.Client
       Dropbox.AuthDriver.autoConfigure @
       unless @driver
         throw new Error(
-            "OAuth driver auto-configuration failed. Call authDriver.")
+            'OAuth driver auto-configuration failed. Call authDriver.')
 
     if @authStep is DropboxClient.ERROR
       throw new Error 'Client got in an error state. Call reset() to reuse it!'
@@ -201,7 +201,7 @@ class Dropbox.Client
             callback null, @ if callback
             return
 
-        when DropboxClient.SIGNED_OFF  # The user signed off, restart the flow.
+        when DropboxClient.SIGNED_OUT  # The user signed out, restart the flow.
           # The authStep change makes reset() not trigger onAuthStepChange.
           @authStep = DropboxClient.RESET
           @reset()
@@ -218,38 +218,61 @@ class Dropbox.Client
   isAuthenticated: ->
     @authStep is DropboxClient.DONE
 
-  # Revokes the user's Dropbox credentials.
+  # Invalidates and forgets the user's Dropbox credentials.
   #
   # This should be called when the user explictly signs off from your
-  # application, to meet the users' expectation that after they sign off, their
-  # access tokens will not be persisted on the machine.
+  # application, to meet the users' expectation that after they sign out, their
+  # access token will not be persisted on the machine.
   #
-  # @param {?function(?Dropbox.ApiError)} callback called when
-  #   the authentication completes; if successful, the error parameter is
-  #   null
+  # @param {?Object} options one or more of the advanced settings below
+  # @option options {Boolean} mustInvalidate when true, the method will fail if
+  #   the API call for invalidating the token fails; by default, the access
+  #   token is forgotten and the method reports success, even if the API call
+  #   fails
+  # @param {?function(?Dropbox.ApiError)} callback called after the user's
+  #   token is forgotten; if successful, the error parameter is null; this
+  #   method will always succeed if mustInvalidate isn't true
   # @return {XMLHttpRequest} the XHR object used for this API call
-  signOut: (callback) ->
+  # @throw {Error} if this client doesn't have Dropbox credentials associated
+  #   with it; call Dropbox.Client#isAuthenticated to find out if a client has
+  #   credentials
+  # @see Dropbox.Client#isAuthenticated
+  signOut: (options, callback) ->
+    if !callback and typeof options is 'function'
+      callback = options
+      options = null
+
+    stopOnXhrError = options and options.mustInvalidate
+    unless @authStep is DropboxClient.DONE
+      throw new Error("This client doesn't have a user's token")
+
     xhr = new Dropbox.Util.Xhr 'POST', @urls.signOut
     xhr.signWithOauth @oauth
     @dispatchXhr xhr, (error) =>
       if error
-        callback error if callback
-        return
+        if error.status is Dropbox.ApiError.INVALID_TOKEN
+          # The token was already invalidated. Sweet.
+          error = null
+        else if stopOnXhrError
+          callback error if callback
+          return
 
       # The authStep change makes reset() not trigger onAuthStepChange.
       @authStep = DropboxClient.RESET
       @reset()
-      @authStep = DropboxClient.SIGNED_OFF
+      @authStep = DropboxClient.SIGNED_OUT
       @onAuthStepChange.dispatch @
       if @driver and @driver.onAuthStepChange
         @driver.onAuthStepChange @, ->
-          callback error if callback
+          callback null if callback
       else
-        callback error if callback
+        callback null if callback
 
   # Alias for signOut.
-  signOff: (callback) ->
-    @signOut callback
+  #
+  # @see Dropbox.Client#signOut
+  signOff: (options, callback) ->
+    @signOut options, callback
 
   # Retrieves information about the logged in user.
   #
@@ -671,6 +694,8 @@ class Dropbox.Client
       callback error, entries, stat, entry_stats
 
   # Alias for "stat" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#stat
   metadata: (path, options, callback) ->
     @stat path, options, callback
 
@@ -776,6 +801,8 @@ class Dropbox.Client
       callback error, stats
 
   # Alias for "history" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#history
   revisions: (path, options, callback) ->
     @history path, options, callback
 
@@ -898,6 +925,8 @@ class Dropbox.Client
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Alias for "revertFile" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#revertFile
   restore: (path, versionTag, callback) ->
     @revertFile path, versionTag, callback
 
@@ -951,6 +980,8 @@ class Dropbox.Client
       callback error, stats
 
   # Alias for "findByName" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#findByName
   search: (path, namePattern, options, callback) ->
     @findByName path, namePattern, options, callback
 
@@ -972,6 +1003,8 @@ class Dropbox.Client
       callback error, Dropbox.File.CopyReference.parse(refData)
 
   # Alias for "makeCopyReference" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#makeCopyReference
   copyRef: (path, callback) ->
     @makeCopyReference path, callback
 
@@ -1014,6 +1047,8 @@ class Dropbox.Client
       callback error, Dropbox.Http.PulledChanges.parse(deltaInfo)
 
   # Alias for "pullChanges" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#pullChanges
   delta: (cursor, callback) ->
     @pullChanges cursor, callback
 
@@ -1050,10 +1085,14 @@ class Dropbox.Client
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # node.js-friendly alias for "remove".
+  #
+  # @see Dropbox.Client#remove
   unlink: (path, callback) ->
     @remove path, callback
 
   # Alias for "remove" that matches the HTTP API.
+  #
+  # @see Dropbox.Client#delete
   delete: (path, callback) ->
     @remove path, callback
 
@@ -1227,7 +1266,7 @@ class Dropbox.Client
   @DONE: 5
 
   # authStep value for a client that voluntarily invalidated its access token
-  @SIGNED_OFF: 6
+  @SIGNED_OUT: 6
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.
   #

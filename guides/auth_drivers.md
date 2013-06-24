@@ -103,7 +103,7 @@ request token for an OAuth access token
 client has an OAuth access token that can be used in API calls; after
 `onAuthStepChange` is triggered, `authorize` will call its callback function,
 and report success
-* `Dropbox.Client.SIGNED_OFF` is reached when the client's `signOut` method is
+* `Dropbox.Client.SIGNED_OUT` is reached when the client's `signOut` method is
 called, after the API call succeeds; after `onAuthStepChange` is triggered,
 `signOut` will call its callback function, and report success
 * `Dropbox.Client.ERROR` is reached if any of the Dropbox API calls used by

@@ -104,7 +104,7 @@ class Dropbox.AuthDriver
   # * Dropbox.Client.DONE - the client has an OAuth 2 access token that can be
   #   used for all API calls; the OAuth 2 process is complete, and the callback
   #   passed to authorize is about to be called
-  # * Dropbox.Client.SIGNED_OFF - the client's Dropbox.Client#signOut() was
+  # * Dropbox.Client.SIGNED_OUT - the client's Dropbox.Client#signOut() was
   #   called, and the client's OAuth 2 access token was invalidated
   # * Dropbox.Client.ERROR - the client encounered an error during the OAuth 2
   #   process; the callback passed to authorize is about to be called with the

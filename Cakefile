@@ -2,8 +2,8 @@ async = require 'async'
 fs = require 'fs-extra'
 glob = require 'glob'
 path = require 'path'
-remove = require 'remove'
 spawn = require('child_process').spawn
+watch = require 'watch'
 
 # Node 0.6 compatibility hack.
 unless fs.existsSync
@@ -18,6 +18,9 @@ task 'build', ->
 task 'clean', ->
   clean()
 
+task 'watch', ->
+  setupWatch()
+
 task 'test', ->
   vendor ->
     build ->
@@ -27,17 +30,13 @@ task 'test', ->
           test_cases.sort()  # Consistent test case order.
           run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
               '--timeout 20000 --require test/js/helpers/setup.js ' +
-              test_cases.join(' ')
+              '--globals Dropbox ' + test_cases.join(' ')
 
 task 'fasttest', ->
   clean ->
     build ->
       ssl_cert ->
-        test_cases = glob.sync 'test/js/fast/**/*_test.js'
-        test_cases.sort()  # Consistent test case order.
-        run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
-            '--timeout 1000 --require test/js/helpers/fast_setup.js ' +
-            '--reporter min ' + test_cases.join(' ')
+        fasttest()
 
 task 'webtest', ->
   vendor ->
@@ -176,6 +175,54 @@ buildPackage = (callback) ->
   async.forEachSeries commands, run, ->
     callback() if callback
 
+setupWatch = (callback) ->
+  scheduled = true
+  buildNeeded = true
+  cleanNeeded = true
+  onTick = ->
+    scheduled = false
+    if cleanNeeded
+      buildNeeded = false
+      cleanNeeded = false
+      console.log "Doing a clean build"
+      clean -> build -> fasttest()
+    else if buildNeeded
+      buildNeed = false
+      console.log "Building"
+      build -> fasttest()
+  process.nextTick onTick
+
+  watchMonitor = (monitor) ->
+    monitor.on 'created', (fileName) ->
+      return unless path.basename(fileName)[0] is '.'
+      buildNeeded = true
+      unless scheduled
+        scheduled = true
+        process.nextTick onTick
+    monitor.on 'changed', (fileName) ->
+      return unless path.basename(fileName)[0] is '.'
+      buildNeeded = true
+      unless scheduled
+        scheduled = true
+        process.nextTick onTick
+    monitor.on 'removed', (fileName) ->
+      return unless path.basename(fileName)[0] is '.'
+      cleanNeeded = true
+      buildNeeded = true
+      unless scheduled
+        scheduled = true
+        process.nextTick onTick
+
+  watch.createMonitor 'src/', watchMonitor
+  watch.createMonitor 'test/src/', watchMonitor
+
+fasttest = (callback) ->
+  test_cases = glob.sync 'test/js/fast/**/*_test.js'
+  test_cases.sort()  # Consistent test case order.
+  run 'node node_modules/mocha/bin/mocha --colors --slow 200 --timeout 1000 ' +
+      '--require test/js/helpers/fast_setup.js --reporter min ' +
+      test_cases.join(' '), callback
+
 webtest = (callback) ->
   webFileServer = require './test/js/helpers/web_file_server.js'
   if 'BROWSER' of process.env
@@ -228,7 +275,9 @@ testChromeApp = (callback) ->
   # TODO(pwnall): remove experimental flag when the identity API gets stable
   command = "\"#{chromeCommand()}\" " +
       '--load-extension=test/chrome_app ' +
-      '--app-id nibiohflpcgopggnnboelamnhcnnpinm ' +
+      # TODO(pwnall): figure out a way to get the app auto-loaded; the flag
+      #               below is documented but doesn't work
+      # '--app-id nibiohflpcgopggnnboelamnhcnnpinm ' +
       '--enable-experimental-extension-apis ' +
       '--user-data-dir=test/chrome_profile --no-default-browser-check ' +
       '--no-first-run --no-service-autorun --disable-default-apps ' +

@@ -32,7 +32,6 @@ if typeof require isnt 'undefined'
         hash.digest 'base64'
   catch requireError
     # The slow versions defined at the top of the file work everywhere.
-    null
 
 # HMAC-SHA1 implementation.
 #
