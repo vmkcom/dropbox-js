@@ -153,6 +153,20 @@ class Dropbox.AuthDriver.BrowserBase
   @currentLocation: ->
     window.location.href
 
+  # Removes the OAuth 2 access token from the current page's URL.
+  #
+  # This hopefully also removes the access token from the browser history.
+  #
+  # @return undefined
+  @cleanupLocation: ->
+    if window.history
+      pageUrl = @currentLocation()
+      hashIndex = pageUrl.indexOf '#'
+      window.history.replaceState {}, document.title,
+                                  pageUrl.substring(0, hashIndex)
+    else
+      window.location.hash = ''  
+    return
 
 # OAuth driver that uses a redirect and localStorage to complete the flow.
 class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
@@ -190,7 +204,7 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
   resumeAuthorize: (stateParam, client, callback) ->
     if @locationStateParam() is stateParam
       pageUrl = Dropbox.AuthDriver.BrowserBase.currentLocation()
-      window.location.hash = ''  # Remove the token from the browser history.
+      Dropbox.AuthDriver.BrowserBase.cleanupLocation()
       callback Dropbox.Util.Oauth.queryParamsFromUrl pageUrl
     else
       @forgetCredentials ->
@@ -318,7 +332,7 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
   @oauthReceiver: ->
     window.addEventListener 'load', ->
       pageUrl = window.location.href
-      window.location.hash = ''  # Remove the token from the browser history.
+      Dropbox.AuthDriver.BrowserBase.cleanupLocation()
       opener = window.opener
       if window.parent isnt window.top
         opener or= window.parent
