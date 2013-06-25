@@ -16,9 +16,11 @@
           client.reset();
           client.authDriver(new Dropbox.AuthDriver.Redirect(
               {scope: "redirect-integration"}));
+          console.log(client);
           client.authenticate(function(error, _client) {
             var message = [error || null, _client && _client.credentials()];
             var json = JSON.stringify(message);
+            console.log(json);
             try {
               // NOTE: postMessage to '*' is acceptable for a test case, but
               //       not for production code, as it can leak data; see

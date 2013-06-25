@@ -2,22 +2,22 @@
 class Dropbox.ApiError
   # @property {Number} the HTTP error code (e.g., 403); compare against the
   #   constants defined on Dropbox.ApiError
-  status: undefined
+  status: null
 
   # @property {String} the HTTP method of the failed request (e.g., 'GET')
-  method: undefined
+  method: null
 
   # @property {String} the URL of the failed request
-  url: undefined
+  url: null
 
   # @property {?String} the body of the HTTP error response; can be null if
   #   the error was caused by a network failure or by a security issue
-  responseText: undefined
+  responseText: null
 
   # @property {?Object} the result of parsing the JSON in the HTTP error
   #   response; can be null if the API server didn't return JSON, or if the
   #   HTTP response body is unavailable
-  response: undefined
+  response: null
 
   # Status value indicating an error at the XMLHttpRequest layer.
   #
@@ -42,8 +42,7 @@ class Dropbox.ApiError
   # Status value indicating a malformed OAuth request.
   #
   # This indicates a bug in dropbox.js and should never occur under normal
-  # circumstances. However, a Safari bug causes this status to be reported
-  # instead of INVALID_TOKEN.
+  # circumstances.
   @OAUTH_ERROR: 403
 
   # Status value indicating that a file or path was not found in Dropbox.
@@ -101,7 +100,7 @@ class Dropbox.ApiError
       @responseText = '(no response)'
       @response = null
 
-  # Used when the error is printed out by developers.
+  # Developer-friendly summary of the error.
   toString: ->
     "Dropbox API error #{@status} from #{@method} #{@url} :: #{@responseText}"
 

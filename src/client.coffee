@@ -49,8 +49,8 @@ class Dropbox.Client
   #   about to be sent; if the event is canceled by returning a falsey value
   #   from a listener, the network request is silently discarded; whenever
   #   possible, listeners should restrict themselves to using the xhr property
-  #   of the Dropbox.Util.Xhr instance passed to them; everything else in the
-  #   Dropbox.Util.Xhr API is in flux
+  #   of the {Dropbox.Util.Xhr} instance passed to them; everything else in the
+  #   {Dropbox.Util.Xhr} API is in flux
   onXhr: null
 
   # @property {Dropbox.Util.EventSource<Dropbox.ApiError>} fires non-cancelable
@@ -84,14 +84,20 @@ class Dropbox.Client
 
   # Authenticates the app's user to Dropbox' API server.
   #
+  # In most cases, the process will involve sending the user to an
+  # authorization server on the Dropbox servers. If the user clicks "Allow",
+  # the application will be authorized. If the user clicks "Deny", the method
+  # will pass a {Dropbox.AuthError} to its callback, and the error's code will
+  # be {Dropbox.AuthError.ACCESS_DENIED}.
+  #
   # @param {?Object} options one or more of the advanced settings below
   # @option options {Boolean} interactive if false, the authentication process
   #   will stop and call the callback whenever it would have to wait for an
   #   authorization; true by default; this is useful for determining if the
   #   authDriver has cached credentials available
-  # @param {?function(?Dropbox.ApiError, Dropbox.Client)} callback called when
-  #   the authentication completes; if successful, the second parameter is this
-  #   client and the first parameter is null
+  # @param {?function(?Dropbox.ApiError|Dropbox.AuthError, Dropbox.Client)}
+  #   callback called when the authentication completes; if successful, the
+  #   second parameter is this client and the first parameter is null
   # @return {Dropbox.Client} this, for easy call chaining
   authenticate: (options, callback) ->
     if !callback and typeof options is 'function'
@@ -117,6 +123,7 @@ class Dropbox.Client
     # This is repetitive stuff done at the end of each step.
     _fsmNextStep = =>
       @authStep = @oauth.step()
+      @authError = @oauth.error() if @authStep is DropboxClient.ERROR
       @_credentials = null
       @onAuthStepChange.dispatch @
       _fsmStep()
@@ -160,14 +167,9 @@ class Dropbox.Client
           authUrl = @authorizeUrl()
           @driver.doAuthorize authUrl, @oauth.authStateParam(), @,
               (queryParams) =>
-                if queryParams.error
-                  # TODO(pwnall): wrap the error around a Dropbox.ApiError
-                  #               or create a Dropbox.AuthError
-                  _fsmErrorStep()
-                else
-                  @oauth.processRedirectParams queryParams
-                  @uid = queryParams.uid
-                  _fsmNextStep()
+                @oauth.processRedirectParams queryParams
+                @uid = queryParams.uid if queryParams.uid
+                _fsmNextStep()
 
         when DropboxClient.PARAM_LOADED
           # Check a previous state parameter.
@@ -177,14 +179,9 @@ class Dropbox.Client
             _fsmNextStep()
             return
           @driver.resumeAuthorize @oauth.authStateParam(), @, (queryParams) =>
-            if queryParams.error
-              # TODO(pwnall): wrap the error around a Dropbox.ApiError
-              #               or create a Dropbox.AuthError
-              _fsmErrorStep()
-            else
-              @oauth.processRedirectParams queryParams
-              @uid = queryParams.uid
-              _fsmNextStep()
+            @oauth.processRedirectParams queryParams
+            @uid = queryParams.uid if queryParams.uid
+            _fsmNextStep()
 
         when DropboxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
@@ -1308,13 +1305,18 @@ class Dropbox.Client
   # @private
   # This a low-level method called by authorize. Users should call authorize.
   #
-  # @param {function(error, data)} callback called with the result of the
-  #   /oauth/access_token HTTP request
+  # @param {function(?Dropbox.ApiError|Dropbox.AuthError, Object)} callback
+  #   called with the result of the /oauth/access_token HTTP request
   getAccessToken: (callback) ->
     params = @oauth.accessTokenParams @driver.url()
     xhr = new Dropbox.Util.Xhr('POST', @urls.token).setParams(params).
         addOauthParams(@oauth)
-    @dispatchXhr xhr, callback
+    @dispatchXhr xhr, (error, data) ->
+      if error and error.status is Dropbox.ApiError.INVALID_PARAM and
+          error.response and error.response.error
+        # Return AuthError instances for OAuth errors.
+        error = new Dropbox.AuthError error.response
+      callback error, data
 
   # Prepares and sends an XHR to the Dropbox API server.
   #

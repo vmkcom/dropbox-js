@@ -69,7 +69,7 @@ class WebFileServer
 
     # Simulate receiving an OAuth 2 access token.
     @app.post '/form_encoded', (request, response) ->
-      body = 'access_token=test%20token&token_type=bearer'
+      body = 'access_token=test%20token&token_type=Bearer'
       contentType = 'application/x-www-form-urlencoded'
       if charset = request.param('charset')
         contentType += "; charset=#{charset}"

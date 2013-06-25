@@ -24,7 +24,11 @@ describe 'Dropbox.Util.Oauth', ->
 
       it 'returns true when the query params contain a token', ->
         expect(@oauth.processRedirectParams(
-            token_type: 'bearer', access_token: 'access-token')).
+            token_type: 'Bearer', access_token: 'access-token')).
+            to.equal true
+
+      it 'returns true when the query params contain a error', ->
+        expect(@oauth.processRedirectParams(error: 'access_denied')).
             to.equal true
 
       it 'throws an exception on unimplemented token types', ->
@@ -49,7 +53,7 @@ describe 'Dropbox.Util.Oauth', ->
       describe 'with a Bearer token', ->
         beforeEach ->
           @oauth.processRedirectParams(
-              token_type: 'bearer', access_token: 'bearer-token')
+              token_type: 'Bearer', access_token: 'bearer-token')
 
         it 'makes #step return DONE', ->
           expect(@oauth.step()).to.equal Dropbox.Client.DONE
@@ -73,6 +77,25 @@ describe 'Dropbox.Util.Oauth', ->
               key: 'client-id', token: 'mac-token', tokenKid: 'mac-server-kid',
               tokenKey: 'mac-token-key')
 
+      describe 'with an OAuth error response', ->
+        beforeEach ->
+          @oauth.processRedirectParams(
+              error: 'access_denied',
+              error_description: "The application didn't seem trustworthy")
+
+        it 'makes #step() return ERROR', ->
+          expect(@oauth.step()).to.equal Dropbox.Client.ERROR
+
+        it 'preserves the api key in the credentials', ->
+          expect(@oauth.credentials()).to.deep.equal key: 'client-id'
+
+        it 'makes #error() return the error', ->
+          error = @oauth.error()
+          expect(error).to.be.instanceOf Dropbox.AuthError
+          expect(error.code).to.equal Dropbox.AuthError.ACCESS_DENIED
+          expect(error.description).to.equal(
+              "The application didn't seem trustworthy")
+
       describe 'without a code or token', ->
         beforeEach ->
           @oldStep = @oauth.step()
@@ -95,6 +118,27 @@ describe 'Dropbox.Util.Oauth', ->
             oauthStateParam: 'oauth-state')
 
     describe '#processRedirectParams', ->
+      it 'returns true when the query params contain a code', ->
+        expect(@oauth.processRedirectParams(code: 'authorization-code')).
+            to.equal true
+
+      it 'returns true when the query params contain a token', ->
+        expect(@oauth.processRedirectParams(
+            token_type: 'Bearer', access_token: 'access-token')).
+            to.equal true
+
+      it 'returns true when the query params contain a error', ->
+        expect(@oauth.processRedirectParams(error: 'access_denied')).
+            to.equal true
+
+      it 'throws an exception on unimplemented token types', ->
+        expect(=> @oauth.processRedirectParams(token_type: 'unimplemented')).
+            to.throw(Error, /unimplemented token/i)
+
+      it "returns false when the query params don't contain a code/token", ->
+        expect(@oauth.processRedirectParams(random_param: 'random')).
+            to.equal false
+
       describe 'with an authorization code', ->
         beforeEach ->
           @oauth.processRedirectParams code: 'authorization-code'
@@ -110,7 +154,7 @@ describe 'Dropbox.Util.Oauth', ->
       describe 'with a Bearer token', ->
         beforeEach ->
           @oauth.processRedirectParams(
-              token_type: 'bearer', access_token: 'bearer-token')
+              token_type: 'Bearer', access_token: 'bearer-token')
 
         it 'makes #step return DONE', ->
           expect(@oauth.step()).to.equal Dropbox.Client.DONE
@@ -135,6 +179,19 @@ describe 'Dropbox.Util.Oauth', ->
               token: 'mac-token', tokenKid: 'mac-server-kid',
               tokenKey: 'mac-token-key')
 
+      describe 'with an OAuth error response', ->
+        beforeEach ->
+          @oauth.processRedirectParams(
+              error: 'access_denied',
+              error_description: "The application didn't seem trustworthy")
+
+        it 'makes #step() return ERROR', ->
+          expect(@oauth.step()).to.equal Dropbox.Client.ERROR
+
+        it 'preserves the app key and secret in the credentials', ->
+          expect(@oauth.credentials()).to.deep.equal(
+              key: 'client-id', secret: 'client-secret')
+
       describe 'without a code or token', ->
         beforeEach ->
           @oldStep = @oauth.step()
@@ -156,8 +213,12 @@ describe 'Dropbox.Util.Oauth', ->
 
       it 'returns true when the query params contain a token', ->
         expect(@oauth.processRedirectParams(
-            token_type: 'bearer', access_token: 'access-token')).
+            token_type: 'Bearer', access_token: 'access-token')).
             to.equal true
+
+      it 'throws an exeception when the query params contain a error', ->
+        expect(=> @oauth.processRedirectParams(error: 'access_denied')).
+            to.throw(Error, /no api key/i)
 
       it 'throws an exception on unimplemented token types', ->
         expect(=> @oauth.processRedirectParams(token_type: 'unimplemented')).
@@ -170,7 +231,7 @@ describe 'Dropbox.Util.Oauth', ->
       describe 'with a Bearer token', ->
         beforeEach ->
           @oauth.processRedirectParams(
-              token_type: 'bearer', access_token: 'bearer-token')
+              token_type: 'Bearer', access_token: 'bearer-token')
 
         it 'makes #step return DONE', ->
           expect(@oauth.step()).to.equal Dropbox.Client.DONE

@@ -1504,10 +1504,11 @@ buildClientTests = (clientKeys) ->
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.be.ok
           unless Dropbox.Util.Xhr.ieXdr
-            expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
-            expect(error.response).to.have.property 'error'
-            expect(error.response.error).to.have.property 'error_description'
-            expect(error.response.error.error_description).to.
+            expect(error).to.be.instanceOf Dropbox.AuthError
+            expect(error).to.have.property 'code'
+            expect(error.code).to.equal Dropbox.AuthError.INVALID_GRANT
+            expect(error).to.have.property 'description'
+            expect(error.description).to.
                 match(/code.*not valid/i)
           done()
 

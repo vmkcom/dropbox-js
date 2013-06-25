@@ -577,7 +577,7 @@ Content-Transfer-Encoding: binary\r
         expect(data).to.have.property 'access_token'
         expect(data.access_token).to.equal 'test token'
         expect(data).to.have.property 'token_type'
-        expect(data.token_type).to.equal 'bearer'
+        expect(data.token_type).to.equal 'Bearer'
         done()
 
     it 'processes form-urlencoded+charset data correctly', (done) ->
@@ -619,7 +619,7 @@ Content-Transfer-Encoding: binary\r
         expect(data).to.have.property 'access_token'
         expect(data.access_token).to.equal 'test token'
         expect(data).to.have.property 'token_type'
-        expect(data.token_type).to.equal 'bearer'
+        expect(data.token_type).to.equal 'Bearer'
         done()
       xhr.prepare().send()
 
@@ -632,7 +632,7 @@ Content-Transfer-Encoding: binary\r
         expect(data).to.have.property 'access_token'
         expect(data.access_token).to.equal 'test token'
         expect(data).to.have.property 'token_type'
-        expect(data.token_type).to.equal 'bearer'
+        expect(data.token_type).to.equal 'Bearer'
         expect(headers).to.have.property 'content-type'
         expect(headers['content-type']).to.
             equal 'application/x-www-form-urlencoded'

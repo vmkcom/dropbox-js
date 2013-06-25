@@ -16,6 +16,7 @@ class Dropbox.Util.Oauth
     @_token = null
     @_tokenKey = null
     @_tokenKid = null
+    @_error = null
     @_appHash = null
     @_loaded = null
     @setCredentials options
@@ -32,6 +33,7 @@ class Dropbox.Util.Oauth
       @_id = null
     @_secret = options.secret or null
     @_appHash = null
+    @_error = null
     @_loaded = true
 
     @reset()
@@ -79,6 +81,8 @@ class Dropbox.Util.Oauth
         Dropbox.Client.PARAM_LOADED
       else
         Dropbox.Client.PARAM_SET
+    else if @_error isnt null
+      Dropbox.Client.ERROR
     else
       Dropbox.Client.RESET
 
@@ -113,6 +117,12 @@ class Dropbox.Util.Oauth
   authStateParam: ->
     @_stateParam
 
+  # @private
+  # This should only be called by Dropbox.Client#authenticate. All other code
+  # should use Dropbox.Client#error.
+  error: ->
+    @_error
+
   # Assimilates the information in an /authorize redirect's query parameters.
   #
   # The parameters may contain an access code, which will bring the Oauth
@@ -130,6 +140,13 @@ class Dropbox.Util.Oauth
   # @see RFC 6750 for OAuth 2.0 Bearer Tokens
   # @see draft-ietf-oauth-v2-http-mac for OAuth 2.0 MAC Tokens
   processRedirectParams: (queryParams) ->
+    if queryParams.error
+      if @_id is null
+        throw new Error('No API key supplied, cannot process errors')
+      @reset()
+      @_error = new Dropbox.AuthError(queryParams)
+      return true
+
     if queryParams.code
       if @_id is null
         throw new Error('No API key supplied, cannot do Authorization Codes')
@@ -140,6 +157,10 @@ class Dropbox.Util.Oauth
 
     tokenType = queryParams.token_type
     if tokenType
+      # NOTE: the API server used to use 'bearer' instead of 'Bearer' as the 
+      #       token_type; the OAuth spec is hard to follow, so it's better to
+      #       be permissive
+      tokenType = tokenType.toLowerCase()
       if tokenType isnt 'bearer' and tokenType isnt 'mac'
         throw new Error("Unimplemented token type #{tokenType}")
 
@@ -302,7 +323,7 @@ class Dropbox.Util.Oauth
   # @return {String} a string that uniquely identifies the OAuth application
   appHash: ->
     return @_appHash if @_appHash
-    @_appHash = Dropbox.Util.sha1(@_id).replace(/\=/g, '')
+    @_appHash = Dropbox.Util.sha1('oauth2-' + @_id).replace(/[\/+=]/g, '')
 
   # Drops all user-specific OAuth information.
   #

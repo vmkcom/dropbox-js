@@ -36,7 +36,8 @@ task 'fasttest', ->
   clean ->
     build ->
       ssl_cert ->
-        fasttest()
+        fasttest (code) ->
+          process.exit code
 
 task 'webtest', ->
   vendor ->
@@ -221,7 +222,8 @@ fasttest = (callback) ->
   test_cases.sort()  # Consistent test case order.
   run 'node node_modules/mocha/bin/mocha --colors --slow 200 --timeout 1000 ' +
       '--require test/js/helpers/fast_setup.js --reporter min ' +
-      test_cases.join(' '), callback
+      test_cases.join(' '), noExit: true, (code) ->
+        callback(code) if callback
 
 webtest = (callback) ->
   webFileServer = require './test/js/helpers/web_file_server.js'
