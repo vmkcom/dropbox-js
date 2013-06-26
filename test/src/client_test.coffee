@@ -101,16 +101,16 @@ buildClientTests = (clientKeys) ->
 
   # Global (expensive) fixtures.
   before (done) ->
-    setupClient this, =>
-      setupDirectory this, =>
-        setupImageFile this, =>
-          setupTextFile this, ->
+    setupClient @, =>
+      setupDirectory @, =>
+        setupImageFile @, =>
+          setupTextFile @, ->
             done()
 
   # Teardown for global fixtures.
   after (done) ->
     @__client.remove @testFolder, (error, stat) =>
-      @test.error(new Error(error)) if error
+      throw new Error(error) if error
       done()
 
   # Per-test (cheap) fixtures.
@@ -1614,4 +1614,3 @@ describe 'Dropbox.Client', ->
       it 'depends on the app key', ->
         client = new Dropbox.Client testFullDropboxKeys
         expect(client.appHash()).not.to.equal @client.appHash()
-
