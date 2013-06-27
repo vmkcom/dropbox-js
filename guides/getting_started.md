@@ -12,7 +12,7 @@ This section describes how to get the library hooked up into your application.
 To get started right away, place this snippet in your page's `<head>`.
 
 ```html
-<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.9.2/dropbox.min.js">
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropbox.js/0.10.0/dropbox.min.js">
 </script>
 ```
 
@@ -64,9 +64,8 @@ If your JavaScript code runs on users' computers, do NOT expose your API secret
 in the code.
 
 ```javascript
-// Browser-side applications do not use an API secret.
+// Browser-side applications do not use the API secret.
 var client = new Dropbox.Client({ key: "your-key-here" });
-secret: "your-secret-here"
 });
 ```
 
@@ -84,8 +83,8 @@ var client = new Dropbox.Client({
 
 
 ## Authentication
-Before you can make any API calls, you need to authenticate your application's
-user with Dropbox, and have them authorize your apps to access their Dropbox.
+Before you can make any API calls, your users must authorize your application
+to access their Dropbox.
 
 This process follows the [OAuth 2.0](http://tools.ietf.org/html/rfc6749)
 protocol, which entails sending the user to a Web page on `www.dropbox.com`,
@@ -94,23 +93,19 @@ use different methods and UI to drive the user through this process, so
 `dropbox.js` lets application code hook into the authorization process by
 implementing an [OAuth driver](../src/auth_driver.coffee).
 
-dropbox.js ships with a couple of [built-in OAuth drivers](built_in.md), which
-a great way to jump-start application development. The
+dropbox.js ships with a couple of [built-in OAuth drivers](./built_in.md),
+which a great way to jump-start application development. The
 
-Read the [authentication doc](./auth_drivers.md) for further information about
+Read the [OAuth driver guide](./auth_drivers.md) for further information about
 writing an OAuth driver, and to learn about all the drivers that ship with
 `dropbox.js`.
 
 ### Browser Setup
 
-The following snippet will set up the recommended driver.
+The recommended driver will be automatically set up for you.
 
-```javascript
-client.authDriver(new Dropbox.AuthDriver.Redirect());
-```
-
-The [built-in OAuth drivers](built_in.md) describes some useful options that
-you can pass to the `Dropbox.AuthDriver.Redirect` constructor.
+The [built-in OAuth drivers guide](./built_in.md) describes some useful
+options if the recommended setup isn't suitable for your application.
 
 ### node.js Setup
 
@@ -121,17 +116,17 @@ all the clients.
 client.authDriver(new Dropbox.AuthDriver.NodeServer(8191));
 ```
 
-The [built-in OAuth drivers doc](built_in.md) has useful tips on using the
+The [built-in OAuth drivers guide](./built_in.md) has useful tips on using the
 `NodeServer` driver.
 
 ### Chrome App / Extension Setup
 
 At this time, the setup for Chrome applications and extensions is a bit more
-involved than the one-liners above.
+involved.
 
 The `Dropbox.AuthDriver.Chrome` section in the
-[built-in OAuth drivers doc](built_in.md) has a step-by-step process for
-setting up the Chrome OAuth driver.
+[built-in OAuth drivers guide](built_in.md) has a step-by-step process for
+setting up the [Chrome OAuth driver](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver/NodeServer.html).
 
 ### Shared Code
 
@@ -286,11 +281,10 @@ client.readdir("/", function(error, entries) {
 
 ### More Code Snippets
 
-The [code snippets doc](./snippets.md) contains some JavaScript fragments
-that may be useful in the latter stages of application development.
+The [collection of code snippets](./snippets.md) contains some JavaScript
+fragments that may be useful in the latter stages of application development.
 
 ### Sample Applications
 
-Check out the [sample apps](../samples/) to see how all these concepts play out
-together.
-
+Check out the [sample applications](../samples/) to see how all these concepts
+play out together.
