@@ -101,6 +101,16 @@ The tests store all their data in folders named along the lines of
 folders yourself.
 
 
+### Solving node.js Issues
+
+If the node.js tests exit abruptly, the command below will help zoom in on the
+troublesome test.
+
+```bash
+LIST=1 cake test
+```
+
+
 ### Solving Browser Issues
 
 An easy method to test a browser in a virtual machine is to skip the automated

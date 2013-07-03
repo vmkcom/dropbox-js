@@ -30,7 +30,8 @@ if global? and require? and module? and (not cordova?)
     imageServer.closeServer()
     imageServer = null
 
-  exports.testXhrServer = 'https://localhost:8912'
+  webFileServer = require './web_file_server.js'
+  exports.testXhrServer = webFileServer.testOrigin()
 else
   if chrome? and chrome.runtime
     # Chrome app
