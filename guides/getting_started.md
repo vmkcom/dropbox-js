@@ -93,7 +93,7 @@ use different methods and UI to drive the user through this process, so
 `dropbox.js` lets application code hook into the authorization process by
 implementing an [OAuth driver](../src/auth_driver.coffee).
 
-dropbox.js ships with a couple of [built-in OAuth drivers](./built_in.md),
+dropbox.js ships with a couple of [built-in OAuth drivers](./builtin_drivers.md),
 which a great way to jump-start application development. The
 
 Read the [OAuth driver guide](./auth_drivers.md) for further information about
