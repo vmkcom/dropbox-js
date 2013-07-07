@@ -25,8 +25,11 @@ test/cordova_app
 test/js
 tmp/*.js
 
-# Method-level documentation output.
+# Auto-generated documentation.
 doc
+sitedoc/*
+!sitedoc/templates
+
 
 # Node packaging output.
 dropbox-*.tgz

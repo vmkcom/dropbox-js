@@ -2,12 +2,19 @@
 class Dropbox.Util.Oauth
   # Creates an Oauth instance that manages an application's key and token data.
   #
-  # @param {Object} options the following properties
+  # @private
+  # This constructor is called by {Dropbox.Client}. This class should not be
+  # instantiated directly.
+  #
+  # @param {Object} options the application type and API key; alternatively,
+  #   the result of a previous {Dropbox.Util.Oauth#credentials} call can be
+  #   passed in to create an identical {Dropbox.Util.Oauth} instance
   # @option options {String} key the Dropbox application's key (client
   #   identifier, in OAuth2 vocabulary)
   # @option options {String} secret the Dropbox application's secret (client
-  #   secret, in OAuth vocabulary); browser-side applications should not pass
-  #   in a client secret
+  #   secret, in OAuth vocabulary); browser-side applications should not use
+  #   this option
+  # @option options {String} token (optional) the user's OAuth 2.0 access token
   constructor: (options) ->
     @_id = null
     @_secret = null
@@ -23,7 +30,13 @@ class Dropbox.Util.Oauth
 
   # Resets the credentials used by this Oauth instance.
   #
-  # @see Dropbox.Util.Oauth#constructor for options
+  # @private
+  # Use {Dropbox.Client#setCredentials} instead.
+  #
+  # @param {Object} options same as for #{Dropbox.Util.Oauth#constructor}
+  # @return {Dropbox.Util.Oauth} this, for easy call chaining
+  #
+  # @see Dropbox.Util.Oauth#constructor
   setCredentials: (options) ->
     if options.key
       @_id = options.key
@@ -46,12 +59,17 @@ class Dropbox.Util.Oauth
       @_authCode = options.oauthCode
     else if options.oauthStateParam
       @_stateParam = options.oauthStateParam
+    @
 
   # The credentials used by this Oauth instance.
   #
+  # @private
+  # Use {Dropbox.Client#credentials} instead.
+  #
   # @return {Object<String, String>} an object that can be passed into
-  #   Dropbox.Util.Oauth#constructor or into Dropbox.Util.Oauth#reset to obtain
-  #   a new instance that uses the same credentials
+  #   {Dropbox.Util.Oauth#constructor} or into {Dropbox.Util.Oauth#reset} to
+  #   obtain a new instance that uses the same credentials; the object can be
+  #   serialized using JSON
   credentials: ->
     returnValue = {}
     returnValue.key = @_id if @_id
@@ -69,8 +87,11 @@ class Dropbox.Util.Oauth
 
   # The authentication process step that this instance's credentials are for
   #
-  # @return {Number} one of the constants defined in Dropbox.Client, such as
-  #    Dropbox.Client.DONE
+  # @private
+  # Use {Dropbox.Client#authStep} instead.
+  #
+  # @return {Number} one of the constants defined on {Dropbox.Client}, such as
+  #    {Dropbox.Client.DONE}
   step: ->
     if @_token isnt null
       Dropbox.Client.DONE
@@ -88,7 +109,11 @@ class Dropbox.Util.Oauth
 
   # Sets the "state" parameter value for the following /authorize request.
   #
+  # @private
+  # Use {Dropbox.Client#authorize} instead.
+  #
   # @param {String} stateParam the value of the "state" parameter
+  # @return {Dropbox.Util.OAuth} this, for easy call chaining
   setAuthStateParam: (stateParam) ->
     if @_id is null
       throw new Error('No API key supplied, cannot do authorization')
@@ -110,24 +135,30 @@ class Dropbox.Util.Oauth
     (@_stateParam is stateParam) and (@_stateParam isnt null)
 
   # @private
-  # This should only be called by Dropbox.Client#authenticate. All other code
-  # should use Dropbox.Util.Oauth#checkAuthStateParam.
+  # This should only be called by {Dropbox.Client#authenticate}. Use
+  # {Dropbox.Util.Oauth#checkAuthStateParam} instead.
   #
   # @return {String} the "state" query parameter set by setAuthStateParam
   authStateParam: ->
     @_stateParam
 
   # @private
-  # This should only be called by Dropbox.Client#authenticate. All other code
-  # should use Dropbox.Client#error.
+  # This should only be called by {Dropbox.Client#authenticate}. Use
+  # {Dropbox.Client#error} instead.
   error: ->
     @_error
 
   # Assimilates the information in an /authorize redirect's query parameters.
   #
   # The parameters may contain an access code, which will bring the Oauth
-  # instance in the AUTHORIZED state, or may contain an access token, which
-  # will bring the Oauth instance in the DONE state.
+  # instance in the {Dropbox.Client.AUTHORIZED} state, or may contain an access
+  # token, which will bring the Oauth instance in the {Dropbox.Client.DONE}
+  # state.
+  #
+  # @private
+  # This should only be called by {Dropbox.Client#authenticate}. OAuth drivers
+  # should pass the redirect parameters to the callback of
+  # {Dropbox.AuthDriver#doAuthorize} or {Dropbox.AuthDriver#resumeAuthorize}.
   #
   # @param {Object<String, String>} queryParams the query parameters that
   #   contain an authorization code or access token; these should be query
@@ -136,9 +167,9 @@ class Dropbox.Util.Oauth
   #   an OAuth 2 authorization code or access token; false if no useful
   #   information was found and this instance's state was not changed
   #
-  # @see RFC 6749 for authorization codes
-  # @see RFC 6750 for OAuth 2.0 Bearer Tokens
-  # @see draft-ietf-oauth-v2-http-mac for OAuth 2.0 MAC Tokens
+  # @see http://tools.ietf.org/html/rfc6749#section-4.1.2 RFC 6749 Section 4.1.2
+  # @see http://tools.ietf.org/html/rfc6750#section-4 RFC 6750 Section 4
+  # @see http://tools.ietf.org/html/draft-ietf-oauth-v2-http-mac-03
   processRedirectParams: (queryParams) ->
     if queryParams.error
       if @_id is null
@@ -157,7 +188,7 @@ class Dropbox.Util.Oauth
 
     tokenType = queryParams.token_type
     if tokenType
-      # NOTE: the API server used to use 'bearer' instead of 'Bearer' as the 
+      # NOTE: the API server used to use 'bearer' instead of 'Bearer' as the
       #       token_type; the OAuth spec is hard to follow, so it's better to
       #       be permissive
       tokenType = tokenType.toLowerCase()
@@ -183,6 +214,9 @@ class Dropbox.Util.Oauth
   # Authorization header (implemented by this method) is the recommended
   # method, and form parameters (implemented by addAuthParams) is the fallback
   # method. The fallback method is useful for avoiding CORS preflight requests.
+  #
+  # @private
+  # This should only be called by {Dropbox.Client#authenticate}.
   #
   # @param {String} method the HTTP method used to make the request ('GET',
   #   'POST', etc)
@@ -216,6 +250,9 @@ class Dropbox.Util.Oauth
   # and form parameters (implemented by this method) is the fallback method.
   # The fallback method is useful for avoiding CORS preflight requests.
   #
+  # @private
+  # This should only be called by {Dropbox.Client#authenticate}.
+  #
   # @param {String} method the HTTP method used to make the request ('GET',
   #   'POST', etc)
   # @param {String} url the HTTP URL (e.g. "http://www.example.com/photos")
@@ -240,14 +277,17 @@ class Dropbox.Util.Oauth
       params.access_token = @_token
     params
 
-  # The query parameters to be used in an /oauth2/authorize URL.
+  # The query parameters to be used in an OAuth 2 /authorize URL.
+  #
+  # @private
+  # This should only be called by {Dropbox.Client#authenticate}.
   #
   # @param {String} responseType one of the /authorize response types
   #   implemented by dropbox.js
   # @param {?String} redirectUrl the URL that the user's browser should be
-  #   redirected to in order to perform an /oauth2/authorize request
+  #   redirected to in order to perform an /authorize request
   # @return {Object<String, String>} the query parameters for the
-  #   /oauth2/authorize URL
+  #   /authorize URL
   #
   # @see Dropbox.AuthDriver#authType
   # @see RFC 6749 for the authorization process in OAuth 2.0
@@ -261,6 +301,9 @@ class Dropbox.Util.Oauth
     params
 
   # The query parameters to be used in an /oauth2/token URL.
+  #
+  # @private
+  # This should only be called by {Dropbox.Client#authenticate}.
   #
   # @param {?String} redirectUrl the URL that the user's browser was redirected
   #   to after performing the /oauth2/authorize request; this must be the same
@@ -318,18 +361,23 @@ class Dropbox.Util.Oauth
     macParams
 
   # @private
-  # Used by Dropbox.Client#appHash
+  # Use {Dropbox.Client#appHash} instead.
   #
-  # @return {String} a string that uniquely identifies the OAuth application
+  # @return {String} a string  that uniquely identifies the application, based
+  #   on its OAuth client id
   appHash: ->
     return @_appHash if @_appHash
     @_appHash = Dropbox.Util.sha1('oauth2-' + @_id).replace(/[\/+=]/g, '')
 
   # Drops all user-specific OAuth information.
   #
-  # This method gets this instance in the RESET auth step.
+  # @private
+  # Use {Dropbox.Client#reset} instead.
   #
-  # @return this, for easy call chaining
+  # After this method is called, the Oauth instance will be in the
+  # {Dropbox.Client.RESET} step.
+  #
+  # @return {Dropbox.Util.Oauth} this, for easy call chaining
   reset: ->
     @_stateParam = null
     @_authCode = null

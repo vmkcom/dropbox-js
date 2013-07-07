@@ -56,6 +56,16 @@ describe 'Dropbox.ApiError', ->
       expect(Dropbox.ApiError).to.have.property 'INVALID_METHOD'
     it 'is between 400 and 499', ->
       expect(@code).to.be.within 400, 499
+    it 'is less than CONFLICT', ->
+      expect(@code).to.be.below Dropbox.ApiError.CONFLICT
+
+  describe '.CONFLICT', ->
+    beforeEach ->
+      @code = Dropbox.ApiError.CONFLICT
+    it 'is defined', ->
+      expect(Dropbox.ApiError).to.have.property 'CONFLICT'
+    it 'is between 400 and 499', ->
+      expect(@code).to.be.within 400, 499
 
   describe '.RATE_LIMITED', ->
     beforeEach ->

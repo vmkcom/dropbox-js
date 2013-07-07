@@ -1,22 +1,24 @@
 # Information about an OAuth 2.0 error returned from the Dropbox API.
+#
+# @see http://tools.ietf.org/html/rfc6749 RFC 6749
 class Dropbox.AuthError
-  # @property {String} one of the {Dropbox.AuthError} constants.
-  #
-  # @see http://tools.ietf.org/html/rfc6749
+  # @property {String} one of the {Dropbox.AuthError} constants
   code: null
 
-  # @property {?String} developer-friendly explanation of the error
+  # @property {String} developer-friendly explanation of the error; can be null
+  #   if the API server does not provide an explanation
   description: null
 
-  # @property {?String} URL to a developer-friendly page
+  # @property {String} URL to a developer-friendly page; can be null if the API
+  #   server does not provide an URL
   uri: null
 
   # Error code indicating the user did not authorize the application.
   #
-  # This error is reported when a user clicks the 'Deny' button on the
-  # Authorization dialog.
+  # This error is reported when a user clicks the _Deny_ button on the OAuth
+  # authorization page on the Dropbox site.
   @ACCESS_DENIED: 'access_denied'
-  
+
   # Error code indicating a malformed OAuth request.
   #
   # This indicates a bug in dropbx.js and should never occur under normal
@@ -85,9 +87,15 @@ class Dropbox.AuthError
     @uri = root.error_uri or null
 
   # Developer-friendly summary of the error.
+  #
+  # @private
+  # @return {String} developer-friendly summary of the error
   toString: ->
     "Dropbox OAuth error #{@code} :: #{@description}"
 
   # Used by some testing frameworks.
+  #
+  # @private
+  # @return {String} used by some testing frameworks
   inspect: ->
     @toString()

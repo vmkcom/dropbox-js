@@ -2,8 +2,12 @@ async = require 'async'
 fs = require 'fs-extra'
 glob = require 'glob'
 path = require 'path'
-spawn = require('child_process').spawn
 watch = require 'watch'
+
+download = require './tasks/download'
+siteDoc = require './tasks/site_doc'
+run = require './tasks/run'
+
 
 # Node 0.6 compatibility hack.
 unless fs.existsSync
@@ -72,6 +76,13 @@ task 'devdoc', ->
   fs.mkdirSync 'doc' unless fs.existsSync 'doc'
   run 'node_modules/codo/bin/codo --private'
 
+task 'sitedoc', ->
+  fs.mkdir 'sitedoc' unless fs.existsSync 'sitedoc'
+  fs.mkdir 'sitedoc/yaml' unless fs.existsSync 'sitedoc/yaml'
+  run 'node_modules/codo/bin/codo --theme yaml --output-dir sitedoc/yaml', ->
+    siteDoc 'sitedoc'
+
+
 task 'extension', ->
   run 'node node_modules/coffee-script/bin/coffee ' +
       '--compile test/chrome_extension/*.coffee'
@@ -133,7 +144,7 @@ buildCode = (callback) ->
 
     # The build failed.
     # Compile without --join for decent error messages.
-    fs.mkdirSync 'tmp' unless fs.existSync 'tmp'
+    fs.mkdirSync 'tmp' unless fs.existsSync 'tmp'
     commands = []
     commands.push 'node node_modules/coffee-script/bin/coffee ' +
         '--output tmp --compile ' + source_files.join(' ')
@@ -157,10 +168,13 @@ buildTests = (callback) ->
 clean = (callback) ->
   dirs = [
     'doc',
+    'sitedoc/all.json',
+    'sitedoc/html',
+    'sitedoc/yaml',
     'test/js',
     'tmp'
   ]
-  cleanDir = (dirName) ->
+  cleanDir = (dirName, callback) ->
     fs.exists dirName, (exists) ->
       unless exists
         callback() if callback
@@ -359,37 +373,3 @@ tokens = (callback) ->
   tokenStash.get ->
     callback() if callback?
 
-_current_cmd = null
-run = (command, options, callback) ->
-  if !callback and typeof options is 'function'
-    callback = options
-    options = {}
-  else
-    options or= {}
-  if /^win/i.test(process.platform)  # Awful windows hacks.
-    command = command.replace(/\//g, '\\')
-    cmd = spawn 'cmd', ['/C', command]
-  else
-    cmd = spawn '/bin/sh', ['-c', command]
-  _current_cmd = cmd
-  cmd.stdout.on 'data', (data) ->
-    process.stdout.write data unless options.noOutput
-  cmd.stderr.on 'data', (data) ->
-    process.stderr.write data unless options.noOutput
-  cmd.on 'exit', (code) ->
-    _current_cmd = null
-    if code isnt 0 and !options.noExit
-      console.log "Non-zero exit code #{code} running\n    #{command}"
-      process.exit 1
-    callback(code) if callback?
-  null
-
-process.on 'SIGHUP', ->
-  _current_cmd.kill() if _current_cmd isnt null
-
-download = ([url, file], callback) ->
-  if fs.existsSync file
-    callback() if callback?
-    return
-
-  run "curl -o #{file} #{url}", callback

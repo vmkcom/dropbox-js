@@ -10,53 +10,61 @@ class Dropbox.AuthDriver
   # @return {String} one of the OAuth 2.0 authorization grant types implemented
   #   by dropbox.js
   #
-  # @see RFC 6749 for OAuth 2.0 authorization types
+  # @see http://tools.ietf.org/html/rfc6749#section-4.1 RFC 6749 Section 4.1
+  # @see http://tools.ietf.org/html/rfc6749#section-4.2 RFC 6749 Section 4.2
   authType: ->
     "code"
 
   # The redirect URL that should be supplied to the OAuth 2 /authorize call.
   #
-  # The driver must be able to intercept redirects to the returned URL, in
-  # order to know when a user has completed the authorization flow.
+  # The driver must be able to intercept redirects to the returned URL and
+  # extract the OAuth 2.0 authorization code or access token from the URL.
   #
-  # @return {String} an absolute URL
+  # OAuth 2.0 redirect URLs must be configured on the application's page in
+  # the {https://www.dropbox.com/developers/apps Dropbox App console}.
+  #
+  # @return {String} an URL on the application's list of OAuth 2 redirect URLs
   url: ->
     "https://some.url"
 
   # Redirects users to /authorize and waits for them to get redirected back.
   #
-  # This method is called when the OAuth 2 process reaches the PARAM_SET step,
-  # meaning that the user must be shown an /authorize page on the Dropbox
-  # servers, and the application must intercept a redirect from that page. The
-  # redirect URL contains an OAuth 2 authorization code or access token.
+  # This method is called when the OAuth 2 process reaches the
+  # {Dropbox.Client.PARAM_SET} step, meaning that the user must be shown an
+  # /authorize page on the Dropbox servers, and the application must intercept
+  # a redirect from that page. The redirect URL contains an OAuth 2
+  # authorization code or access token.
   #
   # @param {String} authUrl the URL that users should be sent to in order to
   #   authorize the application's token; this points to a Web page on
   #   Dropbox' Web server
   # @param {String} stateParam the nonce sent as the OAuth 2 state parameter;
   #   the Dropbox Web server will echo this nonce in the 'state' query
-  #   parameter when redirecting users to the URL returned by the url() method;
-  #   the driver should silently ignore any request that does not contain the
-  #   correct 'state' parameter value
+  #   parameter when redirecting users to the URL returned by
+  #   {Dropbox.AuthDriver#url}; the driver should silently ignore any request
+  #   that does not contain the correct 'state' parameter value
   # @param {Dropbox.Client} client the client driving the OAuth 2 process
   # @param {function(Object<String, String>)} callback called when users have
   #   completed the authorization flow; the driver should call this when
   #   Dropbox redirects users to the URL returned by the url() method, and the
   #   "state" query parameter matches the value passed in "state"; the callback
   #   should receive the query parameters in the redirect URL
+  #
+  # @see Dropbox.Util.OAuth.
   doAuthorize: (authUrl, stateParam, client, callback) ->
     callback code: 'access-code'
 
-  # If defined, called to obtain the state param used in the OAuth 2 process.
+  # (optional) Called to obtain the state param used in the OAuth 2 process.
   #
-  # If a driver does not define this method, Dropbox.OAuth.randomAuthStateParam
-  # is used to generate a random state param value.
+  # If a driver does not define this method,
+  # {Dropbox.OAuth.randomAuthStateParam} is used to generate a random state
+  # param value.
   #
   # Server-side drivers should provide custom implementations that use a
   # derivative of the CSRF token associated with the user's session cookie.
   # This prevents CSRF attacks that would trick the application's server into
-  # using an attacker's OAuth 2 access token to store the user's data in
-  # Dropbox.
+  # using an attacker's OAuth 2 access token to store anoher user's data in the
+  # attacker's Dropbox.
   #
   # Client-side drivers only need to supply a custom implementation if the
   # state parameter must be persisted across page reloads, e.g. if the
@@ -68,28 +76,29 @@ class Dropbox.AuthDriver
   getStateParam: (client, callback) ->
     callback Dropbox.Util.Oauth.randomAuthStateParam()
 
-  # If defined, called to process the /authorize redirect.
+  # (optional) Called to process the /authorize redirect.
   #
-  # This method is called when the OAuth 2 process reaches the PARAM_LOADED
-  # step, meaning that an OAuth 2 state parameter value was loaded when the
-  # Dropbox.Client object was constructed, or during a
-  # Dropbox.Client.#setCredentials() call. This means that
-  # Dropbox.AuthDriver#doAuthorize was called earlier, saved that state parameter,
-  # and did not complete the OAuth 2 process. This happens when the OAuth 2
-  # process requires page reloads, e.g. if the authorization is done via
-  # redirects.
+  # This method is called when the OAuth 2 process reaches the
+  # {Dropbox.Client.PARAM_LOADED} step, meaning that an OAuth 2 state parameter
+  # value was loaded when the Dropbox.Client object was constructed, or during
+  # a {Dropbox.Client.#setCredentials} call. This means that
+  # {Dropbox.AuthDriver#doAuthorize} was called earlier, saved that state
+  # parameter, and did not complete the OAuth 2 process. This happens when the
+  # OAuth 2 process requires page reloads, e.g. if the authorization is done
+  # via redirects.
   #
   # @param {String} stateParam the nonce sent as the OAuth 2 state parameter;
   #   the Dropbox Web server will echo this nonce in the 'state' query
-  #   parameter when redirecting users to the URL returned by the url() method;
-  #   the driver should silently ignore any request that does not contain the
-  #   correct 'state' parameter value
+  #   parameter when redirecting users to the URL returned by
+  #   {Dropbox.AuthDriver#url}; the driver should silently ignore any request
+  #   that does not contain the correct 'state' parameter value
   # @param {Dropbox.Client} client the client driving the OAuth 2 process
-  # @param {function(Object<String, String>)} callback called when users have
+  # @param {function(Object<String, String>)} callback called when the user has
   #   completed the authorization flow; the driver should call this when
-  #   Dropbox redirects users to the URL returned by the url() method, and the
-  #   "state" query parameter matches the value passed in "state"; the callback
-  #   should receive the query parameters in the redirect URL
+  #   Dropbox redirects the user to the URL returned by
+  #   {Dropbox.AuthDriver#url}, and the "state" query parameter matches the
+  #   value passed in "state"; the callback should receive the query parameters
+  #   in the redirect URL
   resumeAuthorize: (stateParam, client, callback) ->
     callback code: 'access-code'
 

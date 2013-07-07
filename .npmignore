@@ -31,8 +31,10 @@ test/chrome_app
 test/chrome_extension
 test/cordova_app
 
-# Documentation output.
+# Auto-generated documentation.
 doc
+sitedoc/*
+!sitedoc/templates
 
 # Test app logos.
 test/app_icon

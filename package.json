@@ -26,14 +26,17 @@
   "devDependencies": {
     "async": ">= 0.2.9",
     "chai": ">= 1.6.1",
-    "codo": ">= 1.7.0",
+    "codo": "git+https://github.com/pwnall/codo#yaml",
     "coffee-script": ">= 1.6.3",
     "fs-extra": ">= 0.6.1",
     "express": ">= 3.2.6",
     "glob": ">= 3.2.1",
+    "js-yaml": ">= 2.1.0",
     "mocha": "git+https://github.com/pwnall/mocha.git#web-workers-2",
+    "mustache": ">= 0.7.2",
     "sinon": ">= 1.7.3",
     "sinon-chai": ">= 2.4.0",
+    "string": ">= 1.4.0",
     "source-map-support": ">= 0.1.5",
     "uglify-js": ">= 2.3.6",
     "watch": ">= 0.8.0"

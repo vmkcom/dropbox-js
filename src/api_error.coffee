@@ -1,7 +1,7 @@
 # Information about a failed call to the Dropbox API.
 class Dropbox.ApiError
   # @property {Number} the HTTP error code (e.g., 403); compare against the
-  #   constants defined on Dropbox.ApiError
+  #   constants defined on {Dropbox.ApiError}
   status: null
 
   # @property {String} the HTTP method of the failed request (e.g., 'GET')
@@ -27,7 +27,8 @@ class Dropbox.ApiError
 
   # Status value indicating an invalid input parameter.
   #
-  # response.error should indicate which input parameter is invalid and why.
+  # The error property on {Dropbox.ApiError#response} should indicate which
+  # input parameter is invalid and why.
   @INVALID_PARAM: 400
 
   # Status value indicating an expired or invalid OAuth token.
@@ -35,8 +36,9 @@ class Dropbox.ApiError
   # The OAuth token used for the request will never become valid again, so the
   # user should be re-authenticated.
   #
-  # The authStep of a Dropbox.Client will automatically transition from DONE
-  # to ERROR when this error is received.
+  # The {Dropbox.Client#authStep} property of the client used to make the API
+  # call will automatically transition from {Dropbox.Client.DONE} to
+  # {Dropbox.Client.ERROR} when this error is received.
   @INVALID_TOKEN: 401
 
   # Status value indicating a malformed OAuth request.
@@ -56,6 +58,14 @@ class Dropbox.ApiError
   # This indicates a bug in dropbox.js and should never occur under normal
   # circumstances.
   @INVALID_METHOD: 405
+
+  # Status value indicating that the server received a conflicting update.
+  #
+  # This is used by some backend methods to indicate that the client needs to
+  # download server-side changes and perform conflict resolution. Under normal
+  # usage, errors with this code should never surface to the code using
+  # dropbox.js.
+  @CONFLICT: 409
 
   # Status value indicating that the application is making too many requests.
   #
@@ -101,9 +111,15 @@ class Dropbox.ApiError
       @response = null
 
   # Developer-friendly summary of the error.
+  #
+  # @private
+  # @return {String} developer-friendly summary of the error
   toString: ->
     "Dropbox API error #{@status} from #{@method} #{@url} :: #{@responseText}"
 
   # Used by some testing frameworks.
+  #
+  # @private
+  # @return {String} used by some testing frameworks
   inspect: ->
     @toString()
