@@ -33,7 +33,7 @@ This sample uses the following `Dropbox.Client` methods:
 
 * authenticate
 * signOff
-* getUserInfo
+* getAccountInfo
 * mkdir
 * readdir
 * writeFile

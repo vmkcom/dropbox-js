@@ -1,13 +1,14 @@
-# The result of stat-ing a file or directory in a user's Dropbox.
+# Metadata about a file or directory in a user's Dropbox.
 class Dropbox.File.Stat
   # Creates a Stat instance from a raw "metadata" response.
   #
-  # @param {?Object} metadata the result of parsing JSON API responses that are
+  # @param {Object} metadata the result of parsing JSON API responses that are
   #   called "metadata" in the API documentation
-  # @return {?Dropbox.File.Stat} an instance wrapping the given API
-  #   response; parameters that aren't parsed JSON objects are returned without
-  #   any processing
+  # @return {Dropbox.File.Stat} an instance wrapping the given API
+  #   response
   @parse: (metadata) ->
+    # NOTE: if the argument is not an object, it is returned; this makes the
+    #       client code more compact
     if metadata and typeof metadata is 'object'
       new Dropbox.File.Stat metadata
     else
@@ -39,12 +40,12 @@ class Dropbox.File.Stat
   # @property {String} name of an icon in Dropbox's icon library that most
   #   accurately represents this file or folder
   #
-  # See the Dropbox API documentation to obtain the Dropbox icon library.
-  # https://www.dropbox.com/developers/reference/api#metadata
+  # See the {https://www.dropbox.com/developers/reference/api#metadata
+  # Dropbox REST API documentation} to obtain the Dropbox icon library.
   typeIcon: null
 
   # @property {String} an identifier for the contents of the described file or
-  #   directories; this can used to be restored a file's contents to a
+  #   directories; this can used to restore a file's contents to a
   #   previous version, or to save bandwidth by not retrieving the same
   #   folder contents twice
   versionTag: null
@@ -68,24 +69,25 @@ class Dropbox.File.Stat
   # @property {Date} the file or folder's last modification time
   modifiedAt: null
 
-  # @property {?Date} the file or folder's last modification time, as reported
+  # @property {Date} the file or folder's last modification time, as reported
   #   by the Dropbox client that uploaded the file; this time should not be
-  #   trusted, but can be used for UI (display, sorting); null if the server
-  #   does not report any time
+  #   trusted, but can be used for UI (display, sorting); this is null if the
+  #   server does not report any time
   clientModifiedAt: null
 
   # JSON representation of this file / folder's metadata
   #
-  # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.File.Stat#parse to obtain an identical Stat instance
+  # @return {Object} an object that can be serialized using JSON; the object
+  #   can be passed to {Dropbox.File.Stat.parse} to obtain a Stat instance with
+  #   the same information
   json: ->
     @_json
 
   # Creates a Stat instance from a raw "metadata" response.
   #
   # @private
-  # This constructor is used by Dropbox.File.Stat.parse, and should not be called
-  # directly.
+  # This constructor is used by {Dropbox.File.Stat.parse}, and should not be
+  # called directly.
   #
   # @param {Object} metadata the result of parsing JSON API responses that are
   #   called "metadata" in the API documentation

@@ -1,4 +1,4 @@
-describe 'Dropbox.File.PublicUrl', ->
+describe 'Dropbox.File.ShareUrl', ->
   describe '.parse', ->
     describe 'on the /shares API example', ->
       beforeEach ->
@@ -6,7 +6,7 @@ describe 'Dropbox.File.PublicUrl', ->
           "url": "http://db.tt/APqhX1",
           "expires": "Tue, 01 Jan 2030 00:00:00 +0000"
         }
-        @url = Dropbox.File.PublicUrl.parse urlData, false
+        @url = Dropbox.File.ShareUrl.parse urlData, false
 
       it 'parses url correctly', ->
         expect(@url).to.have.property 'url'
@@ -29,15 +29,15 @@ describe 'Dropbox.File.PublicUrl', ->
         expect(@url.isPreview).to.equal true
 
       it 'round-trips through json / parse correctly', ->
-        newUrl = Dropbox.File.PublicUrl.parse @url.json()
+        newUrl = Dropbox.File.ShareUrl.parse @url.json()
         newUrl.json()  # Get _json populated for newUrl.
         expect(newUrl).to.deep.equal @url
 
     it 'passes null through', ->
-      expect(Dropbox.File.PublicUrl.parse(null)).to.equal null
+      expect(Dropbox.File.ShareUrl.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.File.PublicUrl.parse(undefined)).to.equal undefined
+      expect(Dropbox.File.ShareUrl.parse(undefined)).to.equal undefined
 
 
 describe 'Dropbox.File.CopyReference', ->

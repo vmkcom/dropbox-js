@@ -35,12 +35,13 @@ Dropbox.CopyReference = Dropbox.File.CopyReference;
 Dropbox.Drivers = Dropbox.AuthDriver;  // namespace change
 Dropbox.EventSource = Dropbox.Util.EventSource;
 Dropbox.Oauth = Dropbox.Util.Oauth;
-Dropbox.PublicUrl = Dropbox.File.PublicUrl;
+Dropbox.PublicUrl = Dropbox.File.ShareUrl;  // class rename
 Dropbox.PullChange = Dropbox.Http.PullChange;
 Dropbox.PulledChanges = Dropbox.Http.PulledChanges;
 Dropbox.RangeInfo = Dropbox.Http.RangeInfo;
 Dropbox.Stat = Dropbox.File.Stat;
 Dropbox.UploadCursor = Dropbox.Http.UploadCursor;
+Dropbox.UserInfo = Dropbox.AccountInfo;  // class rename
 Dropbox.Xhr = Dropbox.Util.Xhr;
 ```
 

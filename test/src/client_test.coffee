@@ -117,14 +117,14 @@ buildClientTests = (clientKeys) ->
   beforeEach ->
     @client = new Dropbox.Client clientKeys
 
-  describe '#getUserInfo', ->
+  describe '#getAccountInfo', ->
     it 'returns reasonable information', (done) ->
-      @client.getUserInfo (error, userInfo, rawUserInfo) ->
+      @client.getAccountInfo (error, accountInfo, rawAccountInfo) ->
         expect(error).to.equal null
-        expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-        expect(userInfo.uid).to.equal clientKeys.uid
-        expect(rawUserInfo).not.to.be.instanceOf Dropbox.UserInfo
-        expect(rawUserInfo).to.have.property 'uid'
+        expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
+        expect(accountInfo.uid).to.equal clientKeys.uid
+        expect(rawAccountInfo).not.to.be.instanceOf Dropbox.AccountInfo
+        expect(rawAccountInfo).to.have.property 'uid'
         done()
 
     describe 'with httpCache', ->
@@ -134,18 +134,19 @@ buildClientTests = (clientKeys) ->
           @xhr = xhr
 
       it 'uses Authorization headers', (done) ->
-        @client.getUserInfo httpCache: true, (error, userInfo, rawUserInfo) =>
-          if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-            expect(@xhr.url).to.contain 'oauth_nonce'
-          else
-            expect(@xhr.headers).to.have.key 'Authorization'
+        @client.getAccountInfo httpCache: true,
+            (error, accountInfo, rawAccountInfo) =>
+              if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
+                expect(@xhr.url).to.contain 'oauth_nonce'
+              else
+                expect(@xhr.headers).to.have.key 'Authorization'
 
-          expect(error).to.equal null
-          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
-          expect(userInfo.uid).to.equal clientKeys.uid
-          expect(rawUserInfo).not.to.be.instanceOf Dropbox.UserInfo
-          expect(rawUserInfo).to.have.property 'uid'
-          done()
+              expect(error).to.equal null
+              expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
+              expect(accountInfo.uid).to.equal clientKeys.uid
+              expect(rawAccountInfo).not.to.be.instanceOf Dropbox.AccountInfo
+              expect(rawAccountInfo).to.have.property 'uid'
+              done()
 
   describe '#mkdir', ->
     afterEach (done) ->
@@ -1262,7 +1263,7 @@ buildClientTests = (clientKeys) ->
       it 'returns a shortened Dropbox URL', (done) ->
         @client.makeUrl @textFile, (error, urlInfo) ->
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).to.contain '//db.tt/'
           done()
@@ -1270,7 +1271,7 @@ buildClientTests = (clientKeys) ->
       it 'returns a shortened Dropbox URL when given empty options', (done) ->
         @client.makeUrl @textFile, {}, (error, urlInfo) ->
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).to.contain '//db.tt/'
           done()
@@ -1279,7 +1280,7 @@ buildClientTests = (clientKeys) ->
       it 'returns an URL to a preview page', (done) ->
         @client.makeUrl @textFile, { long: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
@@ -1295,7 +1296,7 @@ buildClientTests = (clientKeys) ->
       it 'returns an URL to a preview page', (done) ->
         @client.makeUrl @textFile, { longUrl: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal false
           expect(urlInfo.url).not.to.contain '//db.tt/'
           done()
@@ -1304,7 +1305,7 @@ buildClientTests = (clientKeys) ->
       it 'gets a direct download URL', (done) ->
         @client.makeUrl @textFile, { download: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal true
           expect(urlInfo.url).not.to.contain '//db.tt/'
 
@@ -1318,7 +1319,7 @@ buildClientTests = (clientKeys) ->
       it 'gets a direct long-lived download URL', (done) ->
         @client.makeUrl @textFile, { downloadHack: true }, (error, urlInfo) =>
           expect(error).to.equal null
-          expect(urlInfo).to.be.instanceOf Dropbox.File.PublicUrl
+          expect(urlInfo).to.be.instanceOf Dropbox.File.ShareUrl
           expect(urlInfo.isDirect).to.equal true
           expect(urlInfo.url).not.to.contain '//db.tt/'
           expect(urlInfo.expiresAt - Date.now()).to.be.above 86400000
@@ -1553,9 +1554,9 @@ describe 'Dropbox.Client', ->
                 Dropbox.Client.PARAM_SET, Dropbox.Client.DONE])
 
           # Verify that we can do API calls.
-          client.getUserInfo (error, userInfo) ->
+          client.getAccountInfo (error, accountInfo) ->
             expect(error).to.equal null
-            expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+            expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
             invalidCredentials = client.credentials()
             authStepChanges = ['signOut']
             client.signOut (error) ->
@@ -1579,7 +1580,7 @@ describe 'Dropbox.Client', ->
                 expect(authStepChanges).to.deep.equal(['invalidClient',
                     Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR])
                 authStepChanges.push 'onError'
-              invalidClient.getUserInfo (error, userInfo) ->
+              invalidClient.getAccountInfo (error, accountInfo) ->
                 # TODO(pwnall): uncomment the lines below when we get OAuth 2
                 #               token invalidation on the API server
                 #expect(error).to.be.ok
@@ -1608,9 +1609,9 @@ describe 'Dropbox.Client', ->
                         Dropbox.Client.PARAM_SET, Dropbox.Client.DONE])
 
                   # Verify that we can do API calls after the 2nd signin.
-                  client.getUserInfo (error, userInfo) ->
+                  client.getAccountInfo (error, accountInfo) ->
                     expect(error).to.equal null
-                    expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+                    expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
                     done()
 
     describe '#appHash', ->

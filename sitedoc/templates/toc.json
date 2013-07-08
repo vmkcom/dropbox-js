@@ -5,7 +5,7 @@
       "entries": [
         { "text": "Client", "class": "Dropbox.Client" },
         { "text": "AuthDriver", "class": "Dropbox.AuthDriver" },
-        { "text": "UserInfo", "class": "Dropbox.UserInfo" },
+        { "text": "AccountInfo", "class": "Dropbox.AccountInfo" },
         { "text": "ApiError", "class": "Dropbox.ApiError" },
         { "text": "AuthError", "class": "Dropbox.AuthError" }
       ]
@@ -15,7 +15,7 @@
       "entries": [
         { "text": "Stat", "class": "Dropbox.File.Stat" },
         { "text": "CopyReference", "class": "Dropbox.File.CopyReference" },
-        { "text": "PublicUrl", "class": "Dropbox.File.PublicUrl" }
+        { "text": "ShareUrl", "class": "Dropbox.File.ShareUrl" }
       ]
     }
   ]

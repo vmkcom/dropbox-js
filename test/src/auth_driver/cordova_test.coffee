@@ -67,9 +67,9 @@ describe 'Dropbox.AuthDriver.Cordova', ->
         expect(error).to.equal null
         expect(client.authStep).to.equal Dropbox.Client.DONE
         # Verify that we can do API calls.
-        client.getUserInfo (error, userInfo) ->
+        client.getAccountInfo (error, accountInfo) ->
           expect(error).to.equal null
-          expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+          expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
 
           # Follow-up authenticate() should restart the process.
           client.reset()
@@ -94,9 +94,9 @@ describe 'Dropbox.AuthDriver.Cordova', ->
           expect(error).to.equal null
           expect(client.authStep).to.equal Dropbox.Client.DONE
           # Verify that we can do API calls.
-          client.getUserInfo (error, userInfo) ->
+          client.getAccountInfo (error, accountInfo) ->
             expect(error).to.equal null
-            expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+            expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
 
             # Follow-up authenticate() should use stored credentials.
             client.reset()
@@ -105,9 +105,9 @@ describe 'Dropbox.AuthDriver.Cordova', ->
               expect(client.authStep).to.equal Dropbox.Client.DONE
               expect(client.isAuthenticated()).to.equal true
               # Verify that we can do API calls.
-              client.getUserInfo (error, userInfo) ->
+              client.getAccountInfo (error, accountInfo) ->
                 expect(error).to.equal null
-                expect(userInfo).to.be.instanceOf Dropbox.UserInfo
+                expect(accountInfo).to.be.instanceOf Dropbox.AccountInfo
                 done()
 
     it 'should be the default driver on Cordova', ->

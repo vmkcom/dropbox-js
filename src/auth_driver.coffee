@@ -50,15 +50,15 @@ class Dropbox.AuthDriver
   #   "state" query parameter matches the value passed in "state"; the callback
   #   should receive the query parameters in the redirect URL
   #
-  # @see Dropbox.Util.OAuth.queryParamsFromUrl
+  # @see Dropbox.Util.Oauth.queryParamsFromUrl
   doAuthorize: (authUrl, stateParam, client, callback) ->
     callback code: 'access-code'
 
   # (optional) Called to obtain the state param used in the OAuth 2 process.
   #
   # If a driver does not define this method,
-  # {Dropbox.OAuth.randomAuthStateParam} is used to generate a random state
-  # param value.
+  # {Dropbox.Util.Oauth.randomAuthStateParam} is used to generate a random
+  # state param value.
   #
   # Server-side drivers should provide custom implementations that use a
   # derivative of the CSRF token associated with the user's session cookie.
@@ -81,7 +81,7 @@ class Dropbox.AuthDriver
   # This method is called when the OAuth 2 process reaches the
   # {Dropbox.Client.PARAM_LOADED} step, meaning that an OAuth 2 state parameter
   # value was loaded when the Dropbox.Client object was constructed, or during
-  # a {Dropbox.Client.#setCredentials} call. This means that
+  # a {Dropbox.Client#setCredentials} call. This means that
   # {Dropbox.AuthDriver#doAuthorize} was called earlier, saved that state
   # parameter, and did not complete the OAuth 2 process. This happens when the
   # OAuth 2 process requires page reloads, e.g. if the authorization is done

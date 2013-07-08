@@ -1,16 +1,21 @@
-# Wraps an URL to a Dropbox file or folder that can be publicly shared.
-class Dropbox.File.PublicUrl
-  # Creates a PublicUrl instance from a raw API response.
+# Wraps an URL to a Dropbox file or folder that can be shared with other users.
+#
+# ShareUrl instances are created by calling {Dropbox.Client#makeUrl}. They can
+# be safely shared with other users, as they do not contain the user's access
+# token.
+class Dropbox.File.ShareUrl
+  # Creates a ShareUrl instance from a raw API response.
   #
-  # @param {?Object, ?String} urlData the parsed JSON describing a public URL
-  # @param {?Boolean} isDirect true if this is a direct download link, false if
-  #   is a file / folder preview link
-  # @return {?Dropbox.File.PublicUrl} a PublicUrl instance wrapping the given
-  #   public link info; parameters that don't look like parsed JSON are
-  #   returned as they are
+  # @param {Object, String} urlData the parsed JSON describing a shared URL
+  # @param {Boolean} isDirect true if this is a direct download link, false if
+  #   it's a file / folder preview link
+  # @return {Dropbox.File.ShareUrl} a ShareUrl instance wrapping the given
+  #   shared URL information
   @parse: (urlData, isDirect) ->
+    # NOTE: if the argument is not an object, it is returned; this makes the
+    #       client code more compact
     if urlData and typeof urlData is 'object'
-      new Dropbox.File.PublicUrl urlData, isDirect
+      new Dropbox.File.ShareUrl urlData, isDirect
     else
       urlData
 
@@ -31,20 +36,21 @@ class Dropbox.File.PublicUrl
 
   # JSON representation of this file / folder's metadata
   #
-  # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.File.PublicUrl#parse to obtain an identical PublicUrl instance
+  # @return {Object} an object that can be serialized using JSON; the object
+  #   can be passed to {Dropbox.File.CopyReference.parse} to obtain a ShareUrl
+  #   instance with the same information
   json: ->
     # HACK: this can break if the Dropbox API ever decides to use 'direct' in
     #       its link info
     @_json ||= url: @url, expires: @expiresAt.toUTCString(), direct: @isDirect
 
-  # Creates a PublicUrl instance from a raw API response.
+  # Creates a ShareUrl instance from a raw API response.
   #
   # @private
-  # This constructor is used by Dropbox.File.PublicUrl.parse, and should not be
-  # called directly.
+  # This constructor is used by {Dropbox.File.ShareUrl.parse}, and should not
+  # be called directly.
   #
-  # @param {?Object} urlData the parsed JSON describing a public URL
+  # @param {Object} urlData the parsed JSON describing a shared URL
   # @param {Boolean} isDirect true if this is a direct download link, false if
   #   is a file / folder preview link
   constructor: (urlData, isDirect) ->
@@ -74,9 +80,13 @@ class Dropbox.File.PublicUrl
 class Dropbox.File.CopyReference
   # Creates a CopyReference instance from a raw reference or API response.
   #
-  # @param {?Object, ?String} refData the parsed JSON describing a copy
+  # @param {Object, String} refData the parsed JSON describing a copy
   #   reference, or the reference string
+  # @return {Dropbox.File.CopyReference} a CopyReference instance wrapping the
+  #   given reference
   @parse: (refData) ->
+    # NOTE: if the argument is not an object or a string, it is returned; this
+    #       makes the client code more compact
     if refData and (typeof refData is 'object' or typeof refData is 'string')
       new Dropbox.File.CopyReference refData
     else
@@ -90,9 +100,9 @@ class Dropbox.File.CopyReference
 
   # JSON representation of this file / folder's metadata
   #
-  # @return {Object} conforms to the JSON restrictions; can be passed to
-  #   Dropbox.File.CopyReference#parse to obtain an identical CopyReference
-  #   instance
+  # @return {Object} an object that can be serialized using JSON; the object
+  #   can be passed to {Dropbox.File.CopyReference.parse} to obtain a
+  #   CopyReference instance with the same information
   json: ->
     # NOTE: the assignment only occurs if the CopyReference was built around a
     #       string; CopyReferences parsed from API responses hold onto the
@@ -102,7 +112,7 @@ class Dropbox.File.CopyReference
   # Creates a CopyReference instance from a raw reference or API response.
   #
   # @private
-  # This constructor is used by Dropbox.File.CopyReference.parse, and should
+  # This constructor is used by {Dropbox.File.CopyReference.parse}, and should
   # not be called directly.
   #
   # @param {Object, String} refData the parsed JSON describing a copy

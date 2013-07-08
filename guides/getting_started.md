@@ -234,12 +234,12 @@ your application, or if you want to extend dropbox.js.
 ### User Info
 
 ```javascript
-client.getUserInfo(function(error, userInfo) {
+client.getAccountInfo(function(error, accountInfo) {
   if (error) {
     return showError(error);  // Something went wrong.
   }
 
-  alert("Hello, " + userInfo.name + "!");
+  alert("Hello, " + accountInfo.name + "!");
 });
 ```
 

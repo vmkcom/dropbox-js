@@ -52,7 +52,7 @@ class Dropbox.AuthDriver.BrowserBase
 
           # Verify that the old access token still works.
           client.setCredentials credentials
-          client.getUserInfo (error) =>
+          client.getAccountInfo (error) =>
             if error and error.status is Dropbox.ApiError.INVALID_TOKEN
               client.reset()
               @forgetCredentials callback
@@ -165,8 +165,9 @@ class Dropbox.AuthDriver.BrowserBase
       window.history.replaceState {}, document.title,
                                   pageUrl.substring(0, hashIndex)
     else
-      window.location.hash = ''  
+      window.location.hash = ''
     return
+
 
 # OAuth driver that uses a redirect and localStorage to complete the flow.
 class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
@@ -178,15 +179,37 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
   # @option options {String} scope embedded in the localStorage key that holds
   #   the authentication data; useful for having multiple OAuth tokens in a
   #   single application
+  # @option options {String} redirectUrl URL to the page that receives the
+  #   /authorize redirect
+  # @option options {String} redirectFile the URL to the receiver page will be
+  #   computed by replacing the file name (everything after the last /) of
+  #   the current location with this parameter's value
   constructor: (options) ->
     super options
     @receiverUrl = @baseUrl options
 
   # The URL of the page that will receive the callback.
   #
+  # @private
+  # This should only be called by the constructor.
+  #
+  # @param {Object} options the options passed to the constructor
+  # @option options {String} redirectUrl URL to the page that receives the
+  #   /authorize redirect
+  # @option options {String} redirectFile the URL to the receiver page will be
+  #   computed by replacing the file name (everything after the last /) of
+  #   the current location with this parameter's value
   # @return {String} the current URL, minus any fragment it might have
-  baseUrl: ->
+  baseUrl: (options) ->
     url = Dropbox.AuthDriver.BrowserBase.currentLocation()
+    if options
+      if options.redirectUrl
+        return options.redirectUrl
+      if options and options.redirectFile
+        fragments = Dropbox.AuthDriver.BrowserBase.currentLocation().split '/'
+        fragments[fragments.length - 1] = options.redirectFile
+        return fragments.join '/'
+
     hashIndex = url.indexOf '#'
     url = url.substring 0, hashIndex if hashIndex isnt -1
     url
@@ -210,6 +233,7 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
       @forgetCredentials ->
         callback error: 'Authorization error'
 
+
 # OAuth driver that uses a popup window and postMessage to complete the flow.
 class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
   # Sets up a popup-based OAuth driver.
@@ -231,6 +255,9 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
     @receiverUrl = @baseUrl options
 
   # URL of the redirect receiver page, which posts a message back to this page.
+  #
+  # @return {String} receiver page URL
+  # @see Dropbox.AuthDriver#url
   url: ->
     @receiverUrl
 
@@ -240,6 +267,9 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
     @openWindow authUrl
 
   # The URL of the page that will receive the OAuth callback.
+  #
+  # @private
+  # This should only be called by the constructor.
   #
   # @param {Object} options the options passed to the constructor
   # @option options {String} receiverUrl URL to the page that receives the
@@ -268,6 +298,9 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
 
   # Spec string for window.open to create a nice popup.
   #
+  # @private
+  # This should only be called by {Dropbox.AuthDriver.Popup#openWindow}.
+  #
   # @param {Number} popupWidth the desired width of the popup window
   # @param {Number} popupHeight the desired height of the popup window
   # @return {String} spec string for the popup window
@@ -290,6 +323,9 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
       'dialog=yes,dependent=yes,scrollbars=yes,location=yes'
 
   # Listens for a postMessage from a previously opened popup window.
+  #
+  # @private
+  # This should only be called by {Dropbox.AuthDriver.Popup#doAuthorize}.
   #
   # @param {String} stateParam the state parameter passed to the OAuth 2
   #   /authorize endpoint
@@ -350,4 +386,8 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
       window.close()
 
   # Works around postMessage failures on Internet Explorer.
+  #
+  # @private
+  # This should only be used by {Dropbox.AuthDriver.Popup#doAuthorize} and
+  # {Dropbox.AuthDriver.Popup.oauthReceiver}.
   @onMessage = new Dropbox.Util.EventSource

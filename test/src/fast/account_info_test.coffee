@@ -1,4 +1,4 @@
-describe 'Dropbox.UserInfo', ->
+describe 'Dropbox.AccountInfo', ->
   describe '.parse', ->
     describe 'on the API example', ->
       beforeEach ->
@@ -14,57 +14,57 @@ describe 'Dropbox.UserInfo', ->
           },
           "email": "johnpuser@company.com"  # Added to reflect real responses.
         }
-        @userInfo = Dropbox.UserInfo.parse userData
+        @accountInfo = Dropbox.AccountInfo.parse userData
 
       it 'parses name correctly', ->
-        expect(@userInfo).to.have.property 'name'
-        expect(@userInfo.name).to.equal 'John P. User'
+        expect(@accountInfo).to.have.property 'name'
+        expect(@accountInfo.name).to.equal 'John P. User'
 
       it 'parses email correctly', ->
-        expect(@userInfo).to.have.property 'email'
-        expect(@userInfo.email).to.equal 'johnpuser@company.com'
+        expect(@accountInfo).to.have.property 'email'
+        expect(@accountInfo.email).to.equal 'johnpuser@company.com'
 
       it 'parses countryCode correctly', ->
-        expect(@userInfo).to.have.property 'countryCode'
-        expect(@userInfo.countryCode).to.equal 'US'
+        expect(@accountInfo).to.have.property 'countryCode'
+        expect(@accountInfo.countryCode).to.equal 'US'
 
       it 'parses uid correctly', ->
-        expect(@userInfo).to.have.property 'uid'
-        expect(@userInfo.uid).to.equal '12345678'
+        expect(@accountInfo).to.have.property 'uid'
+        expect(@accountInfo.uid).to.equal '12345678'
 
       it 'parses referralUrl correctly', ->
-        expect(@userInfo).to.have.property 'referralUrl'
-        expect(@userInfo.referralUrl).to.
+        expect(@accountInfo).to.have.property 'referralUrl'
+        expect(@accountInfo.referralUrl).to.
             equal 'https://www.dropbox.com/referrals/r1a2n3d4m5s6t7'
 
       it 'parses quota correctly', ->
-        expect(@userInfo).to.have.property 'quota'
-        expect(@userInfo.quota).to.equal 107374182400000
+        expect(@accountInfo).to.have.property 'quota'
+        expect(@accountInfo.quota).to.equal 107374182400000
 
       it 'parses usedQuota correctly', ->
-        expect(@userInfo).to.have.property 'usedQuota'
-        expect(@userInfo.usedQuota).to.equal 933770288436
+        expect(@accountInfo).to.have.property 'usedQuota'
+        expect(@accountInfo.usedQuota).to.equal 933770288436
 
       it 'parses privateBytes correctly', ->
-        expect(@userInfo).to.have.property 'privateBytes'
-        expect(@userInfo.privateBytes).to.equal 680031877871
+        expect(@accountInfo).to.have.property 'privateBytes'
+        expect(@accountInfo.privateBytes).to.equal 680031877871
 
       it 'parses sharedBytes correctly', ->
-        expect(@userInfo).to.have.property 'usedQuota'
-        expect(@userInfo.sharedBytes).to.equal 253738410565
+        expect(@accountInfo).to.have.property 'usedQuota'
+        expect(@accountInfo.sharedBytes).to.equal 253738410565
 
       it 'parses publicAppUrl correctly', ->
-        expect(@userInfo.publicAppUrl).to.equal null
+        expect(@accountInfo.publicAppUrl).to.equal null
 
       it 'round-trips through json / parse correctly', ->
-        newInfo = Dropbox.UserInfo.parse @userInfo.json()
-        expect(newInfo).to.deep.equal @userInfo
+        newInfo = Dropbox.AccountInfo.parse @accountInfo.json()
+        expect(newInfo).to.deep.equal @accountInfo
 
     it 'passes null through', ->
-      expect(Dropbox.UserInfo.parse(null)).to.equal null
+      expect(Dropbox.AccountInfo.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.UserInfo.parse(undefined)).to.equal undefined
+      expect(Dropbox.AccountInfo.parse(undefined)).to.equal undefined
 
 
     describe 'on real data from a "public app folder" application', ->
@@ -82,14 +82,14 @@ describe 'Dropbox.UserInfo', ->
           },
           "email": "spam@gmail.com"  # Anonymized.
         }
-        @userInfo = Dropbox.UserInfo.parse userData
+        @accountInfo = Dropbox.AccountInfo.parse userData
 
       it 'parses publicAppUrl correctly', ->
-        expect(@userInfo.publicAppUrl).to.
+        expect(@accountInfo.publicAppUrl).to.
           equal 'https://dl-web.dropbox.com/spa/90vw6zlu4268jh4'
 
       it 'round-trips through json / parse correctly', ->
-        newInfo = Dropbox.UserInfo.parse @userInfo.json()
-        expect(newInfo).to.deep.equal @userInfo
+        newInfo = Dropbox.AccountInfo.parse @accountInfo.json()
+        expect(newInfo).to.deep.equal @accountInfo
 
 

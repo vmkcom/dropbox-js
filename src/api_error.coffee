@@ -12,11 +12,11 @@ class Dropbox.ApiError
   # @property {String} the URL of the failed request
   url: null
 
-  # @property {?String} the body of the HTTP error response; can be null if
+  # @property {String} the body of the HTTP error response; can be null if
   #   the error was caused by a network failure or by a security issue
   responseText: null
 
-  # @property {?Object} the result of parsing the JSON in the HTTP error
+  # @property {Object} the result of parsing the JSON in the HTTP error
   #   response; can be null if the API server didn't return JSON, or if the
   #   HTTP response body is unavailable
   response: null

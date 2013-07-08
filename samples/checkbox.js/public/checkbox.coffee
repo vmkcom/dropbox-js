@@ -13,7 +13,7 @@ class Checkbox
 
     @dbClient.authenticate (error, data) =>
       return @showError(error) if error
-      @dbClient.getUserInfo (error, userInfo) =>
+      @dbClient.getAccountInfo (error, userInfo) =>
         return @showError(error) if error
         $('#user-name', @$root).text userInfo.name
       @tasks = new Tasks @, @dbClient
