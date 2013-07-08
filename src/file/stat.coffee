@@ -3,9 +3,8 @@ class Dropbox.File.Stat
   # Creates a Stat instance from a raw "metadata" response.
   #
   # @param {Object} metadata the result of parsing JSON API responses that are
-  #   called "metadata" in the API documentation
-  # @return {Dropbox.File.Stat} an instance wrapping the given API
-  #   response
+  #   called "metadata" in the REST API documentation
+  # @return {Dropbox.File.Stat} an instance wrapping the given API response
   @parse: (metadata) ->
     # NOTE: if the argument is not an object, it is returned; this makes the
     #       client code more compact

@@ -1,7 +1,13 @@
 # Parsed HTTP Content-Range header.
 class Dropbox.Http.RangeInfo
   # Creates a RangeInfo instance from the value of a Content-Range HTTP header.
+  #
+  # @param {String} headerValue a Content-Range HTTP header
+  # @return {Dropbox.Http.RangeInfo} a RangeInfo instance representing the
+  #   Content-Range information
   @parse: (headerValue) ->
+    # NOTE: if the argument is not a string, it is returned; this makes the
+    #       client code more compact
     if typeof headerValue is 'string'
       new Dropbox.Http.RangeInfo headerValue
     else

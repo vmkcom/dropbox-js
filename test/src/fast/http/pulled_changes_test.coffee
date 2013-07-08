@@ -51,9 +51,9 @@ describe 'Dropbox.Http.PulledChanges', ->
       it 'parses changes correctly', ->
         expect(@changes).to.have.property 'changes'
         expect(@changes.changes).to.have.length 2
-        expect(@changes.changes[0]).to.be.instanceOf Dropbox.Http.PullChange
+        expect(@changes.changes[0]).to.be.instanceOf Dropbox.Http.PulledChange
         expect(@changes.changes[0].path).to.equal '/Getting_Started.pdf'
-        expect(@changes.changes[1]).to.be.instanceOf Dropbox.Http.PullChange
+        expect(@changes.changes[1]).to.be.instanceOf Dropbox.Http.PulledChange
         expect(@changes.changes[1].path).to.equal '/Public'
 
     it 'passes null through', ->
@@ -63,7 +63,7 @@ describe 'Dropbox.Http.PulledChanges', ->
       expect(Dropbox.Http.PulledChanges.parse(undefined)).to.equal undefined
 
 
-describe 'Dropbox.Http.PullChange', ->
+describe 'Dropbox.Http.PulledChange', ->
   describe '.parse', ->
     describe 'on a modification change', ->
       beforeEach ->
@@ -84,7 +84,7 @@ describe 'Dropbox.Http.PullChange', ->
             "revision": 220823
           }
         ]
-        @changes = Dropbox.Http.PullChange.parse entry
+        @changes = Dropbox.Http.PulledChange.parse entry
 
       it 'parses path correctly', ->
         expect(@changes).to.have.property 'path'
@@ -105,7 +105,7 @@ describe 'Dropbox.Http.PullChange', ->
           "/Public",
           null
         ]
-        @changes = Dropbox.Http.PullChange.parse entry
+        @changes = Dropbox.Http.PulledChange.parse entry
 
       it 'parses path correctly', ->
         expect(@changes).to.have.property 'path'
@@ -120,9 +120,9 @@ describe 'Dropbox.Http.PullChange', ->
         expect(@changes.stat).to.equal null
 
     it 'passes null through', ->
-      expect(Dropbox.Http.PullChange.parse(null)).to.equal null
+      expect(Dropbox.Http.PulledChange.parse(null)).to.equal null
 
     it 'passes undefined through', ->
-      expect(Dropbox.Http.PullChange.parse(undefined)).to.equal undefined
+      expect(Dropbox.Http.PulledChange.parse(undefined)).to.equal undefined
 
 

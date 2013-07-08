@@ -1375,7 +1375,7 @@ buildClientTests = (clientKeys) ->
               expect(changes.blankSlate).to.equal false
               expect(changes.changes).to.have.length.greaterThan 0
               change = changes.changes[changes.changes.length - 1]
-              expect(change).to.be.instanceOf Dropbox.Http.PullChange
+              expect(change).to.be.instanceOf Dropbox.Http.PulledChange
               expect(change.path).to.equal @newFile
               expect(change.wasRemoved).to.equal false
               expect(change.stat.path).to.equal @newFile

@@ -2,8 +2,9 @@
 class Dropbox.Util.EventSource
   # Sets up an event source (publisher).
   #
-  # @param {?Object} options one or more of the options below
-  # @option options {Boolean} cancelable if true,
+  # @param {Object} options one or more of the options below
+  # @option options {Boolean} cancelable if true, events dispatched from this
+  #   source can be canceled from a listener, by returning false
   constructor: (options) ->
     @_cancelable = options and options.cancelable
     @_listeners = []
@@ -51,7 +52,6 @@ class Dropbox.Util.EventSource
           @_listeners.splice i, 1
           break
     @
-
 
   # Informs the listeners (subscribers) that an event occurred.
   #

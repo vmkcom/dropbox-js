@@ -2,13 +2,14 @@
 #
 # @see Dropbox.Client#pullChanges
 class Dropbox.Http.PulledChanges
-  # Creates a Dropbox.Http.PulledChanges from a /delta API call result.
+  # Creates a PulledChanges instance from a /delta API call result.
   #
-  # @param {?Object} deltaInfo the parsed JSON of a /delta API call result
-  # @return {?Dropbox.Http.PulledChanges} a Dropbox.Http.PulledChanges instance
-  #   wrapping the given information; if the parameter does not look like
-  #   parsed JSON, it is returned as is
+  # @param {Object} deltaInfo the parsed JSON of a /delta API call result
+  # @return {Dropbox.Http.PulledChanges} a PulledChanges instance wrapping the
+  #   given Dropbox changes
   @parse: (deltaInfo) ->
+    # NOTE: if the argument is not an object, it is returned; this makes the
+    #       client code more compact
     if deltaInfo and typeof deltaInfo is 'object'
       new Dropbox.Http.PulledChanges deltaInfo
     else
@@ -25,8 +26,8 @@ class Dropbox.Http.PulledChanges
   #   call
   cursorTag: undefined
 
-  # @property {Array<Dropbox.Http.PullChange> an array with one entry for each
-  #   change to the user's Dropbox returned by a pullChanges call.
+  # @property {Array<Dropbox.Http.PulledChange> an array with one entry for
+  #   each change to the user's Dropbox returned by a pullChanges call
   changes: undefined
 
   # @property {Boolean} if true, the pullChanges call returned a subset of the
@@ -48,8 +49,8 @@ class Dropbox.Http.PulledChanges
   # Creates a Dropbox.Http.PulledChanges from a /delta API call result.
   #
   # @private
-  # This constructor is used by Dropbox.Http.PulledChanges, and should not be
-  # called directly.
+  # This constructor is used by {Dropbox.Http.PulledChanges.parse}, and should
+  # not be called directly.
   #
   # @param {Object} deltaInfo the parsed JSON of a /delta API call result
   constructor: (deltaInfo) ->
@@ -59,45 +60,47 @@ class Dropbox.Http.PulledChanges
     @shouldBackOff = not @shouldPullAgain
     if deltaInfo.cursor and deltaInfo.cursor.length
       @changes = for entry in deltaInfo.entries
-        Dropbox.Http.PullChange.parse entry
+        Dropbox.Http.PulledChange.parse entry
     else
       @changes = []
 
 # Wraps a single change in a pullChanges result.
 #
 # @see Dropbox.Client#pullChanges
-class Dropbox.Http.PullChange
-  # Creates a Dropbox.Http.PullChange instance wrapping an entry in a /delta result.
+class Dropbox.Http.PulledChange
+  # Creates a PulledChange instance wrapping an entry in a /delta result.
   #
-  # @param {?Object} entry the parsed JSON of a single entry in a /delta API
+  # @param {Object} entry the parsed JSON of a single entry in a /delta API
   #   call result
-  # @return {?Dropbox.Http.PullChange} a Dropbox.Http.PullChange instance wrapping the
-  #   given entry of a /delta API call; if the parameter does not look like
-  #   parsed JSON, it is returned as is
+  # @return {Dropbox.Http.PulledChange} a PulledChange instance wrapping the
+  #   given entry of a /delta API call response
   @parse: (entry) ->
+    # NOTE: if the argument is not an object, it is returned; this makes the
+    #       client code more compact
     if entry and typeof entry is 'object'
-      new Dropbox.Http.PullChange entry
+      new Dropbox.Http.PulledChange entry
     else
       entry
 
   # @property {String} the path of the changed file or folder
   path: undefined
 
-  # @property {Boolean} if true, this change is a deletion of the file or folder
-  #   at the change's path; if a folder is deleted, all its contents (files
-  #   and sub-folders) were also be deleted; pullChanges might not return
-  #   separate changes expressing for the files or sub-folders
+  # @property {Boolean} if true, this change is a deletion of the file or
+  #   folder at the change's path; if a folder is deleted, all its contents
+  #   (files and sub-folders) were also be deleted; pullChanges might not
+  #   return separate changes expressing for the files or sub-folders
   wasRemoved: undefined
 
-  # @property {?Dropbox.File.Stat} a Stat instance containing updated information for
-  #   the file or folder; this is null if the change is a deletion
+  # @property {Dropbox.File.Stat} a Stat instance containing updated
+  #   information for the file or folder; this is null if the change is a
+  #   deletion
   stat: undefined
 
-  # Creates a Dropbox.Http.PullChange instance wrapping an entry in a /delta result.
+  # Creates a PulledChange instance wrapping an entry in a /delta result.
   #
   # @private
-  # This constructor is used by Dropbox.Http.PullChange.parse, and should not be
-  # called directly.
+  # This constructor is used by {Dropbox.Http.PulledChange.parse}, and should
+  # not be called directly.
   #
   # @param {Object} entry the parsed JSON of a single entry in a /delta API
   #   call result
