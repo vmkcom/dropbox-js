@@ -6,7 +6,7 @@ class Dropbox.UserInfo
   #   describes a user
   # @return {Dropbox.UserInfo} a UserInfo instance wrapping the given API
   #   response; parameters that aren't parsed JSON objects are returned as
-  #   the are
+  #   they are
   @parse: (userInfo) ->
     if userInfo and typeof userInfo is 'object'
       new Dropbox.UserInfo userInfo

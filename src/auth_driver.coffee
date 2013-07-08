@@ -36,8 +36,8 @@ class Dropbox.AuthDriver
   # authorization code or access token.
   #
   # @param {String} authUrl the URL that users should be sent to in order to
-  #   authorize the application's token; this points to a Web page on
-  #   Dropbox' Web server
+  #   authorize the application's token; this points to a webpage on
+  #   Dropbox's server
   # @param {String} stateParam the nonce sent as the OAuth 2 state parameter;
   #   the Dropbox Web server will echo this nonce in the 'state' query
   #   parameter when redirecting users to the URL returned by
@@ -50,7 +50,7 @@ class Dropbox.AuthDriver
   #   "state" query parameter matches the value passed in "state"; the callback
   #   should receive the query parameters in the redirect URL
   #
-  # @see Dropbox.Util.OAuth.
+  # @see Dropbox.Util.OAuth.queryParamsFromUrl
   doAuthorize: (authUrl, stateParam, client, callback) ->
     callback code: 'access-code'
 

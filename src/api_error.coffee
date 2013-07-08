@@ -1,7 +1,9 @@
 # Information about a failed call to the Dropbox API.
 class Dropbox.ApiError
-  # @property {Number} the HTTP error code (e.g., 403); compare against the
-  #   constants defined on {Dropbox.ApiError}
+  # @property {Number} the HTTP error code (e.g., 403)
+  #
+  # This number should be compared against the constants defined on
+  # {Dropbox.ApiError}.
   status: null
 
   # @property {String} the HTTP method of the failed request (e.g., 'GET')

@@ -6,21 +6,35 @@ yaml = require 'js-yaml'
 
 
 # Converts codo YAML docs to the Dropbox site JSON format.
-jsonDoc = (yamlDir) ->
+jsonDoc = (yamlDir, toc) ->
   classIndexPath = path.join yamlDir, 'class_index.yaml'
   index = yaml.load fs.readFileSync(classIndexPath, 'utf8')
   classes = index.classes
+
+  classIndex = {}
   for klass in classes
     classPath = path.join yamlDir, klass.href
     klass.data = yaml.load fs.readFileSync(classPath, 'utf8')
+    classIndex[klass.namespace + '.' + klass.name] = klass
 
-  nameIndex = makeNameIndex classes
+  tocIndex = 0
+  for section in toc.sections
+    for entry in section.entries
+      unless classIndex[entry.class]
+        throw new Error "TOC entry not found: #{entry.class}"
+      tocIndex += 1
+      classIndex[entry.class].tocIndex = tocIndex
 
+  inf = classes.length + 1
   classes.sort (a, b) ->
-    if a.namespace is b.namespace
+    if a.tocIndex or b.tocIndex
+      (a.tocIndex or inf) - (b.tocIndex or inf)
+    else if a.namespace is b.namespace
       a.name.localeCompare b.name
     else
       a.namespace.localeCompare b.namespace
+
+  nameIndex = makeNameIndex classes
 
   json = { classes: [] }
   for klass in classes
@@ -28,7 +42,6 @@ jsonDoc = (yamlDir) ->
     jsonIMethods = []
     jsonClass =
       name: klass.namespace + '.' + klass.name
-      short_name: ((klass.namespace + '.').replace(/^Dropbox\./, '') + klass.name)
       desc: xref(klass.data.doc.comment, nameIndex)
       sections: []
     json.classes.push jsonClass
@@ -58,6 +71,7 @@ jsonDoc = (yamlDir) ->
           params: []
           option_hashes: []
           throws: []
+          see: []
         jsonMethods.push jsonMethod
 
         if method.params and method.params.length isnt 0
@@ -73,7 +87,7 @@ jsonDoc = (yamlDir) ->
           for optionHash in method.options
             jsonOptions = []
             jsonHash =
-              param_name: optionHash.hash
+              param_name: S(optionHash.hash).capitalize() + ' parameter'
               options: jsonOptions
             jsonMethod.option_hashes.push jsonHash
             for option in optionHash.options
@@ -94,6 +108,14 @@ jsonDoc = (yamlDir) ->
               desc: xref(thrown.desc, nameIndex)
             jsonMethod.throws.push jsonThrown
 
+        if method.see and method.see.length isnt 0
+          jsonMethod.has_see = true
+          for see in method.see
+            jsonSee =
+              formattedType: seeAlsoReference(see, nameIndex)
+              desc: ''
+            jsonMethod.see.push jsonSee
+
     if klass.data.properties and klass.data.properties.length isnt 0
       jsonProperties = []
       jsonClass.sections.push(
@@ -105,7 +127,16 @@ jsonDoc = (yamlDir) ->
           method_type: 'property'
           discussion: xref(property.comment, nameIndex)
           formattedComponents: propertySignature(property, nameIndex)
+          see: []
         jsonProperties.push jsonProperty
+
+        if property.see and property.see.length isnt 0
+          jsonProperty.has_see = true
+          for see in property.see
+            jsonSee =
+              formattedType: seeAlsoReference(see, nameIndex)
+              desc: ''
+            jsonProperty.see.push jsonSee
 
     if klass.data.constants and klass.data.constants.length isnt 0
       jsonConstants = []
@@ -118,7 +149,16 @@ jsonDoc = (yamlDir) ->
           method_type: 'constant'
           discussion: xref(constant.doc.comment, nameIndex)
           formattedComponents: constantSignature(constant, nameIndex)
+          see: []
         jsonConstants.push jsonConstant
+
+        if property.see and property.see.length isnt 0
+          jsonConstant.has_see = true
+          for see in property.see
+            jsonSee =
+              formattedType: seeAlsoReference(see, nameIndex)
+              desc: ''
+            jsonConstant.see.push jsonSee
 
   json
 
@@ -210,6 +250,14 @@ addTypeSignature = (typeString, nameIndex, formattedComponents) ->
       formattedComponents.push value: part
   formattedComponents
 
+# A "See Also" reference, in the formattedComponents format used for iOS.
+seeAlsoReference = (see, nameIndex) ->
+  return null unless see.label
+  if nameIndex[see.label]
+    [{value: see.label, href: nameIndex[see.label]}]
+  else
+    [{value: see.label, href: see.reference}]
+
 
 # Fixes <a> links in description text.
 xref = (string, nameIndex) ->
@@ -230,7 +278,10 @@ constantSignature = (constant) ->
 
 # Outputs
 siteDoc = (siteDir) ->
-  json = jsonDoc path.join(siteDir, 'yaml')
+  tocPath = path.join siteDir, 'templates', 'toc.json'
+  toc = JSON.parse fs.readFileSync(tocPath, 'utf8')
+
+  json = jsonDoc path.join(siteDir, 'yaml'), toc
   fs.writeFileSync path.join(siteDir, 'all.json'), JSON.stringify(json)
 
   htmlPath = path.join(siteDir, 'html')
@@ -243,7 +294,7 @@ siteDoc = (siteDir) ->
 
   tocTemplatePath = path.join siteDir, 'templates', 'toc-template.html'
   tocTemplate = fs.readFileSync tocTemplatePath, 'utf8'
-  toc = mustache.render tocTemplate, json, {}
+  toc = mustache.render tocTemplate, toc, {}
   fs.writeFileSync path.join(htmlPath, 'docs_js_ds_toc.html'), toc
 
 

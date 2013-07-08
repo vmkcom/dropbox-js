@@ -16,7 +16,7 @@ class Dropbox.Client
   # @option options {String} token (optional) the user's OAuth 2.0 access token
   # @option options {String} uid (optional) the user's Dropbox UID
   #
-  # @see {Dropbox.Client#credentials}
+  # @see Dropbox.Client#credentials
   constructor: (options) ->
     @apiServer = options.server or @defaultApiServer()
     @authServer = options.authServer or @defaultAuthServer()

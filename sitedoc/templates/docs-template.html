@@ -67,6 +67,19 @@
                         {{/throws}}
                     </div>
                 {{/has_throws}}
+                {{#has_see}}
+                    <div class="parameters">
+                        <h6>See Also</h6>
+                        {{#see}}
+                        <div class="parameter">
+                          <p class="param-title">
+{{#formattedType}}{{#emphasized}}<em>{{/emphasized}}{{#href}}<a href="{{&href}}">{{/href}}{{value}}{{#href}}</a>{{/href}}{{#emphasized}}</em>{{/emphasized}}{{/formattedType}}
+                          </p>
+                          <div class="param-description">{{{desc}}}</div>
+                        </div>
+                        {{/see}}
+                    </div>
+                {{/has_see}}
                 </li>
                 {{/methods}}
         </div>

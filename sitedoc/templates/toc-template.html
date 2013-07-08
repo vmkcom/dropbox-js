@@ -1,5 +1,8 @@
-{{#classes}}
-<li id="toc-{{name}}">
-    <a href="#{{name}}">{{short_name}}</a>
+{{#sections}}
+<h4>{{section}}</h4>
+{{#entries}}
+<li id="toc-{{class}}">
+    <a href="#{{class}}">{{text}}</a>
 </li>
-{{/classes}}
+{{/entries}}
+{{/sections}}
