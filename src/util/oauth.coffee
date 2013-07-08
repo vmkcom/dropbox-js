@@ -91,7 +91,7 @@ class Dropbox.Util.Oauth
   # Use {Dropbox.Client#authStep} instead.
   #
   # @return {Number} one of the constants defined on {Dropbox.Client}, such as
-  #    {Dropbox.Client.DONE}
+  #   {Dropbox.Client.DONE}
   step: ->
     if @_token isnt null
       Dropbox.Client.DONE

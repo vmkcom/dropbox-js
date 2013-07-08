@@ -268,7 +268,7 @@ class Dropbox.Util.Xhr
   reportResponseHeaders: ->
     @wantHeaders = true
 
-  # Simulates having an <input type="file"> being sent with the request.
+  # Simulates having an `<input type="file">` being sent with the request.
   #
   # @param {String} fieldName the name of the form field / parameter (not of
   #   the uploaded file)

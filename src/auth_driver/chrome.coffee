@@ -54,7 +54,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
   # @return unspecified; may vary across platforms and dropbox.js versions
   sendMessage: DropboxChromeSendMessage
 
-  # Expans an URL relative to the Chrome extension / application root.
+  # Expands an URL relative to the Chrome extension / application root.
   #
   # @param {String} url a resource URL relative to the extension root
   # @return {String} the absolute resource URL

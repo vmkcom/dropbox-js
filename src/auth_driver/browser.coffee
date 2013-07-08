@@ -137,7 +137,7 @@ class Dropbox.AuthDriver.BrowserBase
   # @param {?String} the URL to check; if not given, the current location's URL
   #   is checked
   # @return {?String} the state parameter value received from the /authorize
-  # redirect, or null if the URL is not the result of an /authorize redirect
+  #   redirect, or null if the URL is not the result of an /authorize redirect
   locationStateParam: (url) ->
     location = url or Dropbox.AuthDriver.BrowserBase.currentLocation()
 
