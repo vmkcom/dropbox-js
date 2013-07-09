@@ -607,10 +607,10 @@ class Dropbox.Client
   #   API
   # @option options {String} contentHash used for saving bandwidth when getting
   #   a folder's contents; if this value is specified and it matches the
-  #   folder's contents, the call will fail with a {Dropbox.Api.NO_CONTENT}
-  #   error status; a folder's version identifier can be obtained from the
-  #   {Dropbox.File.Stat#contentHash} attribute of the Stat instance describing
-  #   the directory
+  #   folder's contents, the call will fail with a
+  #   {Dropbox.ApiError.NO_CONTENT} error status; a folder's version identifier
+  #   can be obtained from the {Dropbox.File.Stat#contentHash} property of the
+  #   Stat instance describing the folder
   # @option options {String} hash alias for "contentHash" that matches the HTTP
   #   API
   # @option options {Boolean} httpCache if true, the API request will be set to
@@ -685,10 +685,10 @@ class Dropbox.Client
   #   default
   # @option options {String} contentHash used for saving bandwidth when getting
   #   a folder's contents; if this value is specified and it matches the
-  #   folder's contents, the call will fail with a {Dropbox.Api.NO_CONTENT}
-  #   error status; a folder's version identifier can be obtained from the
-  #   {Dropbox.File.Stat#contentHash} attribute of the Stat instance describing
-  #   the directory
+  #   folder's contents, the call will fail with a
+  #   {Dropbox.ApiError.NO_CONTENT} error status; a folder's version identifier
+  #   can be obtained from the {Dropbox.File.Stat#contentHash} property of the
+  #   Stat instance describing the folder
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same

@@ -87,7 +87,7 @@ jsonDoc = (yamlDir, toc) ->
           for optionHash in method.options
             jsonOptions = []
             jsonHash =
-              param_name: S(optionHash.hash).capitalize() + ' parameter'
+              param_name: S(optionHash.hash).capitalize()
               options: jsonOptions
             jsonMethod.option_hashes.push jsonHash
             for option in optionHash.options
