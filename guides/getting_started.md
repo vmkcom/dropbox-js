@@ -104,7 +104,7 @@ writing an OAuth driver, and to learn about all the drivers that ship with
 
 The recommended driver will be automatically set up for you.
 
-The [built-in OAuth drivers guide](./built_in.md) describes some useful
+The [built-in OAuth drivers guide](./builtin_drivers.md) describes some useful
 options if the recommended setup isn't suitable for your application.
 
 ### node.js Setup
@@ -116,7 +116,7 @@ all the clients.
 client.authDriver(new Dropbox.AuthDriver.NodeServer(8191));
 ```
 
-The [built-in OAuth drivers guide](./built_in.md) has useful tips on using the
+The [built-in OAuth drivers guide](./builtin_drivers.md) has useful tips on using the
 `NodeServer` driver.
 
 ### Chrome App / Extension Setup
@@ -125,7 +125,7 @@ At this time, the setup for Chrome applications and extensions is a bit more
 involved.
 
 The `Dropbox.AuthDriver.Chrome` section in the
-[built-in OAuth drivers guide](built_in.md) has a step-by-step process for
+[built-in OAuth drivers guide](./builtin_drivers.md) has a step-by-step process for
 setting up the [Chrome OAuth driver](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver/NodeServer.html).
 
 ### Shared Code
