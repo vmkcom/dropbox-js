@@ -600,11 +600,19 @@ class Dropbox.Client
   #   is a number, it specifies the maximum number of files and folders that
   #   should be returned; the default limit is 10,000 items; if the limit is
   #   exceeded, the call will fail with an error
-  # @option options {String} versionTag used for saving bandwidth when getting
+  # @option options {String} versionTag the tag string for the desired version
+  #   of the file or folder metadata; the most recent version is retrieved by
+  #   default
+  # @option options {String} rev alias for "versionTag" that matches the HTTP
+  #   API
+  # @option options {String} contentHash used for saving bandwidth when getting
   #   a folder's contents; if this value is specified and it matches the
-  #   folder's contents, the call will fail with a 304 (Contents not changed)
-  #   error code; a folder's version identifier can be obtained from the
-  #   versionTag attribute of a Dropbox.File.Stat instance describing it
+  #   folder's contents, the call will fail with a {Dropbox.Api.NO_CONTENT}
+  #   error status; a folder's version identifier can be obtained from the
+  #   {Dropbox.File.Stat#contentHash} attribute of the Stat instance describing
+  #   the directory
+  # @option options {String} hash alias for "contentHash" that matches the HTTP
+  #   API
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
@@ -625,8 +633,14 @@ class Dropbox.Client
     params = {}
     httpCache = false
     if options
-      if options.version?
-        params.rev = options.version
+      if options.versionTag
+        params.rev = options.versionTag
+      else if options.rev
+        params.rev = options.rev
+      if options.contentHash
+        params.hash = options.contentHash
+      else if options.hash
+        params.hash = options.hash
       if options.removed or options.deleted
         params.include_deleted = 'true'
       if options.readDir
@@ -666,12 +680,15 @@ class Dropbox.Client
   # @option options {Boolean, Number} limit the maximum number of files and
   #   folders that should be returned; the default limit is 10,000 items; if
   #   the limit is exceeded, the call will fail with an error
-  # @option options {String} versionTag used for saving bandwidth; if this
-  #   option is specified, and its value matches the folder's version tag,
-  #   the call will fail with a 304 (Contents not changed) error code
-  #   instead of returning the contents; a folder's version identifier can be
-  #   obtained from the versionTag attribute of a Dropbox.File.Stat instance
-  #   describing it
+  # @option options {String} versionTag the tag string for the desired version
+  #   of the file or folder metadata; the most recent version is retrieved by
+  #   default
+  # @option options {String} contentHash used for saving bandwidth when getting
+  #   a folder's contents; if this value is specified and it matches the
+  #   folder's contents, the call will fail with a {Dropbox.Api.NO_CONTENT}
+  #   error status; a folder's version identifier can be obtained from the
+  #   {Dropbox.File.Stat#contentHash} attribute of the Stat instance describing
+  #   the directory
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
@@ -695,6 +712,12 @@ class Dropbox.Client
         statOptions.readDir = options.limit
       if options.versionTag
         statOptions.versionTag = options.versionTag
+      else if options.rev
+        statOptions.versionTag = options.rev
+      if options.contentHash
+        statOptions.contentHash = options.contentHash
+      else if options.hash
+        statOptions.contentHash = options.hash
       if options.removed or options.deleted
         statOptions.removed = options.removed or options.deleted
       if options.httpCache

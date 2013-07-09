@@ -27,6 +27,13 @@ class Dropbox.ApiError
   # Explorer might cause this code to be reported on some API server errors.
   @NETWORK_ERROR: 0
 
+  # Status value indicating that the API call will not receive a response.
+  #
+  # This happens when the contentHash parameter passed to a
+  # {Dropbox.Client#readdir} or {Dropbox.Client#stat} matches the most recent
+  # content, so the API call response is omitted, to save bandwidth.
+  @NO_CONTENT: 304
+
   # Status value indicating an invalid input parameter.
   #
   # The error property on {Dropbox.ApiError#response} should indicate which
@@ -60,6 +67,12 @@ class Dropbox.ApiError
   # This indicates a bug in dropbox.js and should never occur under normal
   # circumstances.
   @INVALID_METHOD: 405
+
+  # Status value indicating that the API call disobeys some constraints.
+  #
+  # This happens when a {Dropbox.Client#readdir} or {Dropbox.Client#stat} call
+  # would return more than a maximum amount of directory entries.
+  @NOT_ACCEPTABLE: 406
 
   # Status value indicating that the server received a conflicting update.
   #

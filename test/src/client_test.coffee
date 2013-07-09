@@ -934,25 +934,25 @@ buildClientTests = (clientKeys) ->
 
   describe '#readdir', ->
     it 'retrieves a Stat and entries for a folder', (done) ->
-      @client.readdir @testFolder, (error, entries, dir_stat, entry_stats) =>
+      @client.readdir @testFolder, (error, entries, dirStat, entryStats) =>
         expect(error).to.equal null
         expect(entries).to.be.ok
         expect(entries).to.have.length 2
         expect(entries[0]).to.be.a 'string'
         expect(entries[0]).not.to.have.string '/'
         expect(entries[0]).to.match /^(test-binary-image.png)|(test-file.txt)$/
-        expect(dir_stat).to.be.instanceOf Dropbox.File.Stat
-        expect(dir_stat.path).to.equal @testFolder
-        expect(dir_stat.isFolder).to.equal true
+        expect(dirStat).to.be.instanceOf Dropbox.File.Stat
+        expect(dirStat.path).to.equal @testFolder
+        expect(dirStat.isFolder).to.equal true
         if clientKeys.key is testFullDropboxKeys.key
-          expect(dir_stat.inAppFolder).to.equal false
+          expect(dirStat.inAppFolder).to.equal false
         else
-          expect(dir_stat.inAppFolder).to.equal true
-        expect(entry_stats).to.be.ok
-        expect(entry_stats).to.have.length 2
-        expect(entry_stats[0]).to.be.instanceOf Dropbox.File.Stat
-        expect(entry_stats[0].path).not.to.equal @testFolder
-        expect(entry_stats[0].path).to.have.string @testFolder
+          expect(dirStat.inAppFolder).to.equal true
+        expect(entryStats).to.be.ok
+        expect(entryStats).to.have.length 2
+        expect(entryStats[0]).to.be.instanceOf Dropbox.File.Stat
+        expect(entryStats[0].path).not.to.equal @testFolder
+        expect(entryStats[0].path).to.have.string @testFolder
         done()
 
     describe 'with httpCache', ->
@@ -984,6 +984,22 @@ buildClientTests = (clientKeys) ->
               expect(entry_stats[0]).to.be.instanceOf Dropbox.File.Stat
               expect(entry_stats[0].path).not.to.equal @testFolder
               expect(entry_stats[0].path).to.have.string @testFolder
+              done()
+
+    describe 'with contentHash', (done) ->
+      beforeEach (done) ->
+        @client.readdir @testFolder, (error, entries, dirStat) =>
+          expect(error).to.equal null
+          @contentHash = dirStat.contentHash
+          done()
+
+      it 'does not retrieve a folder twice if the tag matches', (done) ->
+        @client.readdir @testFolder, contentHash: @contentHash,
+            (error, entries) ->
+              expect(error).to.be.instanceOf Dropbox.ApiError
+              expect(entries).not.to.be.ok
+              unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes
+                expect(error.status).to.equal Dropbox.ApiError.NO_CONTENT
               done()
 
   describe '#history', ->

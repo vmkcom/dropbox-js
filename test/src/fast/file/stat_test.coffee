@@ -50,6 +50,10 @@ describe 'Dropbox.File.Stat', ->
         expect(@stat).to.have.property 'versionTag'
         expect(@stat.versionTag).to.equal '35e97029684fe'
 
+      it 'handles the lack of contentHash correctly', ->
+        expect(@stat).to.have.property 'contentHash'
+        expect(@stat.contentHash).to.equal null
+
       it 'parses mimeType correctly', ->
         expect(@stat).to.have.property 'mimeType'
         expect(@stat.mimeType).to.equal 'application/pdf'
@@ -135,7 +139,11 @@ describe 'Dropbox.File.Stat', ->
 
       it 'parses versionTag correctly', ->
         expect(@stat).to.have.property 'versionTag'
-        expect(@stat.versionTag).to.equal '37eb1ba1849d4b0fb0b28caf7ef3af52'
+        expect(@stat.versionTag).to.equal '714f029684fe'
+
+      it 'parses contentHash correctly', ->
+        expect(@stat).to.have.property 'contentHash'
+        expect(@stat.contentHash).to.equal '37eb1ba1849d4b0fb0b28caf7ef3af52'
 
       it 'parses mimeType correctly', ->
         expect(@stat).to.have.property 'mimeType'

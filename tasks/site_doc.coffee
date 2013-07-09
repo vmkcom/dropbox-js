@@ -170,13 +170,13 @@ makeNameIndex = (classes) ->
     className = klass.namespace + '.' + klass.name
     nameIndex[className] = "##{className}"
     attrs = (klass.data.instanceMethods or []).concat(
-        klass.data.constants or [])
+        klass.data.properties or [])
     for attr in attrs
       nameIndex["#{className}##{attr.name}"] = "##{className}.#{attr.name}"
 
     cattrs = (klass.data.classMethods or []).concat(
-        klass.data.properties or [])
-    for attr in attrs
+        klass.data.constants or [])
+    for attr in cattrs
       nameIndex["#{className}.#{attr.name}"] = "##{className}.#{attr.name}"
   nameIndex
 
@@ -185,7 +185,7 @@ methodSignature = (method, nameIndex) ->
   formattedComponents = []
 
   if method.name isnt 'constructor'
-    returnType = method.doc?.returns?.type or 'void'
+    returnType = method.doc?.returns?.type or method.returns?.type or 'void'
     addTypeSignature returnType, nameIndex, formattedComponents
     formattedComponents.push value: ' '
 

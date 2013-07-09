@@ -9,6 +9,14 @@ describe 'Dropbox.ApiError', ->
     it 'is falsey', ->
       expect(@code).to.not.be.ok
 
+  describe '.NO_CONTENT', ->
+    beforeEach ->
+      @code = Dropbox.ApiError.NO_CONTENT
+    it 'is defined', ->
+      expect(Dropbox.ApiError).to.have.property 'NO_CONTENT'
+    it 'is between 300 and 399', ->
+      expect(@code).to.be.within 300, 399
+
   describe '.INVALID_PARAM', ->
     beforeEach ->
       @code = Dropbox.ApiError.INVALID_PARAM
@@ -54,6 +62,16 @@ describe 'Dropbox.ApiError', ->
       @code = Dropbox.ApiError.INVALID_METHOD
     it 'is defined', ->
       expect(Dropbox.ApiError).to.have.property 'INVALID_METHOD'
+    it 'is between 400 and 499', ->
+      expect(@code).to.be.within 400, 499
+    it 'is less than NOT_ACCEPTABLE', ->
+      expect(@code).to.be.below Dropbox.ApiError.NOT_ACCEPTABLE
+
+  describe '.NOT_ACCEPTABLE', ->
+    beforeEach ->
+      @code = Dropbox.ApiError.NOT_ACCEPTABLE
+    it 'is defined', ->
+      expect(Dropbox.ApiError).to.have.property 'NOT_ACCEPTABLE'
     it 'is between 400 and 499', ->
       expect(@code).to.be.within 400, 499
     it 'is less than CONFLICT', ->

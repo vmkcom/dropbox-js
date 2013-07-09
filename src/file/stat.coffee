@@ -49,6 +49,13 @@ class Dropbox.File.Stat
   #   folder contents twice
   versionTag: null
 
+  # @property {String} a hash over the folder's contents; this can be used to
+  #   save bandwidth when repeatedly reading a directory's content
+  #
+  # @see Dropbox.Client#stat
+  # @see Dropbox.Client#readdir
+  contentHash: null
+
   # @property {String} a guess of the MIME type representing the file or
   #   folder's contents
   mimeType: null
@@ -108,11 +115,11 @@ class Dropbox.File.Stat
     @isRemoved = metadata.is_deleted || false
     @typeIcon = metadata.icon
     if metadata.modified?.length
-      @modifiedAt = Dropbox.Util.parseDate(metadata.modified)
+      @modifiedAt = Dropbox.Util.parseDate metadata.modified
     else
       @modifiedAt = null
     if metadata.client_mtime?.length
-      @clientModifiedAt = Dropbox.Util.parseDate(metadata.client_mtime)
+      @clientModifiedAt = Dropbox.Util.parseDate metadata.client_mtime
     else
       @clientModifiedAt = null
 
@@ -128,10 +135,10 @@ class Dropbox.File.Stat
     @size = metadata.bytes or 0
     @humanSize = metadata.size or ''
     @hasThumbnail = metadata.thumb_exists or false
+    @versionTag = metadata.rev
+    @contentHash = metadata.hash or null
 
     if @isFolder
-      @versionTag = metadata.hash
       @mimeType = metadata.mime_type || 'inode/directory'
     else
-      @versionTag = metadata.rev
       @mimeType = metadata.mime_type || 'application/octet-stream'
