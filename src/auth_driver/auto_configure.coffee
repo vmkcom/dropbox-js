@@ -7,7 +7,7 @@
 # This method is called by Dropbox.Client#authorize when no OAuth driver is
 # set. It should not be called directly.
 #
-# @throw Error if
+# @throw Error if the current enviornment does not support auto-configuration
 Dropbox.AuthDriver.autoConfigure = (client) ->
   if typeof chrome isnt 'undefined' and (chrome.extension or
       (chrome.app and chrome.app.runtime))

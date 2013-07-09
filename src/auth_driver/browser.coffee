@@ -1,4 +1,4 @@
-# Base class for drivers that run in the browser.
+# Base class for OAuth drivers that run in the browser.
 #
 # Inheriting from this class makes a driver use HTML5 localStorage to preserve
 # OAuth tokens across page reloads.
@@ -8,12 +8,12 @@ class Dropbox.AuthDriver.BrowserBase
   # Subclasses should pass the options object they receive to the superclass
   # constructor.
   #
-  # @param {?Object} options the advanced settings below
-  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
-  #   are not saved in localStorage; true by default
+  # @param {Object} options (optional) one or more of the options below
   # @option options {String} scope embedded in the localStorage key that holds
   #   the authentication data; useful for having multiple OAuth tokens in a
   #   single application
+  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
+  #   are not saved in localStorage; true by default
   constructor: (options) ->
     if options
       @rememberUser = if 'rememberUser' of options
@@ -29,10 +29,14 @@ class Dropbox.AuthDriver.BrowserBase
     @stateRe = /^[^#]+\#(.*&)?state=([^&]+)(&|$)/
 
   # Browser-side authentication should always use OAuth 2 Implicit Grant.
+  #
+  # @see Dropbox.AuthDriver#authType
   authType: ->
     'token'
 
   # Persists tokens.
+  #
+  # @see Dropbox.AuthDriver#onAuthStepChange
   onAuthStepChange: (client, callback) ->
     @setStorageKey client
 
@@ -84,7 +88,7 @@ class Dropbox.AuthDriver.BrowserBase
     @storageKey = "dropbox-auth:#{@scope}:#{client.appHash()}"
     @
 
-  # Stores a Dropbox.Client's credentials to localStorage.
+  # Stores a Dropbox.Client's credentials in localStorage.
   #
   # @private
   # onAuthStepChange calls this method during the authentication flow.
@@ -102,10 +106,11 @@ class Dropbox.AuthDriver.BrowserBase
   # @private
   # onAuthStepChange calls this method during the authentication flow.
   #
-  # @param {function(?Object)} callback supplied with the credentials object
+  # @param {function(Object)} callback supplied with the credentials object
   #   stored by a previous call to
-  #   Dropbox.AuthDriver.BrowserBase#storeCredentials; null if no credentials
-  #   were stored, or if the previously stored credentials were deleted
+  #   {Dropbox.AuthDriver.BrowserBase#storeCredentials}; the argument is null
+  #   if no credentials were stored, or if the previously stored credentials
+  #   were deleted
   # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   loadCredentials: (callback) ->
     jsonString = localStorage.getItem @storageKey
@@ -134,9 +139,9 @@ class Dropbox.AuthDriver.BrowserBase
 
   # Figures out if a URL is an OAuth 2.0 /authorize redirect URL.
   #
-  # @param {?String} the URL to check; if not given, the current location's URL
-  #   is checked
-  # @return {?String} the state parameter value received from the /authorize
+  # @param {String} the URL to check; if null, the current location's URL is
+  #   checked
+  # @return {String} the state parameter value received from the /authorize
   #   redirect, or null if the URL is not the result of an /authorize redirect
   locationStateParam: (url) ->
     location = url or Dropbox.AuthDriver.BrowserBase.currentLocation()
@@ -157,7 +162,7 @@ class Dropbox.AuthDriver.BrowserBase
   #
   # This hopefully also removes the access token from the browser history.
   #
-  # @return undefined
+  # @return {void}
   @cleanupLocation: ->
     if window.history
       pageUrl = @currentLocation()
@@ -173,17 +178,17 @@ class Dropbox.AuthDriver.BrowserBase
 class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
   # Sets up the redirect-based OAuth driver.
   #
-  # @param {?Object} options the advanced settings below
-  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
-  #   are not saved in localStorage; true by default
-  # @option options {String} scope embedded in the localStorage key that holds
-  #   the authentication data; useful for having multiple OAuth tokens in a
-  #   single application
+  # @param {Object} options (optional) one more of the options below
   # @option options {String} redirectUrl URL to the page that receives the
   #   /authorize redirect
   # @option options {String} redirectFile the URL to the receiver page will be
   #   computed by replacing the file name (everything after the last /) of
   #   the current location with this parameter's value
+  # @option options {String} scope embedded in the localStorage key that holds
+  #   the authentication data; useful for having multiple OAuth tokens in a
+  #   single application
+  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
+  #   are not saved in localStorage; true by default
   constructor: (options) ->
     super options
     @receiverUrl = @baseUrl options
@@ -193,7 +198,7 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
   # @private
   # This should only be called by the constructor.
   #
-  # @param {Object} options the options passed to the constructor
+  # @param {Object} options (optional) the options passed to the constructor
   # @option options {String} redirectUrl URL to the page that receives the
   #   /authorize redirect
   # @option options {String} redirectFile the URL to the receiver page will be
@@ -214,16 +219,25 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
     url = url.substring 0, hashIndex if hashIndex isnt -1
     url
 
-  # URL of the current page, since the user will be sent right back.
+  # URL of the page that the user will be redirected to.
+  #
+  # @return {String} the URL of the app page that the user will be redirected
+  #   to after /authorize; if no constructor option is set, this will be the
+  #   current page
+  # @see Dropbox.AuthDriver#url
   url: ->
     @receiverUrl
 
   # Saves the OAuth 2 credentials, and redirects to the authorize page.
+  #
+  # @see Dropbox.AuthDriver#doAuthorize
   doAuthorize: (authUrl, stateParam, client) ->
     @storeCredentials client.credentials(), ->
       window.location.assign authUrl
 
-  # Processes a redirect.
+  # Finishes the OAuth 2 process after the user has been redirected.
+  #
+  # @see Dropbox.AuthDriver#resumeAuthorize
   resumeAuthorize: (stateParam, client, callback) ->
     if @locationStateParam() is stateParam
       pageUrl = Dropbox.AuthDriver.BrowserBase.currentLocation()
@@ -238,18 +252,17 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
 class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
   # Sets up a popup-based OAuth driver.
   #
-  # @param {?Object} options one of the settings below; leave out the argument
-  #   to use the current location for redirecting
-  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
-  #   are not saved in localStorage; true by default
-  # @option options {String} scope embedded in the localStorage key that holds
-  #   the authentication data; useful for having multiple OAuth tokens in a
-  #   single application
+  # @param {Object} options (optional) one or more of the options below
   # @option options {String} receiverUrl URL to the page that receives the
   #   /authorize redirect and performs the postMessage
   # @option options {String} receiverFile the URL to the receiver page will be
   #   computed by replacing the file name (everything after the last /) of
   #   the current location with this parameter's value
+  # @option options {String} scope embedded in the localStorage key that holds
+  #   the authentication data; useful for having multiple OAuth tokens in a
+  #   single application
+  # @option options {Boolean} rememberUser if false, the user's OAuth tokens
+  #   are not saved in localStorage; true by default
   constructor: (options) ->
     super options
     @receiverUrl = @baseUrl options
@@ -262,6 +275,8 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
     @receiverUrl
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
+  #
+  # @see Dropbox.AuthDriver#doAuthorize
   doAuthorize: (authUrl, stateParam, client, callback) ->
     @listenForMessage stateParam, callback
     @openWindow authUrl
@@ -290,9 +305,11 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
 
   # Creates a popup window.
   #
+  # @private
+  # This should only be called by {Dropbox.AuthDriver.Popup#doAuthorize}.
+  #
   # @param {String} url the URL that will be loaded in the popup window
-  # @return {?DOMRef} reference to the opened window, or null if the call
-  #   failed
+  # @return {DOMRef} reference to the opened window, or null if the call failed
   openWindow: (url) ->
     window.open url, '_dropboxOauthSigninWindow', @popupWindowSpec(980, 700)
 
@@ -365,6 +382,14 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
     location
 
   # Communicates with the driver from the OAuth receiver page.
+  #
+  # The easiest way for an application to keep up to date with dropbox.js is to
+  # set up a popup receiver page that loads dropbox.js and calls this method.
+  # This guarantees that the code used to communicate between the popup
+  # receiver page and {Dropbox.AuthDriver.Popup#doAuthorize} stays up to date
+  # as dropbox.js is updated.
+  #
+  # @return {void}
   @oauthReceiver: ->
     window.addEventListener 'load', ->
       pageUrl = window.location.href
@@ -384,6 +409,7 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
         catch frameError
           # Hopefully postMessage worked.
       window.close()
+    return
 
   # Works around postMessage failures on Internet Explorer.
   #

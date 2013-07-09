@@ -1213,7 +1213,8 @@ class Dropbox.Client
 
   # Change the client's OAuth credentials.
   #
-  # @param {?Object} credentials the result of a prior call to credentials()
+  # @param {Object} credentials the result of a prior call to
+  #   {Dropbox.Client#credentials}
   # @return {Dropbox.Client} this, for easy call chaining
   setCredentials: (credentials) ->
     oldAuthStep = @authStep
@@ -1282,13 +1283,13 @@ class Dropbox.Client
   # @see Dropbox.Client#isAuthenticated
   authStep: null
 
-  # authStep value for a client that experienced an authentication error
+  # authStep value for a client that experienced an authentication error.
   @ERROR: 0
 
-  # authStep value for a properly initialized client with no user credentials
+  # authStep value for a properly initialized client with no user credentials.
   @RESET: 1
 
-  # authStep value for a client that has an /authorize state parameter value
+  # authStep value for a client that has an /authorize state parameter value.
   #
   # This state is entered when the state parameter is set directly by
   # {Dropbox.Client#authenticate}. Auth drivers that need to save the OAuth
@@ -1296,22 +1297,22 @@ class Dropbox.Client
   # when the client is in this state.
   @PARAM_SET: 2
 
-  # authStep value for a client that has an /authorize state parameter value
+  # authStep value for a client that has an /authorize state parameter value.
   #
   # This state is entered when the state parameter is loaded from an external
-  # data source, by Dropbox.Client#setCredentials or
-  # Dropbox.Client#constructor. Auth drivers that need to save the OAuth state
-  # during Dropbox.AuthDriver#doAuthorize should check for authorization
-  # completion in the PARAM_LOADED state.
+  # data source, by {Dropbox.Client#setCredentials} or
+  # {Dropbox.Client#constructor}. Auth drivers that need to save the OAuth
+  # state during {Dropbox.AuthDriver#doAuthorize} should check for
+  # authorization completion in this state.
   @PARAM_LOADED: 3
 
-  # authStep value for a client that has an authorization code
+  # authStep value for a client that has an authorization code.
   @AUTHORIZED: 4
 
-  # authStep value for a client that has an access token
+  # authStep value for a client that has an access token.
   @DONE: 5
 
-  # authStep value for a client that voluntarily invalidated its access token
+  # authStep value for a client that voluntarily invalidated its access token.
   @SIGNED_OUT: 6
 
   # Normalizes a Dropobx path and encodes it for inclusion in a request URL.

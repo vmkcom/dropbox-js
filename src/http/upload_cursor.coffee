@@ -27,7 +27,7 @@ class Dropbox.Http.UploadCursor
   # JSON representation of this cursor.
   #
   # @return {Object} an object that can be serialized using JSON; the object
-  #   can be passed to {Dropbox.Http.UploadCursor#parse} to obtain an
+  #   can be passed to {Dropbox.Http.UploadCursor.parse} to obtain an
   #   UploadCursor instance with the same information
   json: ->
     # NOTE: the assignment only occurs if
@@ -37,7 +37,7 @@ class Dropbox.Http.UploadCursor
   # Creates an UploadCursor instance from a raw reference or API response.
   #
   # This constructor should only be called directly to obtain a cursor for a
-  # new file upload. {Dropbox.Http.UploadCursor#parse} should be preferred for
+  # new file upload. {Dropbox.Http.UploadCursor.parse} should be preferred for
   # any other use.
   #
   # @param {Object, String} cursorData the parsed JSON describing a copy

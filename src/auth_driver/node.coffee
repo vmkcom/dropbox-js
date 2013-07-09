@@ -4,7 +4,7 @@
 class Dropbox.AuthDriver.NodeServer
   # Starts up the node app that intercepts the browser redirect.
   #
-  # @param {?Object} options one or more of the options below
+  # @param {Object} options (optional) one or more of the options below
   # @option options {Number} port the number of the TCP port that will receive
   #   HTTPS requests; defaults to 8912
   # @option options {Object} tls one or more of the options accepted by

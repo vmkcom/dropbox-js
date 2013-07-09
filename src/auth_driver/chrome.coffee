@@ -43,12 +43,22 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
   # @property {Chrome.Event<Object>, Dropbox.Util.EventSource<Object>} fires
   #   non-cancelable events when Dropbox.AuthDriver.Chrome#sendMessage is
   #   called; the message is a parsed JSON object
+  #
+  # @private
+  # This should only be used to communicate between
+  # {Dropbox.AuthDriver.Chrome#doAuthorize} and
+  # {Dropbox.AuthDriver.Chrome.oauthReceiver}.
   onMessage: DropboxChromeOnMessage
 
   # Sends a message across the Chrome extension / application.
   #
-  # This causes Dropbox.AuthDriver.Chrome#onMessage to fire an event containing
-  # the message
+  # This causes {Dropbox.AuthDriver.Chrome#onMessage} to fire an event
+  # containing the given message.
+  #
+  # @private
+  # This should only be used to communicate between
+  # {Dropbox.AuthDriver.Chrome#doAuthorize} and
+  # {Dropbox.AuthDriver.Chrome.oauthReceiver}.
   #
   # @param {Object} message an object that can be serialized to JSON
   # @return unspecified; may vary across platforms and dropbox.js versions
@@ -65,10 +75,13 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
       return chrome.extension.getURL(url)
     url
 
-  # @param {?Object} options the settings below
-  # @option {String} receiverPath the path of page that receives the /authorize
-  #   redirect and performs the postMessage; the path should be relative to the
-  #   extension folder; by default, is 'chrome_oauth_receiver.html'
+  # Sets up an OAuth driver for Chrome.
+  #
+  # @param {Object} options (optional) one or more of the options below
+  # @option options {String} receiverPath the path of page that receives the
+  #   /authorize redirect and calls {Dropbox.AuthDriver.Chrome.oauthReceiver};
+  #   the path should be relative to the extension folder; by default, is
+  #   'chrome_oauth_receiver.html'
   constructor: (options) ->
     super options
     receiverPath = (options and options.receiverPath) or
@@ -97,7 +110,9 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
       else
         callback()
 
-  # Shows the authorization URL in a pop-up, waits for it to send a message.
+  # Shows the authorization URL in a new tab, waits for it to send a message.
+  #
+  # @see Dropbox.AuthDriver#doAuthorize
   doAuthorize: (authUrl, stateParam, client, callback) ->
     if chrome.identity?.launchWebAuthFlow
       # Apps V2 after the identity API hits stable?
@@ -134,6 +149,9 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
 
   # Closes a window that was previously opened with openWindow.
   #
+  # @private
+  # This should only be used by {Dropbox.AuthDriver.Chrome#oauthReceiver}.
+  #
   # @param {Object} handle the object passed to an openWindow callback
   closeWindow: (handle) ->
     if chrome.tabs and chrome.tabs.remove and handle.id
@@ -145,10 +163,15 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
     @
 
   # URL of the redirect receiver page that messages the app / extension.
+  #
+  # @see Dropbox.AuthDriver#url
   url: ->
     @receiverUrl
 
   # Listens for a postMessage from a previously opened tab.
+  #
+  # @private
+  # This should only be used by {Dropbox.AuthDriver.Chrome#doAuthorize}.
   #
   # @param {String} stateParam the state parameter passed to the OAuth 2
   #   /authorize endpoint
@@ -174,7 +197,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
         callback Dropbox.Util.Oauth.queryParamsFromUrl(receiverHref)
     @onMessage.addListener listener
 
-  # Stores a Dropbox.Client's credentials to local storage.
+  # Stores a Dropbox.Client's credentials in local storage.
   #
   # @private
   # onAuthStepChange calls this method during the authentication flow.
@@ -215,6 +238,12 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
     @
 
   # Communicates with the driver from the OAuth receiver page.
+  #
+  # The easiest way for a Chrome application or extension to keep up to date
+  # with dropbox.js is to set up a popup receiver page that loads dropbox.js
+  # and calls this method. This guarantees that the code used to communicate
+  # between the popup receiver page and {Dropbox.AuthDriver.Popup#doAuthorize}
+  # stays up to date as dropbox.js is updated.
   @oauthReceiver: ->
     window.addEventListener 'load', ->
       driver = new Dropbox.AuthDriver.Chrome()

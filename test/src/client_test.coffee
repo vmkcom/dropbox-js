@@ -137,7 +137,7 @@ buildClientTests = (clientKeys) ->
         @client.getAccountInfo httpCache: true,
             (error, accountInfo, rawAccountInfo) =>
               if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-                expect(@xhr.url).to.contain 'oauth_nonce'
+                expect(@xhr.url).to.contain 'access_token'
               else
                 expect(@xhr.headers).to.have.key 'Authorization'
 
@@ -384,7 +384,7 @@ buildClientTests = (clientKeys) ->
       it 'reads a text file using Authorization headers', (done) ->
         @client.readFile @textFile, httpCache: true, (error, data, stat) =>
           if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-            expect(@xhr.url).to.contain 'oauth_nonce'
+            expect(@xhr.url).to.contain 'access_token'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
@@ -916,7 +916,7 @@ buildClientTests = (clientKeys) ->
       it 'retrieves a Stat for a file using Authorization headers', (done) ->
         @client.stat @textFile, httpCache: true, (error, stat) =>
           if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-            expect(@xhr.url).to.contain 'oauth_nonce'
+            expect(@xhr.url).to.contain 'access_token'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
@@ -965,7 +965,7 @@ buildClientTests = (clientKeys) ->
         @client.readdir @testFolder, httpCache: true,
             (error, entries, dir_stat, entry_stats) =>
               if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-                expect(@xhr.url).to.contain 'oauth_nonce'
+                expect(@xhr.url).to.contain 'access_token'
               else
                 expect(@xhr.headers).to.have.key 'Authorization'
 
@@ -1034,7 +1034,7 @@ buildClientTests = (clientKeys) ->
       it 'gets a list of revisions using Authorization headers', (done) ->
         @client.history @textFile, httpCache: true, (error, versions) =>
           if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-            expect(@xhr.url).to.contain 'oauth_nonce'
+            expect(@xhr.url).to.contain 'access_token'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
@@ -1259,11 +1259,11 @@ buildClientTests = (clientKeys) ->
         @client.onXhr.addListener (xhr) =>
           @xhr = xhr
 
-      it 'locates the test folder using Authorize headers', (done) ->
+      it 'locates the test folder using Authorization headers', (done) ->
         namePattern = @testFolder.substring 5
         @client.search '/', namePattern, httpCache: true, (error, matches) =>
           if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do headers
-            expect(@xhr.url).to.contain 'oauth_nonce'
+            expect(@xhr.url).to.contain 'access_token'
           else
             expect(@xhr.headers).to.have.key 'Authorization'
 
