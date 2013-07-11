@@ -361,7 +361,7 @@ buildCordovaApp = (callback) ->
     throw new Error 'Cordova www directory not found'
 
   buildStandaloneApp appPath, ->
-    cordova_js = glob.sync("#{appPath}/cordova-*.js").sort().
+    cordova_js = glob.sync("#{appPath}/cordova*.js").sort().
                       reverse()[0]
     run "cp #{cordova_js} #{appPath}/test/js/platform.js", ->
       run "cp test/html/cordova_index.html #{appPath}/index.html", ->

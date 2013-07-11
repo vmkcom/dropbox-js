@@ -353,7 +353,7 @@ class Dropbox.Client
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
-  #   request repeatedly (polling?)
+  #   request repeatedly
   # @param {function(Dropbox.ApiError, String, Dropbox.File.Stat,
   #   Dropbox.Http.RangeInfo)} callback called with the result of
   #   the /files (GET) HTTP request; the second parameter is the contents of
@@ -616,7 +616,7 @@ class Dropbox.Client
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
-  #   request repeatedly (polling?)
+  #   request repeatedly
   # @param {function(Dropbox.ApiError, Dropbox.File.Stat,
   #   Array<Dropbox.File.Stat>)} callback called with the result of the
   #   /metadata HTTP request; if the call succeeds, the second parameter is a
@@ -692,7 +692,7 @@ class Dropbox.Client
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
-  #   request repeatedly (polling?)
+  #   request repeatedly
   # @param {function(Dropbox.ApiError, Array<String>, Dropbox.File.Stat,
   #   Array<Dropbox.File.Stat>)} callback called with the result of the
   #   /metadata HTTP request; if the call succeeds, the second parameter is an
@@ -805,7 +805,7 @@ class Dropbox.Client
   # @option options {Boolean} httpCache if true, the API request will be set to
   #   allow HTTP caching to work; by default, requests are set up to avoid
   #   CORS preflights; setting this option can make sense when making the same
-  #   request repeatedly (polling?)
+  #   request repeatedly
   # @param {function(Dropbox.ApiError, Array<Dropbox.File.Stat>)} callback
   #   called with the result of the /revisions HTTP request; if the call
   #   succeeds, the second parameter is an array with one {Dropbox.File.Stat}

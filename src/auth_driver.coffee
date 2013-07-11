@@ -1,4 +1,7 @@
-# Documentation for the interface to a Dropbox OAuth driver.
+# The interface implemented by dropbox.js OAuth drivers.
+#
+# This class exists solely for the purpose of documenting the OAuth driver
+# interface. It should not be instantiated or inherited from.
 class Dropbox.AuthDriver
   # The authorization grant type used by this driver.
   #

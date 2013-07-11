@@ -1,7 +1,10 @@
 <html>
-<head><title>Documentation - JavaScript Core API</title></head>
+<head><title>Documentation - JavaScript Datastore API</title></head>
 <body>
-	<h1>Core API for JavaScript Documentation</h1>
+	<h1>Datastore API for JavaScript Documentation</h1>
+
+<p>Dropbox apps can now create datastores in addition to files. Datastores are the easiest way to keep your app's structured data, like settings, bookmarks, and game save state, in sync across multiple devices and operating systems. Datastores are like simple embedded databases, except changes are automatically synced and if a user makes changes to the same datastore on multiple devices, conflicts are automatically resolved.</p>
+<p>This page details the full set of classes used to work with datastores. For more information on how to get started with the Datastore API, see the <a href="/developers/datastore/tutorial/">Datastore API Tutorial</a>.</p>
 
 	{{#classes}}
     <div class="toc-el" id="{{name}}">
@@ -30,7 +33,9 @@
                             <p class="param-title">{{param_name}}
 {{#formattedType}}{{#emphasized}}<em>{{/emphasized}}{{#href}}<a href="{{&href}}">{{/href}}{{value}}{{#href}}</a>{{/href}}{{#emphasized}}</em>{{/emphasized}}{{/formattedType}}
                             </p>
-                            <div class="param-description">{{{desc}}}</div>
+                            <div class="param-description">
+                              <p>{{{desc}}}</p>
+                            </div>
                         </div>
                         {{/params}}
                     </div>
@@ -41,7 +46,9 @@
                         {{#options}}
                         <div class="parameter">
                             <p class="param-title">{{option_name}} ({{option_type}})</p>
-                            <div class="param-description">{{{desc}}}</div>
+                            <div class="param-description">
+                              <p>{{{desc}}}</p>
+                            </div>
                         </div>
                         {{/options}}
                     </div>
@@ -50,7 +57,9 @@
                     <div class="parameters">
                         <h6>Returns</h6>
                         <div class="parameter">
-                            <div class="param-description">{{{returns}}}</div>
+                          <div class="param-description">
+                            <p>{{{returns}}}</p>
+                          </div>
                         </div>
                     </div>
                 {{/returns}}
@@ -62,7 +71,9 @@
                           <p class="param-title">
 {{#formattedType}}{{#emphasized}}<em>{{/emphasized}}{{#href}}<a href="{{&href}}">{{/href}}{{value}}{{#href}}</a>{{/href}}{{#emphasized}}</em>{{/emphasized}}{{/formattedType}}
                           </p>
-                          <div class="param-description">{{{desc}}}</div>
+                          <div class="param-description">
+                            <p>{{{desc}}}</p>
+                          </div>
                         </div>
                         {{/throws}}
                     </div>
@@ -75,7 +86,9 @@
                           <p class="param-title">
 {{#formattedType}}{{#emphasized}}<em>{{/emphasized}}{{#href}}<a href="{{&href}}">{{/href}}{{value}}{{#href}}</a>{{/href}}{{#emphasized}}</em>{{/emphasized}}{{/formattedType}}
                           </p>
-                          <div class="param-description">{{{desc}}}</div>
+                          <div class="param-description">
+                            <p>{{{desc}}}</p>
+                          </div>
                         </div>
                         {{/see}}
                     </div>

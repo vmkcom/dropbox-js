@@ -164,7 +164,7 @@ class Dropbox.AuthDriver.BrowserBase
   #
   # @return {void}
   @cleanupLocation: ->
-    if window.history
+    if window.history and window.history.replaceState
       pageUrl = @currentLocation()
       hashIndex = pageUrl.indexOf '#'
       window.history.replaceState {}, document.title,
