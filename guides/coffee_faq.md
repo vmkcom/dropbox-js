@@ -74,7 +74,3 @@ easier to use for JavaScript developers that don't speak CoffeeScript.
 ## Can I complain to get dropbox.js to switch away from CoffeeScript?
 
 **No.**
-
-At the moment, 100% of the library's development comes from unpaid, voluntary
-efforts. Switching to JavaScript would reduce the efficiency of these efforts,
-and it would kill developer motivation.

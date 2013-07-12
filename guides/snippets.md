@@ -78,3 +78,42 @@ fs.readFile("some_image.png", function(error, data) {
   });
 });
 ```
+
+
+## Progress indicators
+
+When working with large files, it is desirable to show progress indicators in
+the UI. Thos can be accomplished by listening to the `progress` event of the
+XMLHttpRequest used to download or upload a file.
+
+The code snippet below can be used to track the progress of a file download.
+
+```javascript
+var xhrListener = function(dbXhr) {
+  dbXhr.xhr.addEventListener("progress", function(event) {
+    // event.loaded bytes received, event.total bytes must be received
+    reportProgress(event.loaded, event.total);
+  });
+};
+client.onXhr.addListener(xhrListener);
+client.readFile("some_large_file.iso", function(error, data, stat) {
+  stopReportingProgress();
+});
+client.onXhr.removeListener(xhrListener);
+```
+
+The code snippet below can be used to track the progress of a file upload.
+
+```javascript
+var xhrListener = function(dbXhr) {
+  dbXhr.xhr.upload.onprogress("progress", function(event) {
+    // event.loaded bytes received, event.total bytes must be received
+    reportProgress(event.loaded, event.total);
+  });
+};
+client.onXhr.addListener(xhrListener);
+client.writeFile("some_large_file.iso", data, function(error, stat) {
+  stopReportingProgress();
+});
+client.onXhr.removeListener(xhrListener);
+```
