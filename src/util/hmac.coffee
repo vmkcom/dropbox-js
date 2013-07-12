@@ -3,6 +3,9 @@
 
 # Base64-encoded HMAC-SHA1.
 #
+# @private
+# This should only be used by {Dropbox.Util.Oauth}.
+#
 # @param {String} string the ASCII string to be signed
 # @param {String} key the HMAC key
 # @return {String} a base64-encoded HMAC of the given string and key
@@ -11,6 +14,9 @@ Dropbox.Util.hmac = (string, key) ->
                          string.length, key.length)
 
 # Base64-encoded SHA1.
+#
+# @private
+# This should only be used by {Dropbox.Util.Oauth}.
 #
 # @param {String} string the ASCII string to be hashed
 # @return {String} a base64-encoded SHA1 hash of the given string

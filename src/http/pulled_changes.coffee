@@ -37,7 +37,7 @@ class Dropbox.Http.PulledChanges
 
   # @property {Boolean} if true, the API call will not have any more changes
   #   available in the nearby future, so the application should wait for at
-  #   least 5 miuntes before issuing another pullChanges request
+  #   least 5 minutes before issuing another pullChanges request
   shouldBackOff: undefined
 
   # Serializable representation of the pull cursor inside this object.

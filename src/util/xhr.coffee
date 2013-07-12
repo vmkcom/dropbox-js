@@ -68,22 +68,60 @@ else
       # have a real ArrayBufferView prototype. (Safari, Firefox)
       DropboxXhrSendArrayBufferView = false
 
-# Dispatches low-level AJAX calls (XMLHttpRequests).
+# Dispatches low-level HTTP requests.
+#
+# This wraps XMLHttpRequest or its equivalents (XDomainRequest on IE 9 and
+# below) and works around bugs and inconsistencies in various implementations.
 class Dropbox.Util.Xhr
-  # The object used to perform AJAX requests (XMLHttpRequest).
+  # The constructor used to build AJAX requests (XMLHttpRequest).
+  #
+  # @private
+  # {Dropbox.Util.Xhr} instances will wrap instances built by this constructor.
+  #
+  # This is XMLHttpRequest on modern browsers.
   @Request = DropboxXhrRequest
+
   # Set to true when using the XDomainRequest API.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client}, to decide when to
+  # use workarounds for IE limitations.
   @ieXdr = DropboxXhrIeMode
+
   # Set to true if the platform has proper support for FormData.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client} to decide what REST
+  # API calls to use.
   @canSendForms = DropboxXhrCanSendForms
+
   # Set to true if the platform performs CORS preflight checks.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client} to decide when to
+  # use HTTP headers vs query parameters.
   @doesPreflight = DropboxXhrDoesPreflight
-  # Superclass for all ArrayBufferView objects.
+
+  # The closest superclass for all ArrayBufferView objects.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
+  # level 2 implementation.
   @ArrayBufferView = DropboxXhrArrayBufferView
+
   # True if we think we can send ArrayBufferView objects via XHR.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
+  # level 2 implementation.
   @sendArrayBufferView = DropboxXhrSendArrayBufferView
+
   # True if ArrayBuffer and ArrayBufferView instances get wrapped in Blobs
   # before sending via XHR.
+  #
+  # @private
+  # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
+  # level 2 implementation.
   @wrapBlob = DropboxXhrWrapBlob
 
   # Sets up an AJAX request.
@@ -107,15 +145,22 @@ class Dropbox.Util.Xhr
     @xhr = null
     @onError = null
 
-  # @property {?XMLHttpRequest} the raw XMLHttpRequest object used to make the
-  #   request; null until Dropbox.Util.Xhr#prepare is called
+  # The XMLHttpRequest object used to make the request.
+  #
+  # This is null before {Dropbox.Util.Xhr#prepare} is called
+  #
+  # @property {XMLHttpRequest}
   xhr: null
 
-  # @property {?function(Dropbox.ApiError, function(Dropbox.ApiError))} if the
-  #   XHR fails and this is non-null, it will be called with the error as its
-  #   first argument; the function is responsible for calling its 2nd argument
-  #   and passing it the ApiError, otherwise the Xhr's callback will not be
-  #   called
+  # Called when the HTTP request fails.
+  #
+  # If the underlying XMLHttpRequest fails and this is not null, this callback
+  # will receive a {Dropbox.ApiError} instance as its first argument. The
+  # function is responsible for calling its 2nd argument and passing it the
+  # {Dropbox.ApiError}. If the function does not do that, the callback passed
+  # to {Dropbox.Util.Xhr#send} or {Dropbox.Util.Xhr#} will not be called
+  #
+  # @property {function(Dropbox.ApiError, function(Dropbox.ApiError))}
   onError: null
 
   # Sets the parameters (form field values) that will be sent with the request.
@@ -131,15 +176,18 @@ class Dropbox.Util.Xhr
     @params = params
     @
 
-  # Sets the function called when the XHR completes.
+  # Sets the function called when the HTTP request completes.
   #
-  # This function can also be set when calling Dropbox.Util.Xhr#send.
+  # This function can also be set when calling {Dropbox.Util.Xhr#send}.
   #
-  # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
-  #   the XHR completes; if an error occurs, the first parameter will be a
-  #   Dropbox.ApiError instance; otherwise, the second parameter will be an
-  #   instance of the required response type (e.g., String, Blob), and the
-  #   third parameter will be the JSON-parsed 'x-dropbox-metadata' header
+  # @param {function(Dropbox.ApiError, Object, Object, Object)} callback called
+  #   when the XMLHttpRequest completes; if an error occurs, the first
+  #   parameter will be a {Dropbox.ApiError}; otherwise, the first parameter
+  #   will be null, the second parameter will be an instance of the required
+  #   response type (e.g., String, Blob), the third parameter will be the
+  #   JSON-parsed 'x-dropbox-metadata' header, and the fourth parameter will be
+  #   an object containing all the headers
+  #
   # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setCallback: (@callback) ->
     @
@@ -226,11 +274,10 @@ class Dropbox.Util.Xhr
     @body = body
     @
 
-  # Sends off an AJAX request and requests a custom response type.
+  # Sends off an HTTP request and requests a custom response type.
   #
-  # This method requires XHR Level 2 support, which is not available in IE
-  # versions <= 9. If these browsers must be supported, it is recommended to
-  # check if typeof Uint8Array !== 'undefined'
+  # This method requires XMLHttpRequest Level 2 support, which is not available
+  # in Internet Explorer 9 and older.
   #
   # @param {String} responseType the value that will be assigned to the XHR's
   #   responseType property
@@ -335,7 +382,11 @@ class Dropbox.Util.Xhr
                fileData,
                "\r\n", '--', boundary, '--', "\r\n"].join ''
 
+  # Generates a
+  #
   # @private
+  # This should only be called by {Dropbox.Util.Xhr#prepare}.
+  #
   # @return {String} a nonce suitable for use as a part boundary in a multipart
   #   MIME message
   multipartBoundary: ->
@@ -344,6 +395,8 @@ class Dropbox.Util.Xhr
   # Moves this request's parameters to its URL.
   #
   # @private
+  # This should only be called by {Dropbox.Util.Xhr#prepare}.
+  #
   # @return {Dropbox.Util.Xhr} this, for easy call chaining
   paramsToUrl: ->
     if @params
@@ -356,6 +409,8 @@ class Dropbox.Util.Xhr
   # Moves this request's parameters to its body.
   #
   # @private
+  # This should only be called by {Dropbox.Util.Xhr#prepare}.
+  #
   # @return {Dropbox.Util.Xhr} this, for easy call chaining
   paramsToBody: ->
     if @params
@@ -372,8 +427,8 @@ class Dropbox.Util.Xhr
   #
   # This method completely sets up a native XHR object and stops short of
   # calling its send() method, so the API client has a chance of customizing
-  # the XHR. After customizing the XHR, Dropbox.Util.Xhr#send should be called.
-  #
+  # the XHR. After customizing the XHR, {Dropbox.Util.Xhr#send} should be
+  # called.
   #
   # @return {Dropbox.Util.Xhr} this, for easy call chaining
   prepare: ->
@@ -412,7 +467,8 @@ class Dropbox.Util.Xhr
 
   # Fires off the prepared XHR request.
   #
-  # Dropbox.Util.Xhr#prepare should be called exactly once before this method.
+  # {Dropbox.Util.Xhr#prepare} should be called exactly once before this
+  # method is called.
   #
   # @param {function(?Dropbox.ApiError, ?Object, ?Object)} callback called when
   #   the XHR completes; if an error occurs, the first parameter will be a
