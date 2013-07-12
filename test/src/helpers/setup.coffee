@@ -9,7 +9,10 @@ if global? and require? and module? and (not cordova?)
   exports.sinon = require 'sinon'
   exports.sinonChai = require 'sinon-chai'
 
-  exports.authDriver = new Dropbox.AuthDriver.NodeServer port: 8912
+  tlsOptions = key: require('fs').readFileSync('test/ssl/cert.pem')
+  tlsOptions.cert = tlsOptions.key
+  exports.authDriver = new Dropbox.AuthDriver.NodeServer(
+      tls: tlsOptions, port: 8912)
 
   TokenStash = require './token_stash.js'
   stash = new TokenStash()
