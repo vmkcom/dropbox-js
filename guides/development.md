@@ -256,7 +256,7 @@ git push --tags
 cd ..
 git clone git@github.com:you/cdnjs.git
 cd cdnjs
-git remote add up git://github.com/cdnjs/cdnjs.git
+git remote add up https://github.com/cdnjs/cdnjs.git
 cd ../dropbox-js
 ```
 
