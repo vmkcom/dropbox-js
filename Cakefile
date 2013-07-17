@@ -62,7 +62,7 @@ task 'vendor', ->
   vendor()
 
 task 'tokens', ->
-  fs.removeSync './test/token' if fs.existsSync 'test/tokens'
+  fs.removeSync 'test/token' if fs.existsSync 'test/token'
   build ->
     ssl_cert ->
       tokens ->
