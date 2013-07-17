@@ -49,8 +49,19 @@ describe 'Dropbox.AuthDriver.Redirect', ->
       driver = new Dropbox.AuthDriver.Redirect()
       expect(driver.url()).to.equal 'http://test/file?a=true'
 
+    it 'removes tricky fragments from the location', ->
+      @stub.returns 'http://test/file?a=true#/deadfragment'
+      driver = new Dropbox.AuthDriver.Redirect()
+      expect(driver.url()).to.equal 'http://test/file?a=true'
+
     it 'replaces the current file correctly', ->
       @stub.returns 'http://test:123/a/path/file?a=true#deadfragment'
+      driver = new Dropbox.AuthDriver.Redirect redirectFile: 'another.file'
+      expect(driver.url('oauth token')).to.equal(
+          'http://test:123/a/path/another.file')
+
+    it 'replaces the current file correctly in the presence of fragments', ->
+      @stub.returns 'http://test:123/a/path/file?a=true#/deadfragment'
       driver = new Dropbox.AuthDriver.Redirect redirectFile: 'another.file'
       expect(driver.url('oauth token')).to.equal(
           'http://test:123/a/path/another.file')
@@ -74,28 +85,43 @@ describe 'Dropbox.AuthDriver.Popup', ->
   describe '#url', ->
     beforeEach ->
       @stub = sinon.stub Dropbox.AuthDriver.BrowserBase, 'currentLocation'
-      @stub.returns 'http://test:123/a/path/file.htmx'
 
     afterEach ->
       @stub.restore()
 
     it 'reflects the current page when there are no options', ->
+      @stub.returns 'http://test:123/a/path/file.htmx'
       driver = new Dropbox.AuthDriver.Popup
       expect(driver.url('oauth token')).to.equal(
             'http://test:123/a/path/file.htmx')
 
     it 'replaces the current file correctly', ->
+      @stub.returns 'http://test:123/a/path/file.htmx'
+      driver = new Dropbox.AuthDriver.Popup receiverFile: 'another.file'
+      expect(driver.url('oauth token')).to.equal(
+          'http://test:123/a/path/another.file')
+
+    it 'replaces the current file correctly in the presence of fragments', ->
+      @stub.returns 'http://test:123/a/path/file.htmx#/deadfragment'
+      driver = new Dropbox.AuthDriver.Popup receiverFile: 'another.file'
+      expect(driver.url('oauth token')).to.equal(
+          'http://test:123/a/path/another.file')
+
+    it 'replaces the current file correctly in the presence of queries', ->
+      @stub.returns 'http://test:123/a/path/file.htmx?p/aram=true'
       driver = new Dropbox.AuthDriver.Popup receiverFile: 'another.file'
       expect(driver.url('oauth token')).to.equal(
           'http://test:123/a/path/another.file')
 
     it 'replaces an entire URL without a query correctly', ->
+      @stub.returns 'http://test:123/a/path/file.htmx'
       driver = new Dropbox.AuthDriver.Popup(
           receiverUrl: 'https://something.com/filez')
       expect(driver.url('oauth token')).to.equal(
           'https://something.com/filez')
 
     it 'replaces an entire URL with a query correctly', ->
+      @stub.returns 'http://test:123/a/path/file.htmx'
       driver = new Dropbox.AuthDriver.Popup(
           receiverUrl: 'https://something.com/filez?query=param')
       expect(driver.url('oauth token')).to.equal(

@@ -152,6 +152,25 @@ class Dropbox.AuthDriver.BrowserBase
 
     null
 
+  # Replaces the filename (basename) in an URL.
+  #
+  # @private
+  # This is used by subclasses to compute the redirect_uri value passed to
+  # /authorize.
+  #
+  # @param {String} url the URL whose basename will be replaced
+  # @param {String} basename the file name in the returned URL
+  # @return {String} an URL whose basename has been replaced; the URL will not
+  #   have a query or fragment
+  replaceUrlBasename: (url, basename) ->
+    hashIndex = url.indexOf '#'
+    url = url.substring 0, hashIndex if hashIndex isnt -1
+    queryIndex = url.indexOf '?'
+    url = url.substring 0, queryIndex if queryIndex isnt -1
+    fragments = url.split '/'
+    fragments[fragments.length - 1] = basename
+    fragments.join '/'
+
   # Wrapper for window.location, for testing purposes.
   #
   # @return {String} the current page's URL
@@ -210,10 +229,8 @@ class Dropbox.AuthDriver.Redirect extends Dropbox.AuthDriver.BrowserBase
     if options
       if options.redirectUrl
         return options.redirectUrl
-      if options and options.redirectFile
-        fragments = Dropbox.AuthDriver.BrowserBase.currentLocation().split '/'
-        fragments[fragments.length - 1] = options.redirectFile
-        return fragments.join '/'
+      if options.redirectFile
+        return @replaceUrlBasename(url, options.redirectFile)
 
     hashIndex = url.indexOf '#'
     url = url.substring 0, hashIndex if hashIndex isnt -1
@@ -294,14 +311,13 @@ class Dropbox.AuthDriver.Popup extends Dropbox.AuthDriver.BrowserBase
   #   the current location with this parameter's value
   # @return {String} absolute URL of the receiver page
   baseUrl: (options) ->
+    url = Dropbox.AuthDriver.BrowserBase.currentLocation()
     if options
       if options.receiverUrl
         return options.receiverUrl
       else if options.receiverFile
-        fragments = Dropbox.AuthDriver.BrowserBase.currentLocation().split '/'
-        fragments[fragments.length - 1] = options.receiverFile
-        return fragments.join('/')
-    Dropbox.AuthDriver.BrowserBase.currentLocation()
+        return @replaceUrlBasename(url, options.receiverFile)
+    url
 
   # Creates a popup window.
   #

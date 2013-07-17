@@ -222,62 +222,78 @@ cake tokens
 
 ## Release Process
 
+1. Go to the master branch.
+
+    ```bash
+    git checkout master
+    ```
+
 1. At the very least, test in node.js and in a browser before releasing.
 
-```bash
-cake test
-cake webtest
-```
+    ```bash
+    cake test
+    cake webtest
+    ```
 
 1. Bump the version in `package.json`.
 
 1. Publish a new npm package.
 
-```bash
-npm publish
-```
+    ```bash
+    npm publish
+    ```
 
 1. Commit and tag the version bump on GitHub.
 
-```bash
-git add package.json
-git commit -m "Release X.Y.Z."
-git tag -a -m "Release X.Y.Z" vX.Y.Z
-git push
-git push --tags
-```
+    ```bash
+    git add package.json
+    git commit -m "Release X.Y.Z."
+    git tag -a -m "Release X.Y.Z" vX.Y.Z
+    git push origin master
+    git push origin --tags
+    ```
 
 1. If you haven't already, go to the
    [cdnjs GitHub page](https://github.com/cdnjs/cdnjs) and fork it.
 
 1. If you haven't already, set up cdnjs on your machine.
 
-```bash
-cd ..
-git clone git@github.com:you/cdnjs.git
-cd cdnjs
-git remote add up https://github.com/cdnjs/cdnjs.git
-cd ../dropbox-js
-```
+    ```bash
+    cd ..
+    git clone git@github.com:you/cdnjs.git
+    cd cdnjs
+    git remote add up https://github.com/cdnjs/cdnjs.git
+    cd ../dropbox-js
+    ```
 
 1. Add the new release to your cdnjs fork.
 
-```bash
-cd ../cdnjs
-git checkout master
-git pull up master
-npm install
-git checkout -b dbXYZ
-mkdir ajax/libs/dropbox.js/X.Y.Z
-cp ../dropbox-js/lib/dropbox.* ajax/libs/dropbox.js/X.Y.Z/
-vim ajax/libs/dropbox.js/package.json  # Replace "version"'s value with "X.Y.Z"
-npm test
-git add -A
-git commit -m "Added dropbox.js X.Y.Z"
-git push origin dbXYZ
-```
+    ```bash
+    cd ../cdnjs
+    git checkout master
+    git pull up master
+    npm install
+    git checkout -b dbXYZ
+    mkdir ajax/libs/dropbox.js/X.Y.Z
+    cp ../dropbox-js/lib/dropbox.* ajax/libs/dropbox.js/X.Y.Z/
+    vim ajax/libs/dropbox.js/package.json  # Replace "version"'s value with "X.Y.Z"
+    npm test
+    git add -A
+    git commit -m "Added dropbox.js X.Y.Z"
+    git push origin dbXYZ
+    ```
 
 1. Go to your cdnjs for on GitHub and open a pull request. Use these examples
 of accepted
 [major release pull request](https://github.com/cdnjs/cdnjs/pull/735) and
 [minor release pull request](https://github.com/cdnjs/cdnjs/pull/753).
+
+1. When the pull request is accepted, merge the master branch into the stable
+branch.
+
+    ```bash
+    cd ../dropbox-js
+    git checkout stable
+    git merge --ff-only master
+    git push origin master
+    ```

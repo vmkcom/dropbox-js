@@ -11,21 +11,20 @@ application page.
 
 This driver's constructor takes the following options.
 
-* `useQuery` should be set to true for applications that use the URL fragment
-(the part after `#`) to store state information
-* `rememberUser` can be set to true to have the driver store the user's OAuth
-token in `localStorage`, so the user doesn't have to authorize the application
-on every request
+* `rememberUser` can be set to false to stop the driver from storing the user's
+OAuth token in `localStorage`, so the user doesn't have to authorize the
+application on every request
 
-Although it seems that `rememberUser` should be true by default, it brings a
-couple of drawbacks. The user's token will still be valid after signing out of
+Although it seems that `rememberUser` should always be true, it brings a couple
+of drawbacks. The user's token will still be valid after signing out of
 the Dropbox web site, so your application will still recognize the user and
 access their Dropbox. This behavior is unintuitive to users. A reasonable
-compromise for apps that use `rememberUser` is to provide a `Sign out` button
-that calls the `signOut` method on the app's `Dropbox.Client` instance.
+compromise for apps that use the default `rememberUser` setting is to provide a
+`Sign out` button that calls the `signOut` method on the app's `Dropbox.Client`
+instance.
 
-The [checkbox.js](../samples/checkbox.js) sample application uses
-`rememberUser`, and implements signing out as described above.
+The [checkbox.js](../samples/checkbox.js) sample application implements signing
+out as described above.
 
 
 ### Dropbox.AuthDriver.Popup
@@ -51,24 +50,11 @@ client.authDriver(new Dropbox.AuthDriver.Popup({
     receiverUrl: "https://url.to/oauth_receiver.html"}));
 ```
 
-If your application supports Internet Explorer, the receiver code must be
-served from the same origin (protocol, host, port) as your application.
-
-The popup driver adds a `#` (fragment hash) to the receiver URL if necessary,
-to ensure that the user's Dropbox uid and OAuth token are passed to the
-receiver in a URL fragment. This measure may improve your users' privacy, as it
-reduces the chance that their uid or token ends up in a server log.
-
-If you have a good reason to disable the behavior above, set the `useQuery`
-option to true.
-
-```javascript
-client.authDriver(new Dropbox.AuthDriver.Popup({
-    receiverUrl: "https://url.to/receiver.html", useQuery: true}));
-```
+If your application needs to work in Internet Explorer, the receiver code must
+be served from the same origin (protocol, host, port) as your application.
 
 The popup driver implements the `rememberUser` option with the same semantics
-and caveats as the redirecting driver.
+and caveats as the Redirect driver.
 
 
 ### Dropbox.AuthDriver.Chrome
