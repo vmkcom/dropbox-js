@@ -34,10 +34,23 @@ jsonDoc = (yamlDir, toc) ->
     else
       a.namespace.localeCompare b.namespace
 
+  # Expand mixins.
+  for klass in classes
+    continue unless klass.data.includes
+    for included in klass.data.includes
+      includedMixin = classIndex[included.name]
+      for method in includedMixin.data.methods
+        continue if method.private
+        methodClone = JSON.parse(JSON.stringify(method))
+        methodClone.type = 'instance'
+        klass.data.instanceMethods.push methodClone
+
   nameIndex = makeNameIndex classes
 
   json = { classes: [] }
   for klass in classes
+    continue if klass.type is 'Mixin'
+
     jsonCMethods = []
     jsonIMethods = []
     jsonClass =
@@ -98,7 +111,7 @@ jsonDoc = (yamlDir, toc) ->
               jsonOptions.push jsonOption
 
         if method.returns
-          jsonMethod.returns = method.returns.desc
+          jsonMethod.returns = xref(method.returns.desc, nameIndex)
 
         if method.throws and method.throws.length isnt 0
           jsonMethod.has_throws = true
@@ -169,13 +182,13 @@ makeNameIndex = (classes) ->
   for klass in classes
     className = klass.namespace + '.' + klass.name
     nameIndex[className] = "##{className}"
-    attrs = (klass.data.instanceMethods or []).concat(
-        klass.data.properties or [])
+    attrs = (klass.data?.instanceMethods or []).concat(
+        klass.data?.properties or [])
     for attr in attrs
       nameIndex["#{className}##{attr.name}"] = "##{className}.#{attr.name}"
 
-    cattrs = (klass.data.classMethods or []).concat(
-        klass.data.constants or [])
+    cattrs = (klass.data?.classMethods or []).concat(
+        klass.data?.constants or [])
     for attr in cattrs
       nameIndex["#{className}.#{attr.name}"] = "##{className}.#{attr.name}"
   nameIndex
