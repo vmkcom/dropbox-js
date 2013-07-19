@@ -18,7 +18,11 @@ class Dropbox.Client
   #
   # @see Dropbox.Client#credentials
   constructor: (options) ->
-    @apiServer = options.server or @defaultApiServer()
+    @serverRoot = options.server or @defaultServerRoot()
+    if 'maxApiServer' of options
+      @maxApiServer = options.maxApiServer
+    else
+      @maxApiServer = @defaultMaxApiServer()
     @authServer = options.authServer or @defaultAuthServer()
     @fileServer = options.fileServer or @defaultFileServer()
     @downloadServer = options.downloadServer or @defaultDownloadServer()
@@ -1242,6 +1246,7 @@ class Dropbox.Client
   # This is called by the constructor, and used by the other methods. It should
   # not be used directly.
   setupUrls: ->
+    @apiServer = @chooseApiServer()
     @urls =
       # Authentication.
       authorize: "#{@authServer}/1/oauth2/authorize"
@@ -1273,6 +1278,17 @@ class Dropbox.Client
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
       fileopsMove: "#{@apiServer}/1/fileops/move"
+
+  # Chooses an API server that will be used by this client.
+  #
+  # @private
+  # This should only be called by {Dropbox.Client#setupUrls}.
+  #
+  # @return {String} the URL to the API server.
+  chooseApiServer: ->
+    serverNumber = Math.floor(Math.random() * (@maxApiServer + 1))
+    serverId = if serverNumber is 0 then '' else serverNumber.toString()
+    @serverRoot.replace '$', serverId
 
   # @property {Number} the client's progress in the authentication process
   #
@@ -1413,25 +1429,29 @@ class Dropbox.Client
     return
 
   # @private
-  # @return {String} the URL to the default value for the "server" option
-  defaultApiServer: ->
-    'https://api.dropbox.com'
+  # @return {String} the default value for the "server" option
+  defaultServerRoot: ->
+    'https://api$.dropbox.com'
 
   # @private
-  # @return {String} the URL to the default value for the "authServer" option
+  # @return {String} the default value for the "authServer" option
   defaultAuthServer: ->
-    @apiServer.replace 'api', 'www'
+    @serverRoot.replace 'api$', 'www'
 
   # @private
-  # @return {String} the URL to the default value for the "fileServer" option
+  # @return {String} the default value for the "fileServer" option
   defaultFileServer: ->
-    @apiServer.replace 'api', 'api-content'
+    @serverRoot.replace 'api$', 'api-content'
 
   # @private
-  # @return {String} the URL to the default value for the "downloadServer"
-  #   option
+  # @return {String} to the default value for the "downloadServer" option
   defaultDownloadServer: ->
-    @apiServer.replace 'api', 'dl'
+    @serverRoot.replace 'api$', 'dl'
+
+  # @private
+  # @return {Number} the default value for the "maxApiServer" option
+  defaultMaxApiServer: ->
+    30
 
   # Computes the cached value returned by credentials.
   #
@@ -1442,8 +1462,10 @@ class Dropbox.Client
   computeCredentials: ->
     value = @oauth.credentials()
     value.uid = @uid if @uid
-    if @apiServer isnt @defaultApiServer()
-      value.server = @apiServer
+    if @serverRoot isnt @defaultServerRoot()
+      value.server = @serverRoot
+    if @maxApiServer isnt @defaultMaxApiServer()
+      value.maxApiServer = @maxApiServer
     if @authServer isnt @defaultAuthServer()
       value.authServer = @authServer
     if @fileServer isnt @defaultFileServer()

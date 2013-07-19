@@ -4,20 +4,22 @@ describe 'Dropbox.Client', ->
       key: 'mock00key',
       token: 'mock00token',
       uid: 3141592,
-      server: 'https://api.no-calls-in-fasttests.com'
+      server: 'https://api$.no-calls-in-fasttests.com'
 
   describe 'with custom API server URLs', ->
     it 'computes the other URLs correctly', ->
       client = new Dropbox.Client
         key: 'mock00key',
-        server: 'https://api.sandbox.dropbox-proxy.com'
+        server: 'https://api$.sandbox.dropbox-proxy.com'
 
-      expect(client.apiServer).to.equal(
-        'https://api.sandbox.dropbox-proxy.com')
+      expect(client.serverRoot).to.equal(
+          'https://api$.sandbox.dropbox-proxy.com')
+      expect(client.apiServer).to.match(
+          /^https:\/\/api\d*\.sandbox\.dropbox-proxy\.com$/)
       expect(client.authServer).to.equal(
-        'https://www.sandbox.dropbox-proxy.com')
+          'https://www.sandbox.dropbox-proxy.com')
       expect(client.fileServer).to.equal(
-        'https://api-content.sandbox.dropbox-proxy.com')
+          'https://api-content.sandbox.dropbox-proxy.com')
 
   describe '#normalizePath', ->
     it "doesn't touch relative paths", ->
@@ -94,6 +96,22 @@ describe 'Dropbox.Client', ->
         credentials = @client.credentials()
         expect(credentials).to.have.property 'key'
         expect(credentials).to.have.property 'secret'
+
+    describe 'for a client with custom servers', ->
+      beforeEach ->
+        @client = new Dropbox.Client(
+            key: 'mock00key',
+            server: 'https://api$.sandbox.dropbox-proxy.com',
+            downloadServer: 'https://dlserver.sandbox.dropbox-proxy.com')
+
+      it 'contains the custom servers', ->
+        credentials = @client.credentials()
+        expect(credentials).to.have.property 'server'
+        expect(credentials.server).to.equal(
+            'https://api$.sandbox.dropbox-proxy.com')
+        expect(credentials).to.have.property 'downloadServer'
+        expect(credentials.downloadServer).to.equal(
+            'https://dlserver.sandbox.dropbox-proxy.com')
 
   describe '#setCredentials', ->
     it 'gets the client into the RESET state', ->
@@ -278,3 +296,34 @@ describe 'Dropbox.Client', ->
 
     it 'throws an exception if initialized without an API key or token', ->
       expect(-> new Dropbox.Client({})).to.throw(Error, /no api key/i)
+
+  describe '#chooseApiServer', ->
+    describe 'with only one API server', ->
+      beforeEach ->
+        @client = new Dropbox.Client(
+            key: 'mock00key',
+            server: 'https://api$.dropbox.com',
+            maxApiServer: 0)
+
+      it 'always returns that API server', ->
+        for i in [1..10]
+          expect(@client.chooseApiServer()).to.equal 'https://api.dropbox.com'
+
+    describe 'with 10 API servers', ->
+      beforeEach ->
+        @client = new Dropbox.Client(
+            key: 'mock00key',
+            server: 'https://api$.dropbox.com',
+            maxApiServer: 10)
+        @stub = sinon.stub Math, 'random'
+
+      afterEach ->
+        @stub.restore()
+
+      it 'can return the un-numbered server', ->
+        @stub.returns 0.001
+        expect(@client.chooseApiServer()).to.equal 'https://api.dropbox.com'
+
+      it 'can return the 10th numbered server', ->
+        @stub.returns 0.999
+        expect(@client.chooseApiServer()).to.equal 'https://api10.dropbox.com'
