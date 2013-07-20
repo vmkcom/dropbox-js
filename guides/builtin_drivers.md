@@ -88,7 +88,7 @@ implemented by calling the `signOut` instance method of `Dropbox.Client`.
 ### Dropbox.AuthDriver.Cordova
 
 This driver uses Cordova's
-[InAppBrowser](http://cordova.apache.org/docs/en/2.4.0/cordova_inappbrowser_inappbrowser.md.html#InAppBrowser)
+[InAppBrowser](http://cordova.apache.org/docs/en/3.0.0/cordova_inappbrowser_inappbrowser.md.html)
 to open a popup-like activity that completes the OAuth authorization.
 
 ```javascript

@@ -17,7 +17,7 @@ This library is tested against the following JavaScript platforms.
   browser mentioned above
 * [Chrome packaged apps](http://developer.chrome.com/apps/) in the Chrome
   browser mentioned above
-* [Cordova](http://cordova.apache.org/) 2.5
+* [Cordova](http://cordova.apache.org/) 3.0.0
 
 Keep in mind that the versions above are not hard requirements.
 

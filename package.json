@@ -28,6 +28,7 @@
     "chai": ">= 1.6.1",
     "codo": "git+https://github.com/pwnall/codo#yaml",
     "coffee-script": ">= 1.6.3",
+    "cordova": ">= 3.0.0",
     "fs-extra": ">= 0.6.1",
     "express": ">= 3.2.6",
     "glob": ">= 3.2.1",

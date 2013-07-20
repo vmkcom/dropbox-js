@@ -9,16 +9,16 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
   # @option options {Boolean} rememberUser if false, the user's OAuth tokens
   #   are not saved in localStorage; true by default
   constructor: (options) ->
-    if options
-      @rememberUser = if 'rememberUser' of options
-        options.rememberUser
-      else
-        true
-      @scope = options.scope or 'default'
-    else
-      @rememberUser = true
-      @scope = 'default'
-    @scope = options?.scope or 'default'
+    super options
+
+  # URL of the page that the user will be redirected to.
+  #
+  # @return {String} a page on the Dropbox site that will not redirect; this is
+  #   not a new point of failure, because the OAuth flow already depends on
+  #   the Dropbox site being up and reachable
+  # @see Dropbox.AuthDriver#url
+  url: ->
+    'https://www.dropbox.com/developers'
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   #
@@ -27,26 +27,23 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
     browser = window.open authUrl, '_blank', 'location=yes'
     promptPageLoaded = false
     authHost = /^[^/]*\/\/[^/]*\//.exec(authUrl)[0]
-    onEvent = (event) ->
-      if event.url is authUrl and promptPageLoaded is false
-        # We get loadstop for the app authorization prompt page.
-        # On phones, we get a 2nd loadstop for the same authorization URL
-        # when the user clicks 'Allow'. On tablets, we get a different URL.
-        promptPageLoaded = true
-        return
-      if event.url and event.url.substring(0, authHost.length) isnt authHost
-        # The user clicked on the app URL. Wait until they come back.
-        promptPageLoaded = false
-        return
-      if event.type is 'exit' or promptPageLoaded
+    removed = false
+    onEvent = (event) =>
+      return if removed
+      if event.url and @locationStateParam(event.url) is stateParam
+        removed = true
         browser.removeEventListener 'loadstop', onEvent
         browser.removeEventListener 'exit', onEvent
         browser.close() unless event.type is 'exit'
-        callback()
+        callback Dropbox.Util.Oauth.queryParamsFromUrl event.url
+
+      if event.type is 'exit'
+        removed = true
+        browser.removeEventListener 'loadstop', onEvent
+        browser.removeEventListener 'exit', onEvent
+        browser.close() unless event.type is 'exit'
+        callback new AuthError(
+            'error=access_denied&error_description=User+closed+browser+window')
+
     browser.addEventListener 'loadstop', onEvent
     browser.addEventListener 'exit', onEvent
-
-  # This driver does not use a redirect page.
-  #
-  # @see Dropbox.AuthDriver#url
-  url: -> null

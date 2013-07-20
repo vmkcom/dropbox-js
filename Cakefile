@@ -114,15 +114,19 @@ task 'chrometest2', ->
         testChromeApp()
 
 task 'cordova', ->
+  platform = process.env['CORDOVA_PLATFORM'] or 'android'
   vendor ->
     build ->
-      buildCordovaApp()
+      scaffoldCordovaApp platform, ->
+        buildCordovaApp platform
 
 task 'cordovatest', ->
+  platform = process.env['CORDOVA_PLATFORM'] or 'android'
   vendor ->
     build ->
-      buildCordovaApp ->
-        testCordovaApp()
+      scaffoldCordovaApp platform, ->
+        buildCordovaApp platform, ->
+          testCordovaApp platform
 
 setupWatch = (callback) ->
   scheduled = true
@@ -236,24 +240,49 @@ chromeCommand = ->
   else
     'google-chrome'
 
-testCordovaApp = (callback) ->
-  run 'test/cordova_app/cordova/run', ->
+testCordovaApp = (platform, callback) ->
+  run 'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
+      " run #{platform}", ->
     callback() if callback
 
-buildCordovaApp = (callback) ->
-  if fs.existsSync 'test/cordova_app/www'  # iOS
-    appPath = 'test/cordova_app/www'
-  else if fs.existsSync 'test/cordova_app/assets/www'  # Android
-    appPath = 'test/cordova_app/assets/www'
-  else
-    throw new Error 'Cordova www directory not found'
-
-  buildStandaloneApp appPath, ->
-    cordova_js = glob.sync("#{appPath}/cordova*.js").sort().
-                      reverse()[0]
-    run "cp #{cordova_js} #{appPath}/test/js/platform.js", ->
-      run "cp test/html/cordova_index.html #{appPath}/index.html", ->
+scaffoldCordovaApp = (platform, callback) ->
+  step1 = ->
+    if fs.existsSync 'test/cordova_app'
+      step2()
+    else
+      run 'node_modules/cordova/bin/cordova create test/cordova_app ' +
+          'com.dropbox.js.tests "DropboxJsTests"', ->
+        step2()
+  step2 = ->
+    commands = []
+    unless fs.existsSync(
+        'test/cordova_app/plugins/org.apache.cordova.core.inappbrowser')
+      commands.push(
+          'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
+          'plugin add ' +
+          'https://git-wip-us.apache.org/repos/asf/cordova-plugin-inappbrowser.git')
+    unless fs.existsSync "test/cordova_app/platforms/#{platform}"
+      commands.push(
+          'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
+          "platform add #{platform}")
+    if commands.length is 0
+      callback() if callback
+    else
+      async.forEachSeries commands, run, ->
         callback() if callback
+
+  step1()
+
+buildCordovaApp = (platform, callback) ->
+  buildStandaloneApp 'test/cordova_app/www', ->
+    htmlFile = 'test/cordova_app/www/test/html/browser_test.html'
+    testHtml = fs.readFileSync htmlFile, encoding: 'utf-8'
+    testHtml = testHtml.replace(/<script src="[^"]*\/platform.js">/,
+        '<script src="../../cordova.js">')
+    fs.writeFileSync htmlFile, testHtml
+    run "cp test/html/cordova_index.html test/cordova_app/www/index.html", ->
+    run "cp test/html/cordova_index.html test/cordova_app/www/index.html", ->
+      callback() if callback
 
 tokens = (callback) ->
   TokenStash = require './test/js/helpers/token_stash.js'

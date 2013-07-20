@@ -7,9 +7,9 @@ describe 'Dropbox.AuthDriver.Cordova', ->
     afterEach ->
       @stub.restore()
 
-    it 'does not use an auth URL', ->
+    it 'uses a dropbox.com redirect URL', ->
       driver = new Dropbox.AuthDriver.Cordova
-      expect(driver.url('oauth token')).to.equal null
+      expect(driver.url()).to.match(/dropbox\.com/)
 
   describe '#loadCredentials', ->
     beforeEach ->
