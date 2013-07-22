@@ -1,8 +1,8 @@
 # Authentication Drivers
 
-This document explains the structure and functionality of a `dropbox.js` OAuth
-driver, and is intended to help the development of custom OAuth drivers.
-[builtin_drivers.md](The built-in OAuth drivers) are a good starting point for
+This document explains the structure and functionality of a `dropbox.js` auth
+driver, and is intended to help the development of custom auth drivers.
+[builtin_drivers.md](The built-in auth drivers) are a good starting point for
 new implementations.
 
 
@@ -10,7 +10,7 @@ new implementations.
 
 The bulk of OAuth 2 is a process by which Dropbox users authorize your
 application to access their Dropbox. At the end of the process, your applcation
-obtains an access token, which is an opaque string of 64-128 URL-safe
+obtains an _access token_, which is an opaque string of 64-128 URL-safe
 characters. The access token identifies your application and the user who
 authorized it.
 
@@ -30,6 +30,25 @@ environment that runs the code using `dropbox.js`
 
 ### Browser-Side Applications
 
+OAuth drivers for applications that run in untrusted environments use the
+OAuth 2 Implicit Grant flow. Drivers choose this flow by returning `token` from
+the `authType()` method.
+
+Drivers for browser-side applications implement the following process (
+[Implicit Grant]()
+in the OAuth 2.0 specification):
+
+1. The user is shown an _OAuth authorization_ webpage in a web browser (at the
+time of this writing, the page is
+[https://www.dropbox.com/1/oauth2/authorize]). The page displays the
+application name and logo, and gives the user the options to either _authorize
+the app_ (grant it access to his/her Dropbox) or to _deny the app's request_.
+
+2. The user's browser is redirected to a webpage whose URL is specified by the
+auth driver. The page receives the authorization result in the the URL
+fragment (the text after `#`) as an URL-encoded string. If the user authorizes
+the application, the URL fragment will contain information about an access
+token (e.g. `#access_token=A_long_string&token_type=bearer`).
 
 
 ### Server-Side Applications
