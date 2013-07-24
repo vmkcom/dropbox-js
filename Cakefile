@@ -4,9 +4,13 @@ glob = require 'glob'
 path = require 'path'
 watch = require 'watch'
 
+build = require './tasks/build'
+clean = require './tasks/clean'
 download = require './tasks/download'
 siteDoc = require './tasks/site_doc'
 run = require './tasks/run'
+test = require './tasks/test'
+vendor = require './tasks/vendor'
 
 
 # Node 0.6 compatibility hack.
@@ -17,7 +21,7 @@ unless fs.existsSync
 task 'build', ->
   clean ->
     build ->
-      buildPackage()
+      build.package()
 
 task 'clean', ->
   clean()
@@ -43,7 +47,7 @@ task 'fasttest', ->
   clean ->
     build ->
       ssl_cert ->
-        fasttest (code) ->
+        test.fast (code) ->
           process.exit code
 
 task 'webtest', ->
@@ -51,7 +55,7 @@ task 'webtest', ->
     build ->
       ssl_cert ->
         tokens ->
-          webtest()
+          test.web()
 
 task 'cert', ->
   fs.removeSync 'test/ssl' if fs.existsSync 'test/ssl'
@@ -120,79 +124,6 @@ task 'cordovatest', ->
       buildCordovaApp ->
         testCordovaApp()
 
-build = (callback) ->
-  buildCode ->
-    buildTests ->
-      callback() if callback
-
-buildCode = (callback) ->
-  # Ignoring ".coffee" when sorting.
-  # We want "auth_driver.coffee" to sort before "auth_driver/browser.coffee"
-  source_files = glob.sync 'src/**/*.coffee'
-  source_files.sort (a, b) ->
-    a.replace(/\.coffee$/, '').localeCompare b.replace(/\.coffee$/, '')
-
-  # TODO(pwnall): add --map after --compile when CoffeeScript #2779 is fixed
-  #               and the .map file isn't useless
-  command = 'node node_modules/coffee-script/bin/coffee --output lib ' +
-      "--compile --join dropbox.js #{source_files.join(' ')}"
-
-  run command, noExit: true, noOutput: true, (exitCode) ->
-    if exitCode is 0
-      callback() if callback
-      return
-
-    # The build failed.
-    # Compile without --join for decent error messages.
-    fs.mkdirSync 'tmp' unless fs.existsSync 'tmp'
-    commands = []
-    commands.push 'node node_modules/coffee-script/bin/coffee ' +
-        '--output tmp --compile ' + source_files.join(' ')
-    async.forEachSeries commands, run, ->
-      # run should exit on its own. This is mostly for clarity.
-      process.exit 1
-
-buildTests = (callback) ->
-  fs.mkdirSync 'test/js' unless fs.existsSync 'test/js'
-  commands = []
-  # Tests are supposed to be independent, so the build order doesn't matter.
-  test_dirs = glob.sync 'test/src/**/'
-  for test_dir in test_dirs
-    out_dir = test_dir.replace(/^test\/src\//, 'test/js/')
-    test_files = glob.sync path.join(test_dir, '*.coffee')
-    commands.push "node node_modules/coffee-script/bin/coffee " +
-                  "--output #{out_dir} --compile #{test_files.join(' ')}"
-  async.forEachSeries commands, run, ->
-    callback() if callback
-
-clean = (callback) ->
-  dirs = [
-    'doc',
-    'sitedoc/all.json',
-    'sitedoc/html',
-    'sitedoc/yaml',
-    'test/js',
-    'tmp'
-  ]
-  cleanDir = (dirName, callback) ->
-    fs.exists dirName, (exists) ->
-      unless exists
-        callback() if callback
-        return
-      fs.remove dirName, (error) ->
-        callback() if callback
-  async.forEachSeries dirs, cleanDir, ->
-    callback() if callback
-
-buildPackage = (callback) ->
-  # Minify the javascript, for browser distribution.
-  commands = []
-  commands.push 'cd lib && node ../node_modules/uglify-js/bin/uglifyjs ' +
-      '--compress --mangle --output dropbox.min.js ' +
-      '--source-map dropbox.min.map dropbox.js'
-  async.forEachSeries commands, run, ->
-    callback() if callback
-
 setupWatch = (callback) ->
   scheduled = true
   buildNeeded = true
@@ -203,11 +134,11 @@ setupWatch = (callback) ->
       buildNeeded = false
       cleanNeeded = false
       console.log "Doing a clean build"
-      clean -> build -> fasttest()
+      clean -> build -> test.fast()
     else if buildNeeded
       buildNeed = false
       console.log "Building"
-      build -> fasttest()
+      build -> test.fast()
   process.nextTick onTick
 
   watchMonitor = (monitor) ->
@@ -234,26 +165,6 @@ setupWatch = (callback) ->
   watch.createMonitor 'src/', watchMonitor
   watch.createMonitor 'test/src/', watchMonitor
 
-fasttest = (callback) ->
-  test_cases = glob.sync 'test/js/fast/**/*_test.js'
-  test_cases.sort()  # Consistent test case order.
-  run 'node node_modules/mocha/bin/mocha --colors --slow 200 --timeout 1000 ' +
-      '--require test/js/helpers/fast_setup.js --reporter min ' +
-      test_cases.join(' '), noExit: true, (code) ->
-        callback(code) if callback
-
-webtest = (callback) ->
-  webFileServer = require './test/js/helpers/web_file_server.js'
-  if 'BROWSER' of process.env
-    if process.env['BROWSER'] is 'false'
-      url = webFileServer.testUrl()
-      console.log "Please open the URL below in your browser:\n    #{url}"
-    else
-      webFileServer.openBrowser process.env['BROWSER']
-  else
-    webFileServer.openBrowser()
-  callback() if callback?
-
 ssl_cert = (callback) ->
   if fs.existsSync 'test/ssl/cert.pem'
     callback() if callback?
@@ -263,29 +174,6 @@ ssl_cert = (callback) ->
   run 'openssl req -new -x509 -days 365 -nodes -batch ' +
       '-out test/ssl/cert.pem -keyout test/ssl/cert.pem ' +
       '-subj /O=dropbox.js/OU=Testing/CN=localhost ', callback
-
-vendor = (callback) ->
-  # All the files will be dumped here.
-  fs.mkdirSync 'test/vendor' unless fs.existsSync 'test/vendor'
-
-  # Embed the binary test image into a 7-bit ASCII JavaScript.
-  buffer = fs.readFileSync 'test/binary/dropbox.png'
-  bytes = (buffer.readUInt8(i) for i in [0...buffer.length])
-  browserJs = "window.testImageBytes = [#{bytes.join(', ')}];\n"
-  fs.writeFileSync 'test/vendor/favicon.browser.js', browserJs
-  workerJs = "self.testImageBytes = [#{bytes.join(', ')}];\n"
-  fs.writeFileSync 'test/vendor/favicon.worker.js', workerJs
-
-  downloads = [
-    # chai.js ships different builds for browsers vs node.js
-    ['http://chaijs.com/chai.js', 'test/vendor/chai.js'],
-    # sinon.js also ships special builds for browsers
-    ['http://sinonjs.org/releases/sinon.js', 'test/vendor/sinon.js'],
-    # ... and sinon.js ships an IE-only module
-    ['http://sinonjs.org/releases/sinon-ie.js', 'test/vendor/sinon-ie.js']
-  ]
-  async.forEachSeries downloads, download, ->
-    callback() if callback
 
 testChromeApp = (callback) ->
   # Clean up the profile.
