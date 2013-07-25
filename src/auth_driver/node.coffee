@@ -10,8 +10,6 @@ class Dropbox.AuthDriver.NodeServer
   # @option options {Object} tls one or more of the options accepted by
   #   tls.createServer in the node.js standard library; at a minimum, the key
   #   option should be provided
-  # @param {String} faviconFile the path to a file that will be served at
-  #   /favicon.ico
   constructor: (options) ->
     @_port = options?.port or 8912
     if options?.tls
@@ -20,7 +18,6 @@ class Dropbox.AuthDriver.NodeServer
         @_tlsOptions = key: @_tlsOptions, cert: @_tlsOptions
     else
       @_tlsOptions = null
-    @_faviconFile = options?.favicon or null
     # Calling require in the constructor because this doesn't work in browsers.
     @_fs = require 'fs'
     @_http = require 'http'
@@ -35,7 +32,9 @@ class Dropbox.AuthDriver.NodeServer
   authType: -> "code"
 
   # URL to the node.js OAuth callback handler.
-  url: -> "https://localhost:#{@_port}/oauth_callback"
+  url: ->
+    protocol = if @_tlsOptions is null then 'http' else 'https'
+    "#{protocol}://localhost:#{@_port}/oauth_callback"
 
   # Opens the token
   doAuthorize: (authUrl, stateParam, client, callback) ->
@@ -78,11 +77,7 @@ class Dropbox.AuthDriver.NodeServer
 
     data = ''
     request.on 'data', (dataFragment) -> data += dataFragment
-    request.on 'end', =>
-      if @_faviconFile and (url.pathname is '/favicon.ico')
-        @sendFavicon response
-      else
-        @closeBrowser response
+    request.on 'end', => @closeBrowser response
 
   # Renders a response that will close the browser window used for OAuth.
   closeBrowser: (response) ->
@@ -92,14 +87,6 @@ class Dropbox.AuthDriver.NodeServer
                 <p>Please close this window.</p>
                 """
     response.writeHead(200,
-      {'Content-Length': closeHtml.length, 'Content-Type': 'text/html' })
+        'Content-Length': closeHtml.length, 'Content-Type': 'text/html')
     response.write closeHtml
     response.end()
-
-  # Renders the favicon file.
-  sendFavicon: (response) ->
-    @_fs.readFile @_faviconFile, (error, data) ->
-      response.writeHead(200,
-        { 'Content-Length': data.length, 'Content-Type': 'image/x-icon' })
-      response.write data
-      response.end()
