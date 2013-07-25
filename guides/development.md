@@ -148,17 +148,20 @@ The `cake chrometest` command will open a Google Chrome instance. The
 
 ### Cordova Testing
 
-The tests for Cordova assume that a default Cordova application tree for your
-target platform is created under `test/cordova_app`.
-
-If Cordova is unpacked at `~/cordova`, the following command creates an Android
-application.
+The Cordova tests run against Android by default.
 
 ```bash
-~/cordova/android/bin/create test/cordova_app com.dropbox.dropbox_js.test_app DropboxJsTest
+cake cordovatest
 ```
 
-This setup only needs to be done once.
+They can be customized to run against any platform.
+
+```bash
+CORDOVA_PLATFORM=ios cake cordovatest
+```
+
+Some platforms, such as Android, require that an emulator image be configured
+and started before running the tests.
 
 
 ### Fully Automated Tests
