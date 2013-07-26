@@ -90,20 +90,21 @@ protocol, which entails sending the user to a Web page on `www.dropbox.com`,
 and then having them redirected back to your application. Web applications can
 use different methods and UI to drive the user through this process, so
 `dropbox.js` lets application code hook into the authorization process by
-implementing an [OAuth driver](../src/auth_driver.coffee).
+implementing an [auth driver](../src/auth_driver.coffee).
 
-dropbox.js ships with a couple of [built-in OAuth drivers](./builtin_drivers.md),
-which a great way to jump-start application development. The
+dropbox.js ships with a couple of
+[built-in auth drivers](./builtin_drivers.md), which are great way to
+jump-start application development.
 
-Read the [OAuth driver guide](./auth_drivers.md) for further information about
-writing an OAuth driver, and to learn about all the drivers that ship with
-`dropbox.js`.
+When your application's needs outgrow the built-in drivers, read the
+[auth driver guide](./auth_drivers.md) for further information about
+implementing a custom auth driver.
 
 ### Browser Setup
 
 The recommended driver will be automatically set up for you.
 
-The [built-in OAuth drivers guide](./builtin_drivers.md) describes some useful
+The [built-in auth drivers guide](./builtin_drivers.md) describes some useful
 options if the recommended setup isn't suitable for your application.
 
 ### node.js Setup
@@ -115,8 +116,8 @@ all the clients.
 client.authDriver(new Dropbox.AuthDriver.NodeServer(8191));
 ```
 
-The [built-in OAuth drivers guide](./builtin_drivers.md) has useful tips on using the
-`NodeServer` driver.
+The [built-in OAuth drivers guide](./builtin_drivers.md) has useful tips on
+using the `NodeServer` driver.
 
 ### Chrome App / Extension Setup
 
@@ -124,12 +125,13 @@ At this time, the setup for Chrome applications and extensions is a bit more
 involved.
 
 The `Dropbox.AuthDriver.Chrome` section in the
-[built-in OAuth drivers guide](./builtin_drivers.md) has a step-by-step process for
-setting up the [Chrome OAuth driver](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver/NodeServer.html).
+[built-in auth drivers guide](./builtin_drivers.md) has a step-by-step process
+for setting up the
+[Chrome auth driver](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver/Chrome.html).
 
 ### Shared Code
 
-After setting up an OAuth driver, authenticating the user is one method call
+After setting up an auth driver, authenticating the user is one method call
 away.
 
 ```javascript

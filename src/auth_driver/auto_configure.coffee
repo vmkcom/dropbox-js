@@ -4,7 +4,7 @@
 # security issues. node.js application must always use authDriver.
 #
 # @private
-# This method is called by Dropbox.Client#authorize when no OAuth driver is
+# This method is called by {Dropbox.Client#authorize} when no OAuth driver is
 # set. It should not be called directly.
 #
 # @throw Error if the current enviornment does not support auto-configuration
