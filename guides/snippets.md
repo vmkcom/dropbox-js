@@ -94,6 +94,7 @@ var xhrListener = function(dbXhr) {
     // event.loaded bytes received, event.total bytes must be received
     reportProgress(event.loaded, event.total);
   });
+  return true;  // otherwise, the XMLHttpRequest is canceled
 };
 client.onXhr.addListener(xhrListener);
 client.readFile("some_large_file.iso", function(error, data, stat) {
@@ -110,6 +111,7 @@ var xhrListener = function(dbXhr) {
     // event.loaded bytes received, event.total bytes must be received
     reportProgress(event.loaded, event.total);
   });
+  return true;  // otherwise, the XMLHttpRequest is canceled
 };
 client.onXhr.addListener(xhrListener);
 client.writeFile("some_large_file.iso", data, function(error, stat) {
