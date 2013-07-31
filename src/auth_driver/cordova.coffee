@@ -18,7 +18,7 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
   #   the Dropbox site being up and reachable
   # @see Dropbox.AuthDriver#url
   url: ->
-    'https://www.dropbox.com/developers'
+    'https://www.dropbox.com/1/oauth2/redirect_receiver'
 
   # Shows the authorization URL in a pop-up, waits for it to send a message.
   #
