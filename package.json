@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "open": ">= 0.0.4",
-    "xhr2": ">= 0.0.6"
+    "xhr2": ">= 0.0.7"
   },
   "devDependencies": {
     "async": ">= 0.2.9",
