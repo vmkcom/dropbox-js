@@ -331,6 +331,16 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.deep.equal @imageFileBytes
         done()
 
+    it 'reports non-existing files correctly', (done) ->
+      @client.readFile @textFile + '-not-found', (error, text, stat) =>
+        expect(text).not.to.be.ok
+        expect(stat).not.to.be.ok
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do error codes.
+          expect(error.status).to.equal Dropbox.ApiError.NOT_FOUND
+          expect(error.url).to.contain '-not-found'
+        done()
+
     describe 'with an onXhr listener', ->
       beforeEach ->
         @listenerXhr = null
