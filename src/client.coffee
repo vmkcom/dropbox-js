@@ -1544,7 +1544,7 @@ class Dropbox.Client
   # @private
   # @return {String} to the default value for the "downloadServer" option
   defaultDownloadServer: ->
-    @serverRoot.replace 'api$', 'dl'
+    'https://dl.dropboxusercontent.com'
 
   # @private
   # @return {Number} the default value for the "maxApiServer" option

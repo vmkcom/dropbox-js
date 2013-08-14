@@ -24,26 +24,38 @@ class Dropbox.AuthDriver.Cordova extends Dropbox.AuthDriver.BrowserBase
   #
   # @see Dropbox.AuthDriver#doAuthorize
   doAuthorize: (authUrl, stateParam, client, callback) ->
-    browser = window.open authUrl, '_blank', 'location=yes'
+    browser = window.open authUrl, '_blank',
+                          'location=yes,closebuttoncaption=Cancel'
     promptPageLoaded = false
     authHost = /^[^/]*\/\/[^/]*\//.exec(authUrl)[0]
     removed = false
     onEvent = (event) =>
-      return if removed
       if event.url and @locationStateParam(event.url) is stateParam
-        removed = true
+        return if removed
+        browser.removeEventListener 'loadstart', onEvent
+        browser.removeEventListener 'loaderror', onEvent
         browser.removeEventListener 'loadstop', onEvent
         browser.removeEventListener 'exit', onEvent
-        browser.close() unless event.type is 'exit'
-        callback Dropbox.Util.Oauth.queryParamsFromUrl event.url
+        removed = true
+
+        # Try to avoid a browser crash on browser.close().
+        window.setTimeout((-> browser.close()), 10)
+
+        callback Dropbox.Util.Oauth.queryParamsFromUrl(event.url)
+        return
 
       if event.type is 'exit'
-        removed = true
+        return if removed
+        browser.removeEventListener 'loadstart', onEvent
+        browser.removeEventListener 'loaderror', onEvent
         browser.removeEventListener 'loadstop', onEvent
         browser.removeEventListener 'exit', onEvent
-        browser.close() unless event.type is 'exit'
+        removed = true
         callback new AuthError(
             'error=access_denied&error_description=User+closed+browser+window')
+        return
 
+    browser.addEventListener 'loadstart', onEvent
+    browser.addEventListener 'loaderror', onEvent
     browser.addEventListener 'loadstop', onEvent
     browser.addEventListener 'exit', onEvent

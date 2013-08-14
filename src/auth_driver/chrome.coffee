@@ -7,36 +7,15 @@ if chrome?
     if chrome.runtime.onMessage
       DropboxChromeOnMessage = chrome.runtime.onMessage
     if chrome.runtime.sendMessage
-      DropboxChromeSendMessage = (m) -> chrome.runtime.sendMessage m
+      DropboxChromeSendMessage = chrome.runtime.sendMessage.bind chrome.runtime
 
   # v1 manifest APIs.
   if chrome.extension
     if chrome.extension.onMessage
       DropboxChromeOnMessage or= chrome.extension.onMessage
     if chrome.extension.sendMessage
-      DropboxChromeSendMessage or= (m) -> chrome.extension.sendMessage m
-
-  # Apps that use the v2 manifest don't get messenging in Chrome 25.
-  unless DropboxChromeOnMessage
-    do ->
-      pageHack = (page) ->
-        if page.Dropbox
-          Dropbox.AuthDriver.Chrome::onMessage =
-              page.Dropbox.AuthDriver.Chrome.onMessage
-          Dropbox.AuthDriver.Chrome::sendMessage =
-              page.Dropbox.AuthDriver.Chrome.sendMessage
-        else
-          page.Dropbox = Dropbox
-          Dropbox.AuthDriver.Chrome::onMessage = new Dropbox.Util.EventSource
-          Dropbox.AuthDriver.Chrome::sendMessage =
-              (m) -> Dropbox.AuthDriver.Chrome::onMessage.dispatch m
-
-      if chrome.extension and chrome.extension.getBackgroundPage
-        if page = chrome.extension.getBackgroundPage()
-          return pageHack(page)
-
-      if chrome.runtime and chrome.runtime.getBackgroundPage
-        return chrome.runtime.getBackgroundPage (page) -> pageHack page
+      DropboxChromeSendMessage or=
+          chrome.extension.sendMessage.bind chrome.extension
 
 # OAuth driver specialized for Chrome apps and extensions.
 class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase

@@ -240,7 +240,7 @@ chromeCommand = ->
 
 testCordovaApp = (platform, callback) ->
   run 'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
-      " emulate #{platform}", ->
+      " run #{platform}", ->
     callback() if callback
 
 scaffoldCordovaApp = (platform, callback) ->

@@ -745,7 +745,7 @@ Content-Transfer-Encoding: binary\r
         xhr.prepare().send (error, data) ->
           expect(data).not.to.be.ok
           expect(error).to.be.instanceOf Dropbox.ApiError
-        done()
+          done()
 
     it 'parses X-Dropbox-Metadata correctly', (done) ->
       return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
