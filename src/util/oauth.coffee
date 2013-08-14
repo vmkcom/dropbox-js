@@ -330,10 +330,14 @@ class Dropbox.Util.Oauth
     match = /^[^?#]+(\?([^\#]*))?(\#(.*))?$/.exec url
     return {} unless match
     query = match[2] or ''
+    # angular.js routing prepends / to the fragment URL.
+    query = query.substring 1 if query.substring(0, 1) is '/'
     fragment = match[4] or ''
     fragmentOffset = fragment.indexOf '?'
     if fragmentOffset isnt -1
       fragment = fragment.substring fragmentOffset + 1
+    # angular.js routing prepends / to the fragment URL.
+    fragment = fragment.substring 1 if fragment.substring(0, 1) is '/'
     params = {}
     for kvp in query.split('&').concat fragment.split('&')
       offset = kvp.indexOf '='

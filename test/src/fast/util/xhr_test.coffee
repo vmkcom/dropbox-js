@@ -565,11 +565,16 @@ Content-Transfer-Encoding: binary\r
         agent.options.rejectUnauthorized = false
         @XMLHttpRequest.nodejsSet httpsAgent: agent
 
+      # The XHR test server isn't available for packaged apps.
+      @cordova = cordova?
+      @chrome_app = chrome? and (chrome.extension or chrome.app?.runtime)
+
     afterEach ->
       if @node_js
         @XMLHttpRequest.nodejsSet httpsAgent: @oldAgent
 
     it 'processes form-urlencoded data correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/form_encoded'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.prepare().send (error, data) ->
@@ -581,6 +586,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes form-urlencoded+charset data correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/form_encoded?charset=utf8'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.prepare().send (error, data) ->
@@ -590,6 +596,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes JSON-encoded data correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/json_encoded'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.prepare().send (error, data) ->
@@ -603,6 +610,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes JSON-encoded+charset data correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/json_encoded?charset=utf8'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.prepare().send (error, data) ->
@@ -612,6 +620,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'processes data correctly when using setCallback', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/form_encoded'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.setCallback (error, data) ->
@@ -624,6 +633,7 @@ Content-Transfer-Encoding: binary\r
       xhr.prepare().send()
 
     it 'processes data and headers correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/form_encoded'
       xhr = new Dropbox.Util.Xhr 'POST', url
       xhr.reportResponseHeaders()
@@ -648,6 +658,7 @@ Content-Transfer-Encoding: binary\r
           @xhr.setResponseType 'b'
 
         it 'retrieves a string where each character is a byte', (done) ->
+          return done() if @cordova or @chrome_app
           @xhr.prepare().send (error, data) ->
             expect(error).to.not.be.ok
             expect(data).to.be.a 'string'
@@ -660,7 +671,9 @@ Content-Transfer-Encoding: binary\r
           @xhr.setResponseType 'arraybuffer'
 
         it 'retrieves a well-formed ArrayBuffer', (done) ->
-          # Skip this test on node.js and IE 9 and below
+          return done() if @cordova or @chrome_app
+
+          # Skip this test on IE 9 and below
           return done() unless ArrayBuffer?
 
           @xhr.prepare().send (error, buffer) ->
@@ -676,6 +689,8 @@ Content-Transfer-Encoding: binary\r
           @xhr.setResponseType 'blob'
 
         it 'retrieves a well-formed Blob', (done) ->
+          return done() if @cordova or @chrome_app
+
           # Skip this test on node.js and IE 9 and below
           return done() unless Blob?
 
@@ -716,6 +731,7 @@ Content-Transfer-Encoding: binary\r
 
     it 'sends Authorization headers correctly', (done) ->
       return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
+      return done() if @cordova or @chrome_app
 
       xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file'
       xhr.addOauthHeader @oauth
@@ -733,6 +749,7 @@ Content-Transfer-Encoding: binary\r
 
     it 'parses X-Dropbox-Metadata correctly', (done) ->
       return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
+      return done() if @cordova or @chrome_app
 
       xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file'
       xhr.addOauthHeader @oauth
@@ -748,6 +765,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it "doesn't crash on unparseable X-Dropbox-Metadata", (done) ->
+      return done() if @cordova or @chrome_app
       xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file_bug/txt'
       xhr.prepare().send (error, data, metadata) =>
         expect(error).to.equal null
@@ -756,6 +774,8 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'parses doubled X-Dropbox-Metadata header', (done) ->
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
+      return done() if @cordova or @chrome_app
       xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file_bug/2x'
       xhr.prepare().send (error, data, metadata) =>
         expect(error).to.equal null
@@ -769,6 +789,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'reports errors correctly', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/dropbox_file'
       xhr = new Dropbox.Util.Xhr 'GET', url
       xhr.prepare().send (error, data) =>
@@ -799,6 +820,7 @@ Content-Transfer-Encoding: binary\r
         done()
 
     it 'reports errors correctly when onError is set', (done) ->
+      return done() if @cordova or @chrome_app
       url = testXhrServer + '/dropbox_file'
       xhr = new Dropbox.Util.Xhr 'GET', url
       listenerError = null

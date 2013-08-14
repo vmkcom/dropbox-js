@@ -760,6 +760,21 @@ describe 'Dropbox.Util.Oauth', ->
       expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
           'p ': 'v ')
 
+    it 'extracts query and fragment params with /-prefixed query', ->
+      url = 'http://localhost:8911/oauth_redirect?/param1=value1#param2=value2'
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+          param1: 'value1', param2: 'value2')
+
+    it 'extracts query and fragment params with /-prefixed fragment', ->
+      url = 'http://localhost:8911/oauth_redirect?param1=value1#/param2=value2'
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+          param1: 'value1', param2: 'value2')
+
+    it 'extracts /-prefixed fragment query param', ->
+      url = 'http://localhost:8911/oauth_redirect#?/param1=value1'
+      expect(Dropbox.Util.Oauth.queryParamsFromUrl(url)).to.deep.equal(
+          param1: 'value1')
+
   describe '.timestamp', ->
     it 'returns a number', ->
       expect(Dropbox.Util.Oauth.timestamp()).to.be.a 'number'
