@@ -1,4 +1,4 @@
-describe.only 'Web Worker tests', ->
+describe 'Web Worker tests', ->
   if typeof window isnt 'undefined' and typeof window.Worker is 'function'
     it 'pass', (done) ->
       @timeout 3600000  # This test actually runs the whole suite in a Worker.

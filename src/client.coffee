@@ -1194,6 +1194,98 @@ class Dropbox.Client
     @dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
+  # Fetches information about a Dropbox Platform application.
+  #
+  # This method retrieves the same information that is displayed on the OAuth
+  # authorize page, in a machine-friendly format. It is intended to be used in
+  # IDEs and debugging.
+  #
+  # @param {String} (optional) appKey the App key of the application whose
+  #   information will be retrieved; if not given, the App key passed to this
+  #   Client will be used instead
+  # @param {function(Dropbox.ApiError, Dropbox.Http.AppInfo)} callback called
+  #   with the result of the /app/info HTTP request; if the call succeeds, the
+  #   second parameter is a {Dropbox.Http.AppInfo} instance describing the
+  #   application whose key was given
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  appInfo: (appKey, callback) ->
+    if (not callback) and (typeof appKey is 'function')
+      callback = appKey
+      appKey = @oauth.credentials().key
+
+    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsInfo
+    xhr.setParams app_key: appKey
+    @dispatchXhr xhr, (error, appInfo) ->
+      callback error, Dropbox.Http.AppInfo.parse(appInfo, appKey)
+
+  # Checks if a user is a developer for a Dropbox Platform application.
+  #
+  # This is intended to be used by IDEs to validate Dropbox App keys that their
+  # users input. This method can be used to make sure that users go to
+  # /developers and generate their own App keys, instead of copy-pasting keys
+  # from code samples. The metod can also be used to enable debugging / logging
+  # in applications.
+  #
+  # @param {String, Dropbox.AccountInfo} userId the user whose developer status
+  #   will be checked
+  # @param {String, Dropbox.Http.AppInfo} appKey (optional) the API key of the
+  #   application whose developer list will be checked
+  # @param {function(Dropbox.ApiError, Boolean)} callback called with the
+  #   result of the /app/check_developer HTTP request; if the call succeeds,
+  #   the second argument will be true if the user with the given ID is a
+  #   developer of the given application, and false otherwise
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  isAppDeveloper: (userId, appKey, callback) ->
+    if (typeof userId is 'object') and ('uid' of userId)
+      # userId is a Dropbox.AccountInfo instance
+      userId = userId.uid
+
+    if (not callback) and (typeof appKey is 'function')
+      callback = appKey
+      appKey = @oauth.credentials().key
+    else if (typeof appKey is 'object') and ('key' of appKey)
+      # appKey is a Dropbox.Http.AppInfo instance
+      appKey = appKey.key
+
+    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsCheckDeveloper
+    xhr.setParams app_key: appKey, uid: userId
+    @dispatchXhr xhr, (error, response) ->
+      if response
+        callback error, response.is_developer
+      else
+        callback error
+
+  # Checks if a given URI is an OAuth redirect URI for a Dropbox application.
+  #
+  # This is intended to be used in IDEs and debugging. The same information can
+  # be obtained by checking the HTTP status in an /oauth2/authorize HTTP GET
+  # with request_uri set to the desired URI.
+  #
+  # @param {String} redirectUri the URI that will be checked against the app's
+  #   list of allowed OAuth redirect URIs
+  # @param {String, Dropbox.Http.AppInfo} appKey (optional) the API key of the
+  #   application whose list of allowed OAuth redirect URIs will be checked
+  # @param {function(Dropbox.ApiError, Boolean)} callback called with the
+  #   result of the /app/check_redirect_uri HTTP request; if the call succeeds,
+  #   the second argument will be true if the given URI is on the application's
+  #   list of allowed OAuth redirect URIs, and false otherwise
+  # @return {XMLHttpRequest} the XHR object used for this API call
+  hasOauthRedirectUri: (redirectUri, appKey, callback) ->
+    if (not callback) and (typeof appKey is 'function')
+      callback = appKey
+      appKey = @oauth.credentials().key
+    else if (typeof appKey is 'object') and ('key' of appKey)
+      # appKey is a Dropbox.Http.AppInfo instance
+      appKey = appKey.key
+
+    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsCheckRedirectUri
+    xhr.setParams app_key: appKey, redirect_uri: redirectUri
+    @dispatchXhr xhr, (error, response) ->
+      if response
+        callback error, response.has_redirect_uri
+      else
+        callback error
+
   # Forgets all the user's information.
   #
   # {Dropbox.Client#signOut} should be called when the user expresses an intent
@@ -1278,6 +1370,12 @@ class Dropbox.Client
       fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
       fileopsDelete: "#{@apiServer}/1/fileops/delete"
       fileopsMove: "#{@apiServer}/1/fileops/move"
+
+      # Platform application information.
+      appsInfo: "#{@apiServer}/1/apps/info"
+      appsCheckDeveloper: "#{@apiServer}/1/apps/check_developer"
+      appsCheckRedirectUri: "#{@apiServer}/1/apps/check_redirect_uri"
+
 
   # Chooses an API server that will be used by this client.
   #

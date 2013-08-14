@@ -1493,6 +1493,125 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.contain 'PNG'
         done()
 
+  describe '#appInfo', ->
+    it 'returns an error for non-existing app keys', (done) ->
+      @client.appInfo 'no0such0key', (error, appInfo) ->
+        expect(appInfo).not.to.be.ok
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        done()
+
+    it 'uses the client key if no key is given', (done) ->
+      @client.appInfo (error, appInfo) ->
+        expect(error).to.equal null
+        expect(appInfo).to.be.instanceOf Dropbox.Http.AppInfo
+        expect(appInfo.name).to.match /Automated Testing Keys/i
+        expect(appInfo.key).to.equal clientKeys.key
+        expect(appInfo.canUseDatastores).to.equal true
+        expect(appInfo.canUseFiles).to.equal true
+        if clientKeys.key is testFullDropboxKeys.key
+          expect(appInfo.canUseFullDropbox).to.equal true
+        else
+          expect(appInfo.canUseFullDropbox).to.equal false
+        expect(appInfo.icon(Dropbox.Http.AppInfo.ICON_SMALL)).to.be.a 'string'
+        expect(appInfo.icon(Dropbox.Http.AppInfo.ICON_LARGE)).to.be.a 'string'
+        done()
+
+    it 'uses a key if given', (done) ->
+      if clientKeys.key is testFullDropboxKeys.key
+        otherKey = testKeys.key
+        expectFullDropbox = false
+      else
+        otherKey = testFullDropboxKeys.key
+        expectFullDropbox = true
+
+      @client.appInfo otherKey, (error, appInfo) ->
+        expect(error).to.equal null
+        expect(appInfo).to.be.instanceOf Dropbox.Http.AppInfo
+        expect(appInfo.name).to.match /Automated Testing Keys/i
+        expect(appInfo.key).to.equal otherKey
+        expect(appInfo.canUseFullDropbox).to.equal expectFullDropbox
+        done()
+
+    it 'returns valid PNG icons', (done) ->
+      @client.appInfo (error, appInfo) ->
+        expect(error).to.equal null
+        expect(appInfo).to.be.instanceOf Dropbox.Http.AppInfo
+        smallUrl = appInfo.icon Dropbox.Http.AppInfo.ICON_SMALL
+        largeUrl = appInfo.icon Dropbox.Http.AppInfo.ICON_LARGE
+        expect(smallUrl).to.be.a 'string'
+        expect(largeUrl).to.be.a 'string'
+        expect(smallUrl).not.to.equal largeUrl
+        smallXhr = new Dropbox.Util.Xhr 'GET', smallUrl
+        smallXhr.prepare().send (error, data) =>
+          expect(error).to.equal null
+          expect(data).to.contain 'PNG'
+          largeXhr = new Dropbox.Util.Xhr 'GET', largeUrl
+          largeXhr.prepare().send (error, data) =>
+            expect(error).to.equal null
+            expect(data).to.contain 'PNG'
+            done()
+
+  describe '#isAppDeveloper', ->
+    it 'returns an error for non-existing app keys', (done) ->
+      @client.isAppDeveloper 1, 'no0such0key', (error, isAppDeveloper) ->
+        expect(isAppDeveloper).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        done()
+
+    it 'uses the client key if no key is given', (done) ->
+      @client.isAppDeveloper 1, (error, isDeveloper) ->
+        expect(error).to.equal null
+        expect(isDeveloper).to.equal false
+        done()
+
+    it 'works with AppInfo instances', (done) ->
+      @client.appInfo (error, appInfo) =>
+        expect(error).to.equal null
+        credentials = @client.credentials()
+        delete credentials['key']
+        client = new Dropbox.Client credentials
+        client.isAppDeveloper 1, appInfo, (error, isDeveloper) ->
+          expect(error).to.equal null
+          expect(isDeveloper).to.equal false
+          done()
+
+  describe '#hasOauthRedirectUri', ->
+    beforeEach ->
+      @yesUri = 'https://www.dropbox.com/1/oauth2/redirect_receiver'
+      @noUri = 'https://www.dropbox.com/not/really/registered'
+
+    it 'returns an error for non-existing app keys', (done) ->
+      @client.hasOauthRedirectUri @yesUri, 'no0such0key', (error, hasUri) ->
+        expect(hasUri).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        done()
+
+    it 'uses the client key if no key is given', (done) ->
+      @client.hasOauthRedirectUri @yesUri, (error, hasUri) ->
+        expect(error).to.equal null
+        expect(hasUri).to.equal true
+        done()
+
+    it 'reports missing URIs correctly', (done) ->
+      @client.hasOauthRedirectUri @noUri, (error, hasUri) ->
+        expect(error).to.equal null
+        expect(hasUri).to.equal false
+        done()
+
+    it 'works with AppInfo instances', (done) ->
+      @client.appInfo (error, appInfo) =>
+        expect(error).to.equal null
+        credentials = @client.credentials()
+        delete credentials['key']
+        client = new Dropbox.Client credentials
+        client.hasOauthRedirectUri @noUri, appInfo, (error, hasUri) ->
+          expect(error).to.equal null
+          expect(hasUri).to.equal false
+          done()
+
   describe '#appHash', ->
     it 'is consistent', ->
       client = new Dropbox.Client clientKeys
