@@ -573,8 +573,21 @@ class Dropbox.Util.Xhr
       try
         metadata = JSON.parse metadataJson
       catch jsonError
-        # Make sure the app doesn't crash if the server goes crazy.
-        metadata = undefined
+        # In Chrome (at least) we sometimes get the header doubled up, so it has two identical
+        # JSON strings comma separated. This allows us to work around that issue. Would be great
+        # if we found a different solution, but this should work for now:
+        # https://github.com/dropbox/dropbox-js/issues/109
+        duplicateIndex = metadataJson.indexOf '}, {'
+        if duplicateIndex isnt -1
+          try
+            metadataJson = metadataJson.substring(0, duplicateIndex + 1)
+            metadata = JSON.parse metadataJson
+          catch jsonError
+            # Make sure the app doesn't crash if the server goes crazy.
+            metadata = undefined
+        else
+          # Make sure the app doesn't crash if the server goes crazy.
+          metadata = undefined
     else
       metadata = undefined
 
