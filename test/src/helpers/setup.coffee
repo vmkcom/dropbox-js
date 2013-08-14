@@ -20,7 +20,8 @@ if global? and require? and module? and (not cordova?)
     exports.testKeys = credentials.sandbox
     exports.testFullDropboxKeys = credentials.full
 
-  webFileServer = require './web_file_server.js'
+  WebFileServer = require './web_file_server.js'
+  webFileServer = new WebFileServer()
   exports.testXhrServer = webFileServer.testOrigin()
 
   testImagePath = './test/binary/dropbox.png'
@@ -37,6 +38,8 @@ else
     # Hack-implement "rememberUser: false" in the Chrome driver.
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null
+
+    exports.testXhrServer = 'http://localhost:8911'
   else
     if typeof window is 'undefined' and typeof self isnt 'undefined'
       # Web Worker.
@@ -51,15 +54,18 @@ else
         # Cordova WebView.
         exports.authDriver = new Dropbox.AuthDriver.Cordova(
             rememberUser: false)
+
+        # The XHR test server isn't available in Cordova.
+        exports.testXhrServer = null
       else
         # Browser
         exports.authDriver = new Dropbox.AuthDriver.Popup(
             receiverFile: 'oauth_receiver.html', rememberUser: false,
             scope: 'helper-popup')
 
-      # NOTE: not all browsers suppot location.origin, using our own helper
-      exports.testXhrServer =
-          Dropbox.AuthDriver.Popup.locationOrigin(exports.location)
+        # NOTE: not all browsers suppot location.origin, using our own helper
+        exports.testXhrServer =
+            Dropbox.AuthDriver.Popup.locationOrigin(exports.location)
 
   # NOTE: browser-side apps should not use API secrets, so we remove them
   exports.testKeys.__secret = exports.testKeys.secret

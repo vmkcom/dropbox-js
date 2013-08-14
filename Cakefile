@@ -174,6 +174,10 @@ ssl_cert = (callback) ->
       '-subj /O=dropbox.js/OU=Testing/CN=localhost ', callback
 
 testChromeApp = (callback) ->
+  # Set up the file server for XHR tests.
+  WebFileServer = require './test/js/helpers/web_file_server.js'
+  new WebFileServer port: 8911, noSsl: true
+
   # Clean up the profile.
   fs.mkdirSync 'test/chrome_profile' unless fs.existsSync 'test/chrome_profile'
 

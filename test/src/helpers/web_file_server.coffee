@@ -1,12 +1,16 @@
 express = require 'express'
 fs = require 'fs'
+http = require 'http'
 https = require 'https'
 open = require 'open'
 
 # express.js app server for the Web files and XHR tests.
 class WebFileServer
   # Starts up a HTTP server.
-  constructor: (@port = 8911) ->
+  constructor: (options = {}) ->
+    @port = options.port or 8911
+    @noSsl = !!options.noSsl
+    @protocol = if @noSsl then 'http' else 'https'
     @createApp()
 
   # Opens the test URL in a browser.
@@ -15,11 +19,11 @@ class WebFileServer
 
   # The root URL for XHR tests.
   testOrigin: ->
-    "https://localhost:#{@port}"
+    "#{@protocol}://localhost:#{@port}"
 
   # The URL that should be used to start the tests.
   testUrl: ->
-    "https://localhost:#{@port}/test/html/browser_test.html"
+    "#{@protocol}://localhost:#{@port}/test/html/browser_test.html"
 
   # The self-signed certificate used by this server.
   certificate: ->
@@ -40,6 +44,7 @@ class WebFileServer
       response.header 'Access-Control-Allow-Methods', 'DELETE,GET,POST,PUT'
       response.header 'Access-Control-Allow-Headers',
                       'Content-Type, Authorization'
+      response.header 'Access-Control-Expose-Headers', 'x-dropbox-metadata'
       next()
 
     @app.use @app.router
@@ -124,9 +129,12 @@ class WebFileServer
 
     ## Server creation.
 
-    options = key: fs.readFileSync('test/ssl/cert.pem')
-    options.cert = options.key
-    @server = https.createServer(options, @app)
+    if @noSsl
+      @server = http.createServer @app
+    else
+      options = key: fs.readFileSync('test/ssl/cert.pem')
+      options.cert = options.key
+      @server = https.createServer options, @app
     @server.listen @port
 
-module.exports = new WebFileServer
+module.exports = WebFileServer

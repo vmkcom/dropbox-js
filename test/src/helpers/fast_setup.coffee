@@ -9,7 +9,8 @@ exports.chai = require 'chai'
 exports.sinon = require 'sinon'
 exports.sinonChai = require 'sinon-chai'
 
-webFileServer = require './web_file_server.js'
+WebFileServer = require './web_file_server.js'
+webFileServer = new WebFileServer()
 exports.testXhrServer = webFileServer.testOrigin()
 
 testImagePath = './test/binary/dropbox.png'

@@ -22,7 +22,8 @@ fasttest = (callback) ->
         callback(code) if callback
 
 webtest = (callback) ->
-  webFileServer = require '../test/js/helpers/web_file_server.js'
+  WebFileServer = require '../test/js/helpers/web_file_server.js'
+  webFileServer = new WebFileServer()
   if 'BROWSER' of process.env
     if process.env['BROWSER'] is 'false'
       url = webFileServer.testUrl()
