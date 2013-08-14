@@ -3,7 +3,7 @@ fs = require 'fs'
 https = require 'https'
 open = require 'open'
 
-# Tiny express.js server for the Web files.
+# express.js app server for the Web files and XHR tests.
 class WebFileServer
   # Starts up a HTTP server.
   constructor: (@port = 8911) ->
@@ -87,6 +87,40 @@ class WebFileServer
       response.header 'Content-Type', contentType
       response.header 'Content-Length', body.length.toString()
       response.end body
+
+    # Simulate reading a file.
+    @app.get '/dropbox_file', (request, response) ->
+      # Test Authorize and error handling.
+      if request.get('Authorization') != 'Bearer mock00token'
+        body = JSON.stringify error: 'invalid access token'
+        response.status 401
+        # NOTE: the API server uses text/javascript instead of application/json
+        response.header 'Content-Type', 'text/javascript'
+        response.header 'Content-Length', body.length
+        response.end body
+        return
+
+      # Test metadata parsing.
+      metadata = JSON.stringify(
+          size: '1KB', is_dir: false, path: '/test_path.txt', root: 'dropbox')
+      body = 'Test file contents'
+      response.header 'Content-Type', 'text/plain'
+      response.header 'X-Dropbox-Metadata', metadata
+      response.end body
+
+    # Simulate metadata bugs.
+    @app.get '/dropbox_file_bug/:bug_id', (request, response) ->
+      metadata = JSON.stringify(
+          size: '1KB', is_dir: false, path: '/test_path.txt', root: 'dropbox')
+      body = 'Test file contents'
+      response.header 'Content-Type', 'text/plain'
+      switch request.params.bug_id
+        when '2x'
+          response.header 'X-Dropbox-Metadata', "#{metadata}, #{metadata}"
+        when 'txt'
+          response.header 'X-Dropbox-Metadata', 'no json here'
+      response.end body
+
 
     ## Server creation.
 

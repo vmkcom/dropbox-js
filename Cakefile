@@ -30,18 +30,12 @@ task 'watch', ->
   setupWatch()
 
 task 'test', ->
-  reporter = if process.env['LIST'] then 'spec' else 'dot'
-
   vendor ->
     build ->
       ssl_cert ->
         tokens ->
-          test_cases = glob.sync 'test/js/**/*_test.js'
-          test_cases.sort()  # Consistent test case order.
-          run 'node node_modules/mocha/bin/mocha --colors --slow 200 ' +
-              "--timeout 20000 --reporter #{reporter} " +
-              '--require test/js/helpers/setup.js ' +
-              '--globals Dropbox ' + test_cases.join(' ')
+          test.node (code) ->
+            process.exit code
 
 task 'fasttest', ->
   clean ->

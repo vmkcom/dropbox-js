@@ -714,3 +714,125 @@ Content-Transfer-Encoding: binary\r
             expect(bytes).to.deep.equal testImageBytes
             done()
 
+    it 'sends Authorization headers correctly', (done) ->
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
+
+      xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file'
+      xhr.addOauthHeader @oauth
+      xhr.prepare().send (error, data) =>
+        expect(error).to.equal null
+        expect(data).to.equal 'Test file contents'
+
+        xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file'
+        @oauth.setCredentials token: 'wrong00token'
+        xhr.addOauthHeader @oauth
+        xhr.prepare().send (error, data) ->
+          expect(data).not.to.be.ok
+          expect(error).to.be.instanceOf Dropbox.ApiError
+        done()
+
+    it 'parses X-Dropbox-Metadata correctly', (done) ->
+      return done() if Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't set headers.
+
+      xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file'
+      xhr.addOauthHeader @oauth
+      xhr.prepare().send (error, data, metadata) =>
+        expect(error).to.equal null
+        expect(data).to.equal 'Test file contents'
+        expect(metadata).to.have.property 'size'
+        expect(metadata.size).to.equal '1KB'
+        expect(metadata).to.have.property 'is_dir'
+        expect(metadata.is_dir).to.equal false
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal '/test_path.txt'
+        done()
+
+    it "doesn't crash on unparseable X-Dropbox-Metadata", (done) ->
+      xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file_bug/txt'
+      xhr.prepare().send (error, data, metadata) =>
+        expect(error).to.equal null
+        expect(data).to.equal 'Test file contents'
+        expect(metadata).not.to.be.ok
+        done()
+
+    it 'parses doubled X-Dropbox-Metadata header', (done) ->
+      xhr = new Dropbox.Util.Xhr 'GET', testXhrServer + '/dropbox_file_bug/2x'
+      xhr.prepare().send (error, data, metadata) =>
+        expect(error).to.equal null
+        expect(data).to.equal 'Test file contents'
+        expect(metadata).to.have.property 'size'
+        expect(metadata.size).to.equal '1KB'
+        expect(metadata).to.have.property 'is_dir'
+        expect(metadata.is_dir).to.equal false
+        expect(metadata).to.have.property 'path'
+        expect(metadata.path).to.equal '/test_path.txt'
+        done()
+
+    it 'reports errors correctly', (done) ->
+      url = testXhrServer + '/dropbox_file'
+      xhr = new Dropbox.Util.Xhr 'GET', url
+      xhr.prepare().send (error, data) =>
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'GET'
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
+          expect(error).to.have.property 'responseText'
+          expect(error.responseText).to.be.a 'string'
+          expect(error.responseText).to.equal(
+              '{"error":"invalid access token"}')
+          expect(error).to.have.property 'response'
+          expect(error.response).to.have.property 'error'
+          expect(error.response.error).to.equal 'invalid access token'
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
+          expect(error).to.have.property 'response'
+          expect(error.response).to.be.an 'object'
+          expect(error.response).to.have.property 'error'
+        expect(error.toString()).to.match /^Dropbox API error/
+        expect(error.toString()).to.contain 'GET'
+        expect(error.toString()).to.contain url
+        expect(error.toString()).to.contain 'invalid access token'
+        done()
+
+    it 'reports errors correctly when onError is set', (done) ->
+      url = testXhrServer + '/dropbox_file'
+      xhr = new Dropbox.Util.Xhr 'GET', url
+      listenerError = null
+      xhrCallbackCalled = false
+      xhr.onError = (error, callback) ->
+        expect(listenerError).to.equal null
+        expect(xhrCallbackCalled).to.equal false
+        listenerError = error
+        callback error
+      xhr.prepare().send (error, data) =>
+        xhrCallbackCalled = true
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'GET'
+        expect(listenerError).to.equal error
+        done()
+
+    it 'reports network errors correctly', (done) ->
+      url = 'https://broken.to.causeanetworkerror.com/1/oauth/request_token'
+      xhr = new Dropbox.Util.Xhr 'POST', url
+      xhr.prepare().send (error, data) =>
+        expect(data).to.equal undefined
+        expect(error).to.be.instanceOf Dropbox.ApiError
+        expect(error).to.have.property 'url'
+        expect(error.url).to.equal url
+        expect(error).to.have.property 'method'
+        expect(error.method).to.equal 'POST'
+        expect(error).to.have.property 'responseText'
+        expect(error.responseText).to.equal '(no response)'
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
+          expect(error).to.have.property 'status'
+          expect(error.status).to.equal Dropbox.ApiError.NETWORK_ERROR
+        done()
+

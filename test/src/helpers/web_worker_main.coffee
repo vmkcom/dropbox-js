@@ -28,8 +28,8 @@ importScripts '../../../test/js/fast/util/event_source_test.js'
 importScripts '../../../test/js/fast/util/hmac_test.js'
 importScripts '../../../test/js/fast/util/oauth_test.js'
 importScripts '../../../test/js/fast/util/parse_date_test.js'
+importScripts '../../../test/js/fast/util/xhr_test.js'
 # NOTE: not loading web_worker_test.js, to allow Worker debugging with it.only
-importScripts '../../../test/js/xhr_test.js'
 
 # NOTE: not loading helpers/browser_mocha_runner, using the code below instead.
 
@@ -38,4 +38,5 @@ self.onmessage = (event) ->
   message = event.data
   switch message.type
     when 'go'
+      self.testXhrServer = message.testXhrServer
       mocha.run()

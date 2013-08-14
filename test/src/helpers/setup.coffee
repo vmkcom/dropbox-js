@@ -42,6 +42,9 @@ else
       # Web Worker.
       exports = self
       exports.authDriver = null
+
+      # NOTE: workers set testXhrServer in the "go" postMessage
+      exports.testXhrServer = false
     else
       exports = window
       if cordova?
@@ -54,7 +57,7 @@ else
             receiverFile: 'oauth_receiver.html', rememberUser: false,
             scope: 'helper-popup')
 
-      # NOTE: not all browsers suppot location.origin
+      # NOTE: not all browsers suppot location.origin, using our own helper
       exports.testXhrServer =
           Dropbox.AuthDriver.Popup.locationOrigin(exports.location)
 
