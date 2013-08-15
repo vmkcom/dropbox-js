@@ -84,12 +84,22 @@ describe 'Dropbox.ApiError', ->
       expect(Dropbox.ApiError).to.have.property 'CONFLICT'
     it 'is between 400 and 499', ->
       expect(@code).to.be.within 400, 499
+    it 'is less than RATE_LIMITED', ->
+      expect(@code).to.be.below Dropbox.ApiError.RATE_LIMITED
 
   describe '.RATE_LIMITED', ->
     beforeEach ->
       @code = Dropbox.ApiError.RATE_LIMITED
     it 'is defined', ->
       expect(Dropbox.ApiError).to.have.property 'RATE_LIMITED'
+    it 'is between 400 and 499', ->
+      expect(@code).to.be.within 400, 499
+
+  describe '.SERVER_ERROR', ->
+    beforeEach ->
+      @code = Dropbox.ApiError.SERVER_ERROR
+    it 'is defined', ->
+      expect(Dropbox.ApiError).to.have.property 'SERVER_ERROR'
     it 'is between 500 and 599', ->
       expect(@code).to.be.within 500, 599
     it 'is less than OVER_QUOTA', ->

@@ -85,7 +85,12 @@ class Dropbox.ApiError
   # Status value indicating that the application is making too many requests.
   #
   # Rate-limiting can happen on a per-application or per-user basis.
-  @RATE_LIMITED: 503
+  @RATE_LIMITED: 429
+
+  # Status value indicating a server issue.
+  #
+  # The request should be retried after some time.
+  @SERVER_ERROR: 503
 
   # Status value indicating that the user's Dropbox is over its storage quota.
   #
