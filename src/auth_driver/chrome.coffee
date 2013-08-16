@@ -1,20 +1,20 @@
-DropboxChromeOnMessage = null
-DropboxChromeSendMessage = null
+DbxChromeOnMessage = null
+DbxChromeSendMessage = null
 
 if chrome?
   # v2 manifest APIs.
   if chrome.runtime
     if chrome.runtime.onMessage
-      DropboxChromeOnMessage = chrome.runtime.onMessage
+      DbxChromeOnMessage = chrome.runtime.onMessage
     if chrome.runtime.sendMessage
-      DropboxChromeSendMessage = chrome.runtime.sendMessage.bind chrome.runtime
+      DbxChromeSendMessage = chrome.runtime.sendMessage.bind chrome.runtime
 
   # v1 manifest APIs.
   if chrome.extension
     if chrome.extension.onMessage
-      DropboxChromeOnMessage or= chrome.extension.onMessage
+      DbxChromeOnMessage or= chrome.extension.onMessage
     if chrome.extension.sendMessage
-      DropboxChromeSendMessage or=
+      DbxChromeSendMessage or=
           chrome.extension.sendMessage.bind chrome.extension
 
 # OAuth driver specialized for Chrome apps and extensions.
@@ -27,7 +27,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
   # This should only be used to communicate between
   # {Dropbox.AuthDriver.Chrome#doAuthorize} and
   # {Dropbox.AuthDriver.Chrome.oauthReceiver}.
-  onMessage: DropboxChromeOnMessage
+  onMessage: DbxChromeOnMessage
 
   # Sends a message across the Chrome extension / application.
   #
@@ -41,7 +41,7 @@ class Dropbox.AuthDriver.Chrome extends Dropbox.AuthDriver.BrowserBase
   #
   # @param {Object} message an object that can be serialized to JSON
   # @return unspecified; may vary across platforms and dropbox.js versions
-  sendMessage: DropboxChromeSendMessage
+  sendMessage: DbxChromeSendMessage
 
   # Expands an URL relative to the Chrome extension / application root.
   #

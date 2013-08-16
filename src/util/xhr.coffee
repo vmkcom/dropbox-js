@@ -1,72 +1,70 @@
-if typeof XMLHttpRequest isnt 'undefined' and
-    (typeof window isnt 'undefined' or typeof self isnt 'undefined') and
-    typeof navigator isnt 'undefined' and
-    typeof navigator.userAgent is 'string'
+if Dropbox.Env.global.XMLHttpRequest
   # Browser or Web Worker.
-  if typeof XDomainRequest isnt 'undefined' and not
-      ('withCredentials' of new XMLHttpRequest())
-    DropboxXhrRequest = XDomainRequest
-    DropboxXhrIeMode = true
+  if Dropbox.Env.global.XDomainRequest and
+      not ('withCredentials' of new XMLHttpRequest())
+    DbxXhrRequest = XDomainRequest
+    DbxXhrIeMode = true
     # IE's XDR doesn't allow setting requests' Content-Type to anything other
     # than text/plain, so it can't send _any_ forms.
-    DropboxXhrCanSendForms = false
+    DbxXhrCanSendForms = false
   else
-    DropboxXhrRequest = XMLHttpRequest
-    DropboxXhrIeMode = false
+    DbxXhrRequest = XMLHttpRequest
+    DbxXhrIeMode = false
     # Web Workers don't support FormData at all.
     # Also, Firefox doesn't support adding named files to FormData.
     # https://bugzilla.mozilla.org/show_bug.cgi?id=690659
-    DropboxXhrCanSendForms = typeof FormData isnt 'undefined' and
+    DbxXhrCanSendForms = typeof FormData isnt 'undefined' and
       navigator.userAgent.indexOf('Firefox') is -1
-  DropboxXhrDoesPreflight = true
+  DbxXhrDoesPreflight = true
 else
   # Node.js.
-  DropboxXhrRequest = require('xhr2')  # Need an XHR emulation.
-  DropboxXhrIeMode = false
+  DbxXhrRequest = Dropbox.Env.require 'xhr2'  # We need an XHR emulation.
+  DbxXhrIeMode = false
   # Node.js doesn't have FormData. We wouldn't want to bother putting together
   # upload forms in node.js anyway, because it doesn't do CORS preflight
   # checks, so we can use PUT requests without a performance hit.
-  DropboxXhrCanSendForms = false
+  DbxXhrCanSendForms = false
   # Our XHR emulation skips CORS checks, which don't make sense for a server.
-  DropboxXhrDoesPreflight = false
+  DbxXhrDoesPreflight = false
 
-if typeof Uint8Array is 'undefined'
+if !Dropbox.Env.global.Uint8Array
   # IE <= 9
-  DropboxXhrArrayBufferView = null
-  DropboxXhrWrapBlob = false
-  DropboxXhrSendArrayBufferView = false
+  DbxXhrArrayBufferView = null
+  DbxXhrWrapBlob = false
+  DbxXhrSendArrayBufferView = false
 else
-  # Old browsers don't expose the ArrayBufferView constructor.
+  # The ArrayBufferView constructor is not exposed.
   if Object.getPrototypeOf
-    DropboxXhrArrayBufferView = Object.getPrototypeOf(
+    DbxXhrArrayBufferView = Object.getPrototypeOf(
         Object.getPrototypeOf(new Uint8Array(0))).constructor
   else if Object.__proto__
-    DropboxXhrArrayBufferView =
+    DbxXhrArrayBufferView =
         (new Uint8Array(0)).__proto__.__proto__.constructor
 
-  if typeof Blob is 'undefined'
-    DropboxXhrWrapBlob = false
-    DropboxXhrSendArrayBufferView = true
+  if !Dropbox.Env.global.Blob
+    DbxXhrWrapBlob = false
+    DbxXhrSendArrayBufferView = true
   else
     try
-      if (new Blob [new Uint8Array(2)]).size is 2
-        DropboxXhrWrapBlob = true
-        DropboxXhrSendArrayBufferView = true
-      else
-        DropboxXhrSendArrayBufferView = false
-        DropboxXhrWrapBlob = (new Blob [new ArrayBuffer(2)]).size is 2
-    catch blobError
-      DropboxXhrSendArrayBufferView = false
-      DropboxXhrWrapBlob = false
-      if typeof WebKitBlobBuilder isnt 'undefined'
+      do ->
+        if (new Blob [new Uint8Array(2)]).size is 2
+          DbxXhrWrapBlob = true
+          DbxXhrSendArrayBufferView = true
+        else
+          DbxXhrSendArrayBufferView = false
+          DbxXhrWrapBlob = (new Blob [new ArrayBuffer(2)]).size is 2
+    catch
+      DbxXhrSendArrayBufferView = false
+      DbxXhrWrapBlob = false
+      if Dropbox.Env.global.WebKitBlobBuilder
         # Android's WebView doesn't support adding named files to FormData.
         if navigator.userAgent.indexOf('Android') isnt -1
-          DropboxXhrCanSendForms = false
+          DbxXhrCanSendForms = false
 
-    if DropboxXhrArrayBufferView is Object
+    if DbxXhrArrayBufferView is Object
       # Browsers that haven't implemented XHR#send(ArrayBufferView) also don't
       # have a real ArrayBufferView prototype. (Safari, Firefox)
-      DropboxXhrSendArrayBufferView = false
+      DbxXhrSendArrayBufferView = false
 
 # Dispatches low-level HTTP requests.
 #
@@ -79,42 +77,42 @@ class Dropbox.Util.Xhr
   # {Dropbox.Util.Xhr} instances will wrap instances built by this constructor.
   #
   # This is XMLHttpRequest on modern browsers.
-  @Request = DropboxXhrRequest
+  @Request = DbxXhrRequest
 
   # Set to true when using the XDomainRequest API.
   #
   # @private
   # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client}, to decide when to
   # use workarounds for IE limitations.
-  @ieXdr = DropboxXhrIeMode
+  @ieXdr = DbxXhrIeMode
 
   # Set to true if the platform has proper support for FormData.
   #
   # @private
   # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client} to decide what REST
   # API calls to use.
-  @canSendForms = DropboxXhrCanSendForms
+  @canSendForms = DbxXhrCanSendForms
 
   # Set to true if the platform performs CORS preflight checks.
   #
   # @private
   # This is used by {Dropbox.Util.Xhr} and {Dropbox.Client} to decide when to
   # use HTTP headers vs query parameters.
-  @doesPreflight = DropboxXhrDoesPreflight
+  @doesPreflight = DbxXhrDoesPreflight
 
   # The closest superclass for all ArrayBufferView objects.
   #
   # @private
   # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
   # level 2 implementation.
-  @ArrayBufferView = DropboxXhrArrayBufferView
+  @ArrayBufferView = DbxXhrArrayBufferView
 
   # True if we think we can send ArrayBufferView objects via XHR.
   #
   # @private
   # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
   # level 2 implementation.
-  @sendArrayBufferView = DropboxXhrSendArrayBufferView
+  @sendArrayBufferView = DbxXhrSendArrayBufferView
 
   # True if ArrayBuffer and ArrayBufferView instances get wrapped in Blobs
   # before sending via XHR.
@@ -122,7 +120,7 @@ class Dropbox.Util.Xhr
   # @private
   # This is used by {Dropbox.Util.Xhr} to work around bugs in browsers' XHR
   # level 2 implementation.
-  @wrapBlob = DropboxXhrWrapBlob
+  @wrapBlob = DbxXhrWrapBlob
 
   # Sets up an AJAX request.
   #

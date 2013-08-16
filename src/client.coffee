@@ -121,13 +121,13 @@ class Dropbox.Client
     else
       interactive = true
 
-    unless @driver or @authStep is DropboxClient.DONE
+    unless @driver or @authStep is DbxClient.DONE
       Dropbox.AuthDriver.autoConfigure @
       unless @driver
         throw new Error(
             'OAuth driver auto-configuration failed. Call authDriver.')
 
-    if @authStep is DropboxClient.ERROR
+    if @authStep is DbxClient.ERROR
       throw new Error 'Client got in an error state. Call reset() to reuse it!'
 
 
@@ -135,14 +135,14 @@ class Dropbox.Client
     # This is repetitive stuff done at the end of each step.
     _fsmNextStep = =>
       @authStep = @oauth.step()
-      @authError = @oauth.error() if @authStep is DropboxClient.ERROR
+      @authError = @oauth.error() if @authStep is DbxClient.ERROR
       @_credentials = null
       @onAuthStepChange.dispatch @
       _fsmStep()
 
     # _fsmStep helper that transitions the FSM to the error step.
     _fsmErrorStep = =>
-      @authStep = DropboxClient.ERROR
+      @authStep = DbxClient.ERROR
       @_credentials = null
       @onAuthStepChange.dispatch @
       _fsmStep()
@@ -157,7 +157,7 @@ class Dropbox.Client
           return
 
       switch @authStep
-        when DropboxClient.RESET
+        when DbxClient.RESET
           # No credentials. Decide on a state param for OAuth 2 authorization.
           unless interactive
             callback null, @ if callback
@@ -165,13 +165,13 @@ class Dropbox.Client
           if @driver.getStateParam
             @driver.getStateParam (stateParam) =>
               # NOTE: the driver might have injected the state param itself
-              if @client.authStep is DropboxClient.RESET
+              if @client.authStep is DbxClient.RESET
                 @oauth.setAuthStateParam stateParam
               _fsmNextStep()
           @oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
           _fsmNextStep()
 
-        when DropboxClient.PARAM_SET
+        when DbxClient.PARAM_SET
           # Ask the user for authorization.
           unless interactive
             callback null, @ if callback
@@ -183,7 +183,7 @@ class Dropbox.Client
                 @uid = queryParams.uid if queryParams.uid
                 _fsmNextStep()
 
-        when DropboxClient.PARAM_LOADED
+        when DbxClient.PARAM_LOADED
           # Check a previous state parameter.
           unless @driver.resumeAuthorize
             # This switches the client to the PARAM_SET state
@@ -195,7 +195,7 @@ class Dropbox.Client
             @uid = queryParams.uid if queryParams.uid
             _fsmNextStep()
 
-        when DropboxClient.AUTHORIZED
+        when DbxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
           @getAccessToken (error, data) =>
             if error
@@ -206,17 +206,17 @@ class Dropbox.Client
               @uid = data.uid
               _fsmNextStep()
 
-        when DropboxClient.DONE  # We have an access token.
+        when DbxClient.DONE  # We have an access token.
             callback null, @ if callback
             return
 
-        when DropboxClient.SIGNED_OUT  # The user signed out, restart the flow.
+        when DbxClient.SIGNED_OUT  # The user signed out, restart the flow.
           # The authStep change makes reset() not trigger onAuthStepChange.
-          @authStep = DropboxClient.RESET
+          @authStep = DbxClient.RESET
           @reset()
           _fsmStep()
 
-        when DropboxClient.ERROR  # An error occurred during authentication.
+        when DbxClient.ERROR  # An error occurred during authentication.
           callback @authError, @ if callback
           return
 
@@ -228,7 +228,7 @@ class Dropbox.Client
   # @return {Boolean} true if this client has a user's OAuth 2 access token and
   #   can be used to make API calls; false otherwise
   isAuthenticated: ->
-    @authStep is DropboxClient.DONE
+    @authStep is DbxClient.DONE
 
   # Invalidates and forgets the user's Dropbox OAuth 2 access token.
   #
@@ -255,7 +255,7 @@ class Dropbox.Client
       options = null
 
     stopOnXhrError = options and options.mustInvalidate
-    unless @authStep is DropboxClient.DONE
+    unless @authStep is DbxClient.DONE
       throw new Error("This client doesn't have a user's token")
 
     xhr = new Dropbox.Util.Xhr 'POST', @urls.signOut
@@ -270,9 +270,9 @@ class Dropbox.Client
           return
 
       # The authStep change makes reset() not trigger onAuthStepChange.
-      @authStep = DropboxClient.RESET
+      @authStep = DbxClient.RESET
       @reset()
-      @authStep = DropboxClient.SIGNED_OUT
+      @authStep = DbxClient.SIGNED_OUT
       @onAuthStepChange.dispatch @
       if @driver and @driver.onAuthStepChange
         @driver.onAuthStepChange @, ->
@@ -1512,10 +1512,10 @@ class Dropbox.Client
   # @return {void}
   handleXhrError: (error, callback) ->
     if error.status is Dropbox.ApiError.INVALID_TOKEN and
-        @authStep is DropboxClient.DONE
+        @authStep is DbxClient.DONE
       # The user's token became invalid.
       @authError = error
-      @authStep = DropboxClient.ERROR
+      @authStep = DbxClient.ERROR
       @onAuthStepChange.dispatch @
       if @driver and @driver.onAuthStepChange
         @driver.onAuthStepChange @, =>
@@ -1573,4 +1573,4 @@ class Dropbox.Client
     @_credentials = value
     return
 
-DropboxClient = Dropbox.Client
+DbxClient = Dropbox.Client
