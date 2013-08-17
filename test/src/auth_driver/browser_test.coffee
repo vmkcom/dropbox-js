@@ -90,10 +90,11 @@ describe 'Dropbox.AuthDriver.Redirect', ->
 
     it 'should work', (done) ->
       return done() if @node_js or @chrome_app or @cordova
-      @timeout 30 * 1000  # Time-consuming because the user must click.
+      @timeout 45 * 1000  # Time-consuming because the user must click.
 
       listenerCalled = false
       listener = (event) ->
+        console.log event
         return if listenerCalled is true
         listenerCalled = true
         data = event.data or event

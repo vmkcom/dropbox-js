@@ -47,6 +47,12 @@ class WebFileServer
       response.header 'Access-Control-Expose-Headers', 'x-dropbox-metadata'
       next()
 
+    # Disable HTTP caching, for IE.
+    @app.use (request, response, next) ->
+      response.header 'Cache-Control', 'nocache'
+      response.header 'Expires', '-1'
+      next()
+
     @app.use @app.router
 
     @app.use express.static(fs.realpathSync(__dirname + '/../../../'),
@@ -111,6 +117,7 @@ class WebFileServer
       body = 'Test file contents'
       response.header 'Content-Type', 'text/plain'
       response.header 'X-Dropbox-Metadata', metadata
+      response.header 'Content-Length', body.length
       response.end body
 
     # Simulate metadata bugs.
