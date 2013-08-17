@@ -802,6 +802,7 @@ Content-Transfer-Encoding: binary\r
         unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do HTTP status codes.
           expect(error).to.have.property 'status'
           expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
           expect(error).to.have.property 'responseText'
           expect(error.responseText).to.be.a 'string'
           expect(error.responseText).to.equal(
@@ -809,14 +810,11 @@ Content-Transfer-Encoding: binary\r
           expect(error).to.have.property 'response'
           expect(error.response).to.have.property 'error'
           expect(error.response.error).to.equal 'invalid access token'
-        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
-          expect(error).to.have.property 'response'
-          expect(error.response).to.be.an 'object'
-          expect(error.response).to.have.property 'error'
         expect(error.toString()).to.match /^Dropbox API error/
         expect(error.toString()).to.contain 'GET'
         expect(error.toString()).to.contain url
-        expect(error.toString()).to.contain 'invalid access token'
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR hides the HTTP body on error.
+          expect(error.toString()).to.contain 'invalid access token'
         done()
 
     it 'reports errors correctly when onError is set', (done) ->

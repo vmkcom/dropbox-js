@@ -1498,7 +1498,8 @@ buildClientTests = (clientKeys) ->
       @client.appInfo 'no0such0key', (error, appInfo) ->
         expect(appInfo).not.to.be.ok
         expect(error).to.be.instanceOf Dropbox.ApiError
-        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't HTTP status codes.
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
         done()
 
     it 'uses the client key if no key is given', (done) ->
@@ -1557,7 +1558,8 @@ buildClientTests = (clientKeys) ->
       @client.isAppDeveloper 1, 'no0such0key', (error, isAppDeveloper) ->
         expect(isAppDeveloper).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
-        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't HTTP status codes.
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
         done()
 
     it 'uses the client key if no key is given', (done) ->
@@ -1586,7 +1588,8 @@ buildClientTests = (clientKeys) ->
       @client.hasOauthRedirectUri @yesUri, 'no0such0key', (error, hasUri) ->
         expect(hasUri).to.equal undefined
         expect(error).to.be.instanceOf Dropbox.ApiError
-        expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+        unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't HTTP status codes.
+          expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
         done()
 
     it 'uses the client key if no key is given', (done) ->
