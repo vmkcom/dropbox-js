@@ -94,7 +94,8 @@ describe 'Dropbox.AuthDriver.Redirect', ->
 
       listenerCalled = false
       listener = (event) ->
-        console.log event
+        window.removeEventListener 'message', listener
+        Dropbox.AuthDriver.Popup.onMessage.removeListener listener
         return if listenerCalled is true
         listenerCalled = true
         data = event.data or event
@@ -105,8 +106,6 @@ describe 'Dropbox.AuthDriver.Redirect', ->
         expect(credentials.uid).to.be.a 'string'
         expect(credentials).to.have.property 'token'
         expect(credentials.token).to.be.a 'string'
-        window.removeEventListener 'message', listener
-        Dropbox.AuthDriver.Popup.onMessage.removeListener listener
         done()
 
       window.addEventListener 'message', listener

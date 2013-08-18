@@ -1731,14 +1731,14 @@ describe 'Dropbox.Client', ->
               invalidClient.getAccountInfo (error, accountInfo) ->
                 # TODO(pwnall): uncomment the lines below when we get OAuth 2
                 #               token invalidation on the API server
-                #expect(error).to.be.ok
-                #unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do HTTP codes.
-                #  expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
-                #  expect(invalidClient.authError).to.equal error
-                #  expect(invalidClient.isAuthenticated()).to.equal false
-                #  expect(authStepChanges).to.deep.equal(['invalidClient',
-                #      Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR,
-                #      'onError'])
+                expect(error).to.be.ok
+                unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do HTTP codes.
+                  expect(error.status).to.equal Dropbox.ApiError.INVALID_TOKEN
+                  expect(invalidClient.authError).to.equal error
+                  expect(invalidClient.isAuthenticated()).to.equal false
+                  expect(authStepChanges).to.deep.equal(['invalidClient',
+                      Dropbox.Client.ERROR, 'driver-' + Dropbox.Client.ERROR,
+                      'onError'])
 
                 # Verify that the same client can be used for a 2nd signin.
                 authStepChanges = ['authorize2']
