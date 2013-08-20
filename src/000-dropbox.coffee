@@ -2,23 +2,19 @@
 #
 # For now, it only serves as the dropbox.js namespace.
 class Dropbox
-  # In the future, this will be a constructor call.
-  null
+  # In the future, this will have a constructor defined.
 
 # Namespace for internal functions that are only exposed for testing purposes.
 #
 # The APIs in Dropbox.Util are not covered by the library's semver promise, and
 # can change on a whim.
 class Dropbox.Util
-  null
 
 # Namespace for objects associated to the low-level HTTP API.
 #
 # The APIs in Dropbox.Http are intended to be used as building blocks for
 # higher-level APIs. Most applications should not need to use them directly.
 class Dropbox.Http
-  null
 
 # Namespace for the APIs that work with Dropbox files and folders.
 class Dropbox.File
-  null

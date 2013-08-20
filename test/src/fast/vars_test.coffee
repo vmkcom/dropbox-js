@@ -41,4 +41,4 @@ describe 'vars at the top of the dropbox.js function', ->
       continue if variable is 'Dropbox'
       continue if /^Dbx[A-Z]/.test(variable)
       badVars.push variable
-    expect(badVars).to.be.empty;
+    expect(badVars).to.be.empty
