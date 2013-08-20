@@ -114,4 +114,4 @@ describe 'Dropbox.AuthDriver.Cordova', ->
       return unless @cordova
       client = new Dropbox.Client testKeys
       Dropbox.AuthDriver.autoConfigure client
-      expect(client.driver).to.be.instanceOf Dropbox.AuthDriver.Cordova
+      expect(client._driver).to.be.instanceOf Dropbox.AuthDriver.Cordova

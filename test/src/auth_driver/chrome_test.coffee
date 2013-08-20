@@ -85,4 +85,4 @@ describe 'Dropbox.AuthDriver.Chrome', ->
       return unless @chrome_app
       client = new Dropbox.Client testKeys
       Dropbox.AuthDriver.autoConfigure client
-      expect(client.driver).to.be.instanceOf Dropbox.AuthDriver.Chrome
+      expect(client._driver).to.be.instanceOf Dropbox.AuthDriver.Chrome

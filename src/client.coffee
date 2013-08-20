@@ -18,25 +18,24 @@ class Dropbox.Client
   #
   # @see Dropbox.Client#credentials
   constructor: (options) ->
-    @serverRoot = options.server or @defaultServerRoot()
+    @_serverRoot = options.server or @_defaultServerRoot()
     if 'maxApiServer' of options
-      @maxApiServer = options.maxApiServer
+      @_maxApiServer = options.maxApiServer
     else
-      @maxApiServer = @defaultMaxApiServer()
-    @authServer = options.authServer or @defaultAuthServer()
-    @fileServer = options.fileServer or @defaultFileServer()
-    @downloadServer = options.downloadServer or @defaultDownloadServer()
+      @_maxApiServer = @_defaultMaxApiServer()
+    @_authServer = options.authServer or @_defaultAuthServer()
+    @_fileServer = options.fileServer or @_defaultFileServer()
+    @_downloadServer = options.downloadServer or @_defaultDownloadServer()
 
     @onXhr = new Dropbox.Util.EventSource cancelable: true
     @onError = new Dropbox.Util.EventSource
     @onAuthStepChange = new Dropbox.Util.EventSource
-    @xhrOnErrorHandler = (error, callback) => @handleXhrError error, callback
+    @_xhrOnErrorHandler = (error, callback) => @_handleXhrError error, callback
 
-    @oauth = new Dropbox.Util.Oauth options
-    @uid = options.uid or null
-    @authStep = @oauth.step()
-    @driver = null
-    @filter = null
+    @_oauth = new Dropbox.Util.Oauth options
+    @_uid = options.uid or null
+    @authStep = @_oauth.step()
+    @_driver = null
     @authError = null
     @_credentials = null
 
@@ -71,7 +70,7 @@ class Dropbox.Client
   #   application and the OAuth 2.0 flow used by the Dropbox API
   # @return {Dropbox.Client} this, for easy call chaining
   authDriver: (driver) ->
-    @driver = driver
+    @_driver = driver
     @
 
   # The authenticated user's Dropbx user account ID.
@@ -82,7 +81,7 @@ class Dropbox.Client
   # @return {String} a short ID that identifies the user account; null if no
   #   user is authenticated
   dropboxUid: ->
-    @uid
+    @_uid
 
   # Get the client's OAuth credentials.
   #
@@ -90,7 +89,7 @@ class Dropbox.Client
   #   {Dropbox.Client#setCredentials} or to the {Dropbox.Client} constructor to
   #   reuse this client's login credentials
   credentials: ->
-    @computeCredentials() unless @_credentials
+    @_computeCredentials() unless @_credentials
     @_credentials
 
   # Authenticates the app's user to Dropbox's API server.
@@ -121,9 +120,9 @@ class Dropbox.Client
     else
       interactive = true
 
-    unless @driver or @authStep is DbxClient.DONE
+    unless @_driver or @authStep is DbxClient.DONE
       Dropbox.AuthDriver.autoConfigure @
-      unless @driver
+      unless @_driver
         throw new Error(
             'OAuth driver auto-configuration failed. Call authDriver.')
 
@@ -134,8 +133,8 @@ class Dropbox.Client
     # _fsmStep helper that transitions the FSM to the next step.
     # This is repetitive stuff done at the end of each step.
     _fsmNextStep = =>
-      @authStep = @oauth.step()
-      @authError = @oauth.error() if @authStep is DbxClient.ERROR
+      @authStep = @_oauth.step()
+      @authError = @_oauth.error() if @authStep is DbxClient.ERROR
       @_credentials = null
       @onAuthStepChange.dispatch @
       _fsmStep()
@@ -152,8 +151,8 @@ class Dropbox.Client
     _fsmStep = =>
       if oldAuthStep isnt @authStep
         oldAuthStep = @authStep
-        if @driver and @driver.onAuthStepChange
-          @driver.onAuthStepChange(@, _fsmStep)
+        if @_driver and @_driver.onAuthStepChange
+          @_driver.onAuthStepChange(@, _fsmStep)
           return
 
       switch @authStep
@@ -162,13 +161,13 @@ class Dropbox.Client
           unless interactive
             callback null, @ if callback
             return
-          if @driver.getStateParam
-            @driver.getStateParam (stateParam) =>
+          if @_driver.getStateParam
+            @_driver.getStateParam (stateParam) =>
               # NOTE: the driver might have injected the state param itself
               if @client.authStep is DbxClient.RESET
-                @oauth.setAuthStateParam stateParam
+                @_oauth.setAuthStateParam stateParam
               _fsmNextStep()
-          @oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
+          @_oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
           _fsmNextStep()
 
         when DbxClient.PARAM_SET
@@ -177,23 +176,24 @@ class Dropbox.Client
             callback null, @ if callback
             return
           authUrl = @authorizeUrl()
-          @driver.doAuthorize authUrl, @oauth.authStateParam(), @,
+          @_driver.doAuthorize authUrl, @_oauth.authStateParam(), @,
               (queryParams) =>
-                @oauth.processRedirectParams queryParams
-                @uid = queryParams.uid if queryParams.uid
+                @_oauth.processRedirectParams queryParams
+                @_uid = queryParams.uid if queryParams.uid
                 _fsmNextStep()
 
         when DbxClient.PARAM_LOADED
           # Check a previous state parameter.
-          unless @driver.resumeAuthorize
+          unless @_driver.resumeAuthorize
             # This switches the client to the PARAM_SET state
-            @oauth.setAuthStateParam @oauth.authStateParam()
+            @_oauth.setAuthStateParam @_oauth.authStateParam()
             _fsmNextStep()
             return
-          @driver.resumeAuthorize @oauth.authStateParam(), @, (queryParams) =>
-            @oauth.processRedirectParams queryParams
-            @uid = queryParams.uid if queryParams.uid
-            _fsmNextStep()
+          @_driver.resumeAuthorize @_oauth.authStateParam(), @,
+              (queryParams) =>
+                @_oauth.processRedirectParams queryParams
+                @_uid = queryParams.uid if queryParams.uid
+                _fsmNextStep()
 
         when DbxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.
@@ -202,8 +202,8 @@ class Dropbox.Client
               @authError = error
               _fsmErrorStep()
             else
-              @oauth.processRedirectParams data
-              @uid = data.uid
+              @_oauth.processRedirectParams data
+              @_uid = data.uid
               _fsmNextStep()
 
         when DbxClient.DONE  # We have an access token.
@@ -258,9 +258,9 @@ class Dropbox.Client
     unless @authStep is DbxClient.DONE
       throw new Error("This client doesn't have a user's token")
 
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.signOut
-    xhr.signWithOauth @oauth
-    @dispatchXhr xhr, (error) =>
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.signOut
+    xhr.signWithOauth @_oauth
+    @_dispatchXhr xhr, (error) =>
       if error
         if error.status is Dropbox.ApiError.INVALID_TOKEN
           # The token was already invalidated. Sweet.
@@ -274,8 +274,8 @@ class Dropbox.Client
       @reset()
       @authStep = DbxClient.SIGNED_OUT
       @onAuthStepChange.dispatch @
-      if @driver and @driver.onAuthStepChange
-        @driver.onAuthStepChange @, ->
+      if @_driver and @_driver.onAuthStepChange
+        @_driver.onAuthStepChange @, ->
           callback null if callback
       else
         callback null if callback
@@ -308,9 +308,9 @@ class Dropbox.Client
     if options and options.httpCache
       httpCache = true
 
-    xhr = new Dropbox.Util.Xhr 'GET', @urls.accountInfo
-    xhr.signWithOauth @oauth, httpCache
-    @dispatchXhr xhr, (error, accountData) ->
+    xhr = new Dropbox.Util.Xhr 'GET', @_urls.accountInfo
+    xhr.signWithOauth @_oauth, httpCache
+    @_dispatchXhr xhr, (error, accountData) ->
       callback error, Dropbox.AccountInfo.parse(accountData), accountData
 
   # Backwards-compatible name of getAccountInfo.
@@ -404,13 +404,13 @@ class Dropbox.Client
       httpCache = true if options.httpCache
 
     xhr = new Dropbox.Util.Xhr 'GET',
-                               "#{@urls.getFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth @oauth, httpCache
+                               "#{@_urls.getFile}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth @_oauth, httpCache
     xhr.setResponseType responseType
     if rangeHeader
       xhr.setHeader 'Range', rangeHeader if rangeHeader
       xhr.reportResponseHeaders()
-    @dispatchXhr xhr, (error, data, metadata, headers) ->
+    @_dispatchXhr xhr, (error, data, metadata, headers) ->
       if headers
         rangeInfo = Dropbox.Http.RangeInfo.parse headers['content-range']
       else
@@ -446,9 +446,9 @@ class Dropbox.Client
 
     useForm = Dropbox.Util.Xhr.canSendForms and typeof data is 'object'
     if useForm
-      @writeFileUsingForm path, data, options, callback
+      @_writeFileUsingForm path, data, options, callback
     else
-      @writeFileUsingPut path, data, options, callback
+      @_writeFileUsingPut path, data, options, callback
 
   # writeFile implementation that uses the POST /files API.
   #
@@ -457,7 +457,7 @@ class Dropbox.Client
   #
   # This method is more demanding in terms of CPU and browser support, but does
   # not require CORS preflight, so it always completes in 1 HTTP request.
-  writeFileUsingForm: (path, data, options, callback) ->
+  _writeFileUsingForm: (path, data, options, callback) ->
     # Break down the path into a file/folder name and the containing folder.
     slashIndex = path.lastIndexOf '/'
     if slashIndex is -1
@@ -478,15 +478,15 @@ class Dropbox.Client
     # TODO: locale support would edit the params here
 
     xhr = new Dropbox.Util.Xhr 'POST',
-                               "#{@urls.postFile}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth).setFileField('file', fileName,
+                               "#{@_urls.postFile}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth(@_oauth).setFileField('file', fileName,
         data, 'application/octet-stream')
 
     # NOTE: the Dropbox API docs ask us to replace the 'file' parameter after
     #       signing the request; the hack below works as intended
     delete params.file
 
-    @dispatchXhr xhr, (error, metadata) ->
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # writeFile implementation that uses the /files_put API.
@@ -497,7 +497,7 @@ class Dropbox.Client
   # This method is less demanding on CPU, and makes fewer assumptions about
   # browser support, but it takes 2 HTTP requests for binary files, because it
   # needs CORS preflight.
-  writeFileUsingPut: (path, data, options, callback) ->
+  _writeFileUsingPut: (path, data, options, callback) ->
     params = {}
     if options
       if options.noOverwrite
@@ -508,9 +508,9 @@ class Dropbox.Client
         params.parent_rev = options.parentRev or options.parent_rev
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Util.Xhr 'POST',
-                               "#{@urls.putFile}/#{@urlEncodePath(path)}"
-    xhr.setBody(data).setParams(params).signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, metadata) ->
+                               "#{@_urls.putFile}/#{@_urlEncodePath(path)}"
+    xhr.setBody(data).setParams(params).signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Atomic step in a resumable file upload.
@@ -534,9 +534,9 @@ class Dropbox.Client
     else
       params = { offset: 0 }
 
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.chunkedUpload
-    xhr.setBody(data).setParams(params).signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, cursor) ->
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.chunkedUpload
+    xhr.setBody(data).setParams(params).signWithOauth(@_oauth)
+    @_dispatchXhr xhr, (error, cursor) ->
       if error and error.status is Dropbox.ApiError.INVALID_PARAM and
           error.response and error.response.upload_id and error.response.offset
         callback null, Dropbox.Http.UploadCursor.parse(error.response)
@@ -580,9 +580,9 @@ class Dropbox.Client
 
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Util.Xhr 'POST',
-        "#{@urls.commitChunkedUpload}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, metadata) ->
+        "#{@_urls.commitChunkedUpload}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth(@_oauth)
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Reads the metadata of a file or folder in a user's Dropbox.
@@ -659,9 +659,9 @@ class Dropbox.Client
     params.list ||= 'false'
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Util.Xhr 'GET',
-                               "#{@urls.metadata}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth @oauth, httpCache
-    @dispatchXhr xhr, (error, metadata) ->
+                               "#{@_urls.metadata}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth @_oauth, httpCache
+    @_dispatchXhr xhr, (error, metadata) ->
       stat = Dropbox.File.Stat.parse metadata
       if metadata?.contents
         entries = for entry in metadata.contents
@@ -778,8 +778,8 @@ class Dropbox.Client
     else
       params = {}
 
-    path = @urlEncodePath path
-    url = "#{@urls.shares}/#{path}"
+    path = @_urlEncodePath path
+    url = "#{@_urls.shares}/#{path}"
     isDirect = false
     useDownloadHack = false
     if options
@@ -788,14 +788,14 @@ class Dropbox.Client
         useDownloadHack = true
       else if options.download
         isDirect = true
-        url = "#{@urls.media}/#{path}"
+        url = "#{@_urls.media}/#{path}"
 
     # TODO: locale support would edit the params here
     xhr = new Dropbox.Util.Xhr('POST', url).setParams(params).
-                                            signWithOauth @oauth
-    @dispatchXhr xhr, (error, urlData) =>
+                                            signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, urlData) =>
       if useDownloadHack and urlData?.url
-        urlData.url = urlData.url.replace @authServer, @downloadServer
+        urlData.url = urlData.url.replace @_authServer, @_downloadServer
       callback error, Dropbox.File.ShareUrl.parse(urlData, isDirect)
 
   # Retrieves the revision history of a file in a user's Dropbox.
@@ -829,9 +829,9 @@ class Dropbox.Client
         httpCache = true
 
     xhr = new Dropbox.Util.Xhr 'GET',
-                               "#{@urls.revisions}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth @oauth, httpCache
-    @dispatchXhr xhr, (error, versions) ->
+                               "#{@_urls.revisions}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth @_oauth, httpCache
+    @_dispatchXhr xhr, (error, versions) ->
       if versions
         stats = (Dropbox.File.Stat.parse(metadata) for metadata in versions)
       else
@@ -914,7 +914,7 @@ class Dropbox.Client
 
     xhr = @thumbnailXhr path, options
     xhr.setResponseType responseType
-    @dispatchXhr xhr, (error, data, metadata) ->
+    @_dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.File.Stat.parse(metadata)
 
   # Sets up an XHR for reading a thumbnail for a file in the user's Dropbox.
@@ -934,8 +934,8 @@ class Dropbox.Client
         params.size = options.size
 
     xhr = new Dropbox.Util.Xhr 'GET',
-                               "#{@urls.thumbnails}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@oauth)
+                               "#{@_urls.thumbnails}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth(@_oauth)
 
   # Reverts a file's contents to a previous version.
   #
@@ -955,9 +955,9 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   revertFile: (path, versionTag, callback) ->
     xhr = new Dropbox.Util.Xhr 'POST',
-                               "#{@urls.restore}/#{@urlEncodePath(path)}"
-    xhr.setParams(rev: versionTag).signWithOauth @oauth
-    @dispatchXhr xhr, (error, metadata) ->
+                               "#{@_urls.restore}/#{@_urlEncodePath(path)}"
+    xhr.setParams(rev: versionTag).signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Alias for "revertFile" that matches the HTTP API.
@@ -1005,9 +1005,10 @@ class Dropbox.Client
       if options.httpCache
         httpCache = true
 
-    xhr = new Dropbox.Util.Xhr 'GET', "#{@urls.search}/#{@urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth @oauth, httpCache
-    @dispatchXhr xhr, (error, results) ->
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@_urls.search}/#{@_urlEncodePath(path)}"
+    xhr.setParams(params).signWithOauth @_oauth, httpCache
+    @_dispatchXhr xhr, (error, results) ->
       if results
         stats = (Dropbox.File.Stat.parse(metadata) for metadata in results)
       else
@@ -1032,9 +1033,9 @@ class Dropbox.Client
   # @return {XMLHttpRequest} the XHR object used for this API call
   makeCopyReference: (path, callback) ->
     xhr = new Dropbox.Util.Xhr 'GET',
-                               "#{@urls.copyRef}/#{@urlEncodePath(path)}"
-    xhr.signWithOauth @oauth
-    @dispatchXhr xhr, (error, refData) ->
+                               "#{@_urls.copyRef}/#{@_urlEncodePath(path)}"
+    xhr.signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, refData) ->
       callback error, Dropbox.File.CopyReference.parse(refData)
 
   # Alias for "makeCopyReference" that matches the HTTP API.
@@ -1076,9 +1077,9 @@ class Dropbox.Client
     else
       params = {}
 
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.delta
-    xhr.setParams(params).signWithOauth @oauth
-    @dispatchXhr xhr, (error, deltaInfo) ->
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.delta
+    xhr.setParams(params).signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, deltaInfo) ->
       callback error, Dropbox.Http.PulledChanges.parse(deltaInfo)
 
   # Alias for "pullChanges" that matches the HTTP API.
@@ -1097,10 +1098,10 @@ class Dropbox.Client
   #   describing the newly created folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   mkdir: (path, callback) ->
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsCreateFolder
-    xhr.setParams(root: 'auto', path: @normalizePath(path)).
-        signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, metadata) ->
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.fileopsCreateFolder
+    xhr.setParams(root: 'auto', path: @_normalizePath(path)).
+        signWithOauth(@_oauth)
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Removes a file or directory from a user's Dropbox.
@@ -1113,10 +1114,10 @@ class Dropbox.Client
   #   describing the removed file or folder, and the first parameter is null
   # @return {XMLHttpRequest} the XHR object used for this API call
   remove: (path, callback) ->
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsDelete
-    xhr.setParams(root: 'auto', path: @normalizePath(path)).
-        signWithOauth(@oauth)
-    @dispatchXhr xhr, (error, metadata) ->
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.fileopsDelete
+    xhr.setParams(root: 'auto', path: @_normalizePath(path)).
+        signWithOauth(@_oauth)
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # node.js-friendly alias for "remove".
@@ -1158,16 +1159,16 @@ class Dropbox.Client
       callback = options
       options = null
 
-    params = { root: 'auto', to_path: @normalizePath(toPath) }
+    params = { root: 'auto', to_path: @_normalizePath(toPath) }
     if from instanceof Dropbox.File.CopyReference
       params.from_copy_ref = from.tag
     else
-      params.from_path = @normalizePath from
+      params.from_path = @_normalizePath from
     # TODO: locale support would edit the params here
 
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsCopy
-    xhr.setParams(params).signWithOauth @oauth
-    @dispatchXhr xhr, (error, metadata) ->
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.fileopsCopy
+    xhr.setParams(params).signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Moves a file or folder to a different location in a user's Dropbox.
@@ -1187,11 +1188,11 @@ class Dropbox.Client
       callback = options
       options = null
 
-    xhr = new Dropbox.Util.Xhr 'POST', @urls.fileopsMove
+    xhr = new Dropbox.Util.Xhr 'POST', @_urls.fileopsMove
     xhr.setParams(
-        root: 'auto', from_path: @normalizePath(fromPath),
-        to_path: @normalizePath(toPath)).signWithOauth @oauth
-    @dispatchXhr xhr, (error, metadata) ->
+        root: 'auto', from_path: @_normalizePath(fromPath),
+        to_path: @_normalizePath(toPath)).signWithOauth @_oauth
+    @_dispatchXhr xhr, (error, metadata) ->
       callback error, Dropbox.File.Stat.parse(metadata) if callback
 
   # Fetches information about a Dropbox Platform application.
@@ -1211,11 +1212,11 @@ class Dropbox.Client
   appInfo: (appKey, callback) ->
     if (not callback) and (typeof appKey is 'function')
       callback = appKey
-      appKey = @oauth.credentials().key
+      appKey = @_oauth.credentials().key
 
-    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsInfo
+    xhr = new Dropbox.Util.Xhr 'GET', @_urls.appsInfo
     xhr.setParams app_key: appKey
-    @dispatchXhr xhr, (error, appInfo) ->
+    @_dispatchXhr xhr, (error, appInfo) ->
       callback error, Dropbox.Http.AppInfo.parse(appInfo, appKey)
 
   # Checks if a user is a developer for a Dropbox Platform application.
@@ -1242,14 +1243,14 @@ class Dropbox.Client
 
     if (not callback) and (typeof appKey is 'function')
       callback = appKey
-      appKey = @oauth.credentials().key
+      appKey = @_oauth.credentials().key
     else if (typeof appKey is 'object') and ('key' of appKey)
       # appKey is a Dropbox.Http.AppInfo instance
       appKey = appKey.key
 
-    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsCheckDeveloper
+    xhr = new Dropbox.Util.Xhr 'GET', @_urls.appsCheckDeveloper
     xhr.setParams app_key: appKey, uid: userId
-    @dispatchXhr xhr, (error, response) ->
+    @_dispatchXhr xhr, (error, response) ->
       if response
         callback error, response.is_developer
       else
@@ -1273,14 +1274,14 @@ class Dropbox.Client
   hasOauthRedirectUri: (redirectUri, appKey, callback) ->
     if (not callback) and (typeof appKey is 'function')
       callback = appKey
-      appKey = @oauth.credentials().key
+      appKey = @_oauth.credentials().key
     else if (typeof appKey is 'object') and ('key' of appKey)
       # appKey is a Dropbox.Http.AppInfo instance
       appKey = appKey.key
 
-    xhr = new Dropbox.Util.Xhr 'GET', @urls.appsCheckRedirectUri
+    xhr = new Dropbox.Util.Xhr 'GET', @_urls.appsCheckRedirectUri
     xhr.setParams app_key: appKey, redirect_uri: redirectUri
-    @dispatchXhr xhr, (error, response) ->
+    @_dispatchXhr xhr, (error, response) ->
       if response
         callback error, response.has_redirect_uri
       else
@@ -1297,10 +1298,10 @@ class Dropbox.Client
   # @return {Dropbox.Client} this, for easy call chaining
   # @see Dropbox.Client#signOut
   reset: ->
-    @uid = null
-    @oauth.reset()
+    @_uid = null
+    @_oauth.reset()
     oldAuthStep = @authStep
-    @authStep = @oauth.step()
+    @authStep = @_oauth.step()
     if oldAuthStep isnt @authStep
       @onAuthStepChange.dispatch @
     @authError = null
@@ -1314,9 +1315,9 @@ class Dropbox.Client
   # @return {Dropbox.Client} this, for easy call chaining
   setCredentials: (credentials) ->
     oldAuthStep = @authStep
-    @oauth.setCredentials credentials
-    @authStep = @oauth.step()
-    @uid = credentials.uid or null
+    @_oauth.setCredentials credentials
+    @authStep = @_oauth.step()
+    @_uid = credentials.uid or null
     @authError = null
     @_credentials = null
     if oldAuthStep isnt @authStep
@@ -1330,7 +1331,7 @@ class Dropbox.Client
   # @return {String} a string that uniquely identifies the Dropbox application
   #   of this client
   appHash: ->
-    @oauth.appHash()
+    @_oauth.appHash()
 
   # Computes the URLs of all the Dropbox API calls.
   #
@@ -1338,43 +1339,43 @@ class Dropbox.Client
   # This is called by the constructor, and used by the other methods. It should
   # not be used directly.
   setupUrls: ->
-    @apiServer = @chooseApiServer()
-    @urls =
+    @_apiServer = @_chooseApiServer()
+    @_urls =
       # Authentication.
-      authorize: "#{@authServer}/1/oauth2/authorize"
-      token: "#{@apiServer}/1/oauth2/token"
-      signOut: "#{@apiServer}/1/unlink_access_token"
+      authorize: "#{@_authServer}/1/oauth2/authorize"
+      token: "#{@_apiServer}/1/oauth2/token"
+      signOut: "#{@_apiServer}/1/unlink_access_token"
 
       # Accounts.
-      accountInfo: "#{@apiServer}/1/account/info"
+      accountInfo: "#{@_apiServer}/1/account/info"
 
       # Files and metadata.
-      getFile: "#{@fileServer}/1/files/auto"
-      postFile: "#{@fileServer}/1/files/auto"
-      putFile: "#{@fileServer}/1/files_put/auto"
-      metadata: "#{@apiServer}/1/metadata/auto"
-      delta: "#{@apiServer}/1/delta"
-      revisions: "#{@apiServer}/1/revisions/auto"
-      restore: "#{@apiServer}/1/restore/auto"
-      search: "#{@apiServer}/1/search/auto"
-      shares: "#{@apiServer}/1/shares/auto"
-      media: "#{@apiServer}/1/media/auto"
-      copyRef: "#{@apiServer}/1/copy_ref/auto"
-      thumbnails: "#{@fileServer}/1/thumbnails/auto"
-      chunkedUpload: "#{@fileServer}/1/chunked_upload"
+      getFile: "#{@_fileServer}/1/files/auto"
+      postFile: "#{@_fileServer}/1/files/auto"
+      putFile: "#{@_fileServer}/1/files_put/auto"
+      metadata: "#{@_apiServer}/1/metadata/auto"
+      delta: "#{@_apiServer}/1/delta"
+      revisions: "#{@_apiServer}/1/revisions/auto"
+      restore: "#{@_apiServer}/1/restore/auto"
+      search: "#{@_apiServer}/1/search/auto"
+      shares: "#{@_apiServer}/1/shares/auto"
+      media: "#{@_apiServer}/1/media/auto"
+      copyRef: "#{@_apiServer}/1/copy_ref/auto"
+      thumbnails: "#{@_fileServer}/1/thumbnails/auto"
+      chunkedUpload: "#{@_fileServer}/1/chunked_upload"
       commitChunkedUpload:
-          "#{@fileServer}/1/commit_chunked_upload/auto"
+          "#{@_fileServer}/1/commit_chunked_upload/auto"
 
       # File operations.
-      fileopsCopy: "#{@apiServer}/1/fileops/copy"
-      fileopsCreateFolder: "#{@apiServer}/1/fileops/create_folder"
-      fileopsDelete: "#{@apiServer}/1/fileops/delete"
-      fileopsMove: "#{@apiServer}/1/fileops/move"
+      fileopsCopy: "#{@_apiServer}/1/fileops/copy"
+      fileopsCreateFolder: "#{@_apiServer}/1/fileops/create_folder"
+      fileopsDelete: "#{@_apiServer}/1/fileops/delete"
+      fileopsMove: "#{@_apiServer}/1/fileops/move"
 
       # Platform application information.
-      appsInfo: "#{@apiServer}/1/apps/info"
-      appsCheckDeveloper: "#{@apiServer}/1/apps/check_developer"
-      appsCheckRedirectUri: "#{@apiServer}/1/apps/check_redirect_uri"
+      appsInfo: "#{@_apiServer}/1/apps/info"
+      appsCheckDeveloper: "#{@_apiServer}/1/apps/check_developer"
+      appsCheckRedirectUri: "#{@_apiServer}/1/apps/check_redirect_uri"
 
 
   # Chooses an API server that will be used by this client.
@@ -1383,10 +1384,10 @@ class Dropbox.Client
   # This should only be called by {Dropbox.Client#setupUrls}.
   #
   # @return {String} the URL to the API server.
-  chooseApiServer: ->
-    serverNumber = Math.floor(Math.random() * (@maxApiServer + 1))
+  _chooseApiServer: ->
+    serverNumber = Math.floor(Math.random() * (@_maxApiServer + 1))
     serverId = if serverNumber is 0 then '' else serverNumber.toString()
-    @serverRoot.replace '$', serverId
+    @_serverRoot.replace '$', serverId
 
   # @property {Number} the client's progress in the authentication process
   #
@@ -1434,8 +1435,8 @@ class Dropbox.Client
   # @private
   # This is called internally by the other client functions, and should not be
   # used outside the {Dropbox.Client} class.
-  urlEncodePath: (path) ->
-    Dropbox.Util.Xhr.urlEncodeValue(@normalizePath(path)).replace /%2F/gi, '/'
+  _urlEncodePath: (path) ->
+    Dropbox.Util.Xhr.urlEncodeValue(@_normalizePath(path)).replace /%2F/gi, '/'
 
   # Normalizes a Dropbox path for API requests.
   #
@@ -1444,7 +1445,7 @@ class Dropbox.Client
   # paths as arguments.
   #
   # @param {String} path a path
-  normalizePath: (path) ->
+  _normalizePath: (path) ->
     if path.substring(0, 1) is '/'
       i = 1
       while path.substring(i, i + 1) is '/'
@@ -1461,8 +1462,8 @@ class Dropbox.Client
   # @return {String} the URL that the user's browser should be redirected to in
   #   order to perform an /oauth2/authorize request
   authorizeUrl: () ->
-    params = @oauth.authorizeUrlParams @driver.authType(), @driver.url()
-    @urls.authorize + "?" + Dropbox.Util.Xhr.urlEncode(params)
+    params = @_oauth.authorizeUrlParams @_driver.authType(), @_driver.url()
+    @_urls.authorize + "?" + Dropbox.Util.Xhr.urlEncode(params)
 
   # Exchanges an OAuth 2 authorization code with an access token.
   #
@@ -1473,10 +1474,10 @@ class Dropbox.Client
   #   called with the result of the /oauth/access_token HTTP request
   # @return {XMLHttpRequest} the XHR object used for this API call
   getAccessToken: (callback) ->
-    params = @oauth.accessTokenParams @driver.url()
-    xhr = new Dropbox.Util.Xhr('POST', @urls.token).setParams(params).
-        addOauthParams(@oauth)
-    @dispatchXhr xhr, (error, data) ->
+    params = @_oauth.accessTokenParams @_driver.url()
+    xhr = new Dropbox.Util.Xhr('POST', @_urls.token).setParams(params).
+        addOauthParams(@_oauth)
+    @_dispatchXhr xhr, (error, data) ->
       if error and error.status is Dropbox.ApiError.INVALID_PARAM and
           error.response and error.response.error
         # Return AuthError instances for OAuth errors.
@@ -1492,9 +1493,9 @@ class Dropbox.Client
   # @param {function(Dropbox.ApiError, Object)} callback called with the
   #   outcome of the XHR
   # @return {XMLHttpRequest} the native XHR object used to make the request
-  dispatchXhr: (xhr, callback) ->
+  _dispatchXhr: (xhr, callback) ->
     xhr.setCallback callback
-    xhr.onError = @xhrOnErrorHandler
+    xhr.onError = @_xhrOnErrorHandler
     xhr.prepare()
     nativeXhr = xhr.xhr
     if @onXhr.dispatch xhr
@@ -1510,15 +1511,15 @@ class Dropbox.Client
   # @param {Dropbox.ApiError} error the XHR error
   # @param {function()} callback called when this error handler is done
   # @return {void}
-  handleXhrError: (error, callback) ->
+  _handleXhrError: (error, callback) ->
     if error.status is Dropbox.ApiError.INVALID_TOKEN and
         @authStep is DbxClient.DONE
       # The user's token became invalid.
       @authError = error
       @authStep = DbxClient.ERROR
       @onAuthStepChange.dispatch @
-      if @driver and @driver.onAuthStepChange
-        @driver.onAuthStepChange @, =>
+      if @_driver and @_driver.onAuthStepChange
+        @_driver.onAuthStepChange @, =>
           @onError.dispatch error
           callback error
         return null
@@ -1528,27 +1529,27 @@ class Dropbox.Client
 
   # @private
   # @return {String} the default value for the "server" option
-  defaultServerRoot: ->
+  _defaultServerRoot: ->
     'https://api$.dropbox.com'
 
   # @private
   # @return {String} the default value for the "authServer" option
-  defaultAuthServer: ->
-    @serverRoot.replace 'api$', 'www'
+  _defaultAuthServer: ->
+    @_serverRoot.replace 'api$', 'www'
 
   # @private
   # @return {String} the default value for the "fileServer" option
-  defaultFileServer: ->
-    @serverRoot.replace 'api$', 'api-content'
+  _defaultFileServer: ->
+    @_serverRoot.replace 'api$', 'api-content'
 
   # @private
   # @return {String} to the default value for the "downloadServer" option
-  defaultDownloadServer: ->
+  _defaultDownloadServer: ->
     'https://dl.dropboxusercontent.com'
 
   # @private
   # @return {Number} the default value for the "maxApiServer" option
-  defaultMaxApiServer: ->
+  _defaultMaxApiServer: ->
     30
 
   # Computes the cached value returned by credentials.
@@ -1557,19 +1558,19 @@ class Dropbox.Client
   # Use {Dropbox.Client#credentials} instead.
   #
   # @return {void}
-  computeCredentials: ->
-    value = @oauth.credentials()
-    value.uid = @uid if @uid
-    if @serverRoot isnt @defaultServerRoot()
-      value.server = @serverRoot
-    if @maxApiServer isnt @defaultMaxApiServer()
-      value.maxApiServer = @maxApiServer
-    if @authServer isnt @defaultAuthServer()
-      value.authServer = @authServer
-    if @fileServer isnt @defaultFileServer()
-      value.fileServer = @fileServer
-    if @downloadServer isnt @defaultDownloadServer()
-      value.downloadServer = @downloadServer
+  _computeCredentials: ->
+    value = @_oauth.credentials()
+    value.uid = @_uid if @_uid
+    if @_serverRoot isnt @_defaultServerRoot()
+      value.server = @_serverRoot
+    if @_maxApiServer isnt @_defaultMaxApiServer()
+      value.maxApiServer = @_maxApiServer
+    if @_authServer isnt @_defaultAuthServer()
+      value.authServer = @_authServer
+    if @_fileServer isnt @_defaultFileServer()
+      value.fileServer = @_fileServer
+    if @_downloadServer isnt @_defaultDownloadServer()
+      value.downloadServer = @_downloadServer
     @_credentials = value
     return
 

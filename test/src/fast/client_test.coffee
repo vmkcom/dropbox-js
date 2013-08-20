@@ -12,31 +12,31 @@ describe 'Dropbox.Client', ->
         key: 'mock00key',
         server: 'https://api$.sandbox.dropbox-proxy.com'
 
-      expect(client.serverRoot).to.equal(
+      expect(client._serverRoot).to.equal(
           'https://api$.sandbox.dropbox-proxy.com')
-      expect(client.apiServer).to.match(
+      expect(client._apiServer).to.match(
           /^https:\/\/api\d*\.sandbox\.dropbox-proxy\.com$/)
-      expect(client.authServer).to.equal(
+      expect(client._authServer).to.equal(
           'https://www.sandbox.dropbox-proxy.com')
-      expect(client.fileServer).to.equal(
+      expect(client._fileServer).to.equal(
           'https://api-content.sandbox.dropbox-proxy.com')
 
-  describe '#normalizePath', ->
+  describe '#_normalizePath', ->
     it "doesn't touch relative paths", ->
-      expect(@client.normalizePath('aa/b/cc/dd')).to.equal 'aa/b/cc/dd'
+      expect(@client._normalizePath('aa/b/cc/dd')).to.equal 'aa/b/cc/dd'
 
     it 'removes the leading / from absolute paths', ->
-      expect(@client.normalizePath('/aaa/b/cc/dd')).to.equal 'aaa/b/cc/dd'
+      expect(@client._normalizePath('/aaa/b/cc/dd')).to.equal 'aaa/b/cc/dd'
 
     it 'removes multiple leading /s from absolute paths', ->
-      expect(@client.normalizePath('///aa/b/ccc/dd')).to.equal 'aa/b/ccc/dd'
+      expect(@client._normalizePath('///aa/b/ccc/dd')).to.equal 'aa/b/ccc/dd'
 
-  describe '#urlEncodePath', ->
+  describe '#_urlEncodePath', ->
     it 'encodes each segment separately', ->
-      expect(@client.urlEncodePath('a b+c/d?e"f/g&h')).to.
+      expect(@client._urlEncodePath('a b+c/d?e"f/g&h')).to.
           equal "a%20b%2Bc/d%3Fe%22f/g%26h"
     it 'normalizes paths', ->
-      expect(@client.urlEncodePath('///a b+c/g&h')).to.
+      expect(@client._urlEncodePath('///a b+c/g&h')).to.
           equal "a%20b%2Bc/g%26h"
 
   describe '#dropboxUid', ->
@@ -206,8 +206,8 @@ describe 'Dropbox.Client', ->
 
       it 'stops at PARAM_SET with interactive: false', (done) ->
         @client.reset()
-        @client.oauth.setAuthStateParam 'state_should_not_be_used'
-        @client.authStep = @client.oauth.step()
+        @client._oauth.setAuthStateParam 'state_should_not_be_used'
+        @client.authStep = @client._oauth.step()
         expect(@client.authStep).to.equal Dropbox.Client.PARAM_SET
         @client.authenticate interactive: false, (error, client) ->
           expect(error).to.equal null
@@ -255,7 +255,7 @@ describe 'Dropbox.Client', ->
           @onAuthStepChangeCalled.push client.authStep
           callback()
         @xhrErrorStatus = 0
-        @client.dispatchXhr = (xhr, callback) =>
+        @client._dispatchXhr = (xhr, callback) =>
           callback new Dropbox.ApiError(status: @xhrErrorStatus, 'POST', 'url')
 
       describe 'unset', ->
@@ -297,7 +297,7 @@ describe 'Dropbox.Client', ->
     it 'throws an exception if initialized without an API key or token', ->
       expect(-> new Dropbox.Client({})).to.throw(Error, /no api key/i)
 
-  describe '#chooseApiServer', ->
+  describe '#_chooseApiServer', ->
     describe 'with only one API server', ->
       beforeEach ->
         @client = new Dropbox.Client(
@@ -307,7 +307,7 @@ describe 'Dropbox.Client', ->
 
       it 'always returns that API server', ->
         for i in [1..10]
-          expect(@client.chooseApiServer()).to.equal 'https://api.dropbox.com'
+          expect(@client._chooseApiServer()).to.equal 'https://api.dropbox.com'
 
     describe 'with 10 API servers', ->
       beforeEach ->
@@ -322,8 +322,8 @@ describe 'Dropbox.Client', ->
 
       it 'can return the un-numbered server', ->
         @stub.returns 0.001
-        expect(@client.chooseApiServer()).to.equal 'https://api.dropbox.com'
+        expect(@client._chooseApiServer()).to.equal 'https://api.dropbox.com'
 
       it 'can return the 10th numbered server', ->
         @stub.returns 0.999
-        expect(@client.chooseApiServer()).to.equal 'https://api10.dropbox.com'
+        expect(@client._chooseApiServer()).to.equal 'https://api10.dropbox.com'

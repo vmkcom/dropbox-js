@@ -245,12 +245,10 @@ buildClientTests = (clientKeys) ->
         expect(stat).to.be.instanceOf Dropbox.File.Stat
         expect(stat.path).to.equal @textFile
         expect(stat.isFile).to.equal true
-        if @node_js
-          # The Dropbox API server doesn't whitelist Content-Range for CORS.
-          expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
-          expect(rangeInfo.start).to.equal @textFileData.length - 10
-          expect(rangeInfo.end).to.equal @textFileData.length - 1
-          expect(rangeInfo.size).to.equal @textFileData.length
+        expect(rangeInfo).to.be.instanceOf Dropbox.Http.RangeInfo
+        expect(rangeInfo.start).to.equal @textFileData.length - 10
+        expect(rangeInfo.end).to.equal @textFileData.length - 1
+        expect(rangeInfo.size).to.equal @textFileData.length
         done()
 
     it 'reads a binary file into a string', (done) ->

@@ -117,7 +117,7 @@ describe 'Dropbox.AuthDriver.Redirect', ->
       return if @node_js or @chrome_app or @cordova
       client = new Dropbox.Client testKeys
       Dropbox.AuthDriver.autoConfigure client
-      expect(client.driver).to.be.instanceOf Dropbox.AuthDriver.Redirect
+      expect(client._driver).to.be.instanceOf Dropbox.AuthDriver.Redirect
 
 
 describe 'Dropbox.AuthDriver.Popup', ->
