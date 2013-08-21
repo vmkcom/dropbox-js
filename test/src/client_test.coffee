@@ -1354,57 +1354,6 @@ buildClientTests = (clientKeys) ->
             expect(data).to.equal @textFileData
             done()
 
-  describe '#pullChanges', ->
-    beforeEach ->
-      # Pulling an entire Dropbox can take a lot of time, so we need fancy
-      # logic here.
-      @timeoutValue = 60 * 1000
-      @timeout @timeoutValue
-
-    afterEach (done) ->
-      @timeoutValue += 10 * 1000
-      @timeout @timeoutValue
-      return done() unless @newFile
-      @client.remove @newFile, (error, stat) -> done()
-
-    it 'gets a cursor, then it gets relevant changes', (done) ->
-      @timeout @timeoutValue
-
-      @client.pullChanges (error, changes) =>
-        expect(error).to.equal null
-        expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
-        expect(changes.blankSlate).to.equal true
-
-        # Calls pullChanges until it's done listing the user's Dropbox.
-        drainEntries = (client, callback) =>
-          return callback() unless changes.shouldPullAgain
-          @timeoutValue += 10 * 1000  # 10 extra seconds per call
-          @timeout @timeoutValue
-          client.pullChanges changes, (error, _changes) ->
-            expect(error).to.equal null
-            changes = _changes
-            drainEntries client, callback
-        drainEntries @client, =>
-
-          @newFile = "#{@testFolder}/delta-test.txt"
-          newFileData = "This file is used to test the pullChanges method.\n"
-          @client.writeFile @newFile, newFileData, (error, stat) =>
-            expect(error).to.equal null
-            expect(stat).to.have.property 'path'
-            expect(stat.path).to.equal @newFile
-
-            @client.pullChanges changes, (error, changes) =>
-              expect(error).to.equal null
-              expect(changes).to.be.instanceof Dropbox.Http.PulledChanges
-              expect(changes.blankSlate).to.equal false
-              expect(changes.changes).to.have.length.greaterThan 0
-              change = changes.changes[changes.changes.length - 1]
-              expect(change).to.be.instanceOf Dropbox.Http.PulledChange
-              expect(change.path).to.equal @newFile
-              expect(change.wasRemoved).to.equal false
-              expect(change.stat.path).to.equal @newFile
-              done()
-
   describe '#thumbnailUrl', ->
     it 'produces an URL that contains the file name', ->
       url = @client.thumbnailUrl @imageFile, { png: true, size: 'medium' }
@@ -1490,6 +1439,157 @@ buildClientTests = (clientKeys) ->
             join('')
         expect(bytes).to.contain 'PNG'
         done()
+
+  describe '#pullChanges', ->
+    describe 'with valid args', ->
+      beforeEach ->
+        # /delta takes a long time, and we need an unbounded number of them.
+        @timeoutValue = 60 * 1000
+        @timeout @timeoutValue
+
+      afterEach (done) ->
+        @timeoutValue += 10 * 1000
+        @timeout @timeoutValue
+        return done() unless @newFile
+        @client.remove @newFile, (error, stat) -> done()
+
+      it 'gets a cursor, then it gets relevant changes', (done) ->
+        @timeout @timeoutValue
+
+        @client.pullChanges (error, changes) =>
+          expect(error).to.equal null
+          expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
+          expect(changes.blankSlate).to.equal true
+
+          # Calls pullChanges until it's done listing the user's Dropbox.
+          drainEntries = (client, callback) =>
+            return callback() unless changes.shouldPullAgain
+            @timeoutValue += 10 * 1000  # 10 extra seconds per call
+            @timeout @timeoutValue
+            client.pullChanges changes, (error, _changes) ->
+              expect(error).to.equal null
+              changes = _changes
+              drainEntries client, callback
+
+          drainEntries @client, =>
+            @newFile = "#{@testFolder}/delta-test.txt"
+            newFileData = "This file is used to test pullChanges.\n"
+            @client.writeFile @newFile, newFileData, (error, stat) =>
+              expect(error).to.equal null
+              expect(stat).to.have.property 'path'
+              expect(stat.path).to.equal @newFile
+
+              @client.pullChanges changes, (error, changes) =>
+                expect(error).to.equal null
+                expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
+                expect(changes.blankSlate).to.equal false
+                expect(changes.changes).to.have.length.greaterThan 0
+                change = changes.changes[changes.changes.length - 1]
+                expect(change).to.be.instanceOf Dropbox.Http.PulledChange
+                expect(change.path).to.equal @newFile
+                expect(change.wasRemoved).to.equal false
+                expect(change.stat.path).to.equal @newFile
+                done()
+
+    describe 'with a bad cursor', ->
+      it 'returns an error', (done) ->
+        @client.pullChanges '[troll-cursor]', (error, changes) ->
+          expect(changes).not.to.be.ok
+          expect(error).to.be.instanceOf Dropbox.ApiError
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+            expect(error).to.have.property 'status'
+            expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+            done()
+
+  describe '#pollForChanges', ->
+    describe 'with a valid cursor', ->
+      beforeEach (done) ->
+        # Pulling an entire Dropbox can take a lot of time, so we need fancy
+        # logic here.
+        @timeoutValue = 60 * 1000
+        @timeout @timeoutValue
+
+        @client.pullChanges (error, changes) =>
+          expect(error).to.equal null
+          expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
+
+          # Calls pullChanges until it's done listing the user's Dropbox.
+          drainEntries = (client, callback) =>
+            return callback() unless changes.shouldPullAgain
+            @timeoutValue += 10 * 1000  # 10 extra seconds per call
+            @timeout @timeoutValue
+            client.pullChanges changes, (error, _changes) ->
+              expect(error).to.equal null
+              changes = _changes
+              drainEntries client, callback
+
+          # Wait a few seconds for previous test operations to trickle down to
+          # the notification servers.
+          delayedDrainEntries = =>
+            drainEntries @client, =>
+              @changes = changes
+              done()
+          setTimeout delayedDrainEntries, 3000
+
+      afterEach (done) ->
+        @timeoutValue += 10 * 1000
+        @timeout @timeoutValue
+        return done() unless @newFile
+        @client.remove @newFile, (error, stat) -> done()
+
+      it 'gets notified when changes happen', (done) ->
+        # TODO(pwnall): enable browser tests when api-notify gets CORS headers
+        return done() unless @node_js
+
+        @timeout @timeoutValue
+
+        # A file that will be written after 3 seconds.
+        @newFile = "#{@testFolder}/longpoll-delta-test.txt"
+        newFileData = "This file is used to test pollForChanges.\n"
+        fileWritten = false
+
+        # The callback for this should be called after the file is written.
+        @client.pollForChanges @changes, timeout: 30, (error, result) =>
+          expect(error).to.equal null
+          expect(result).to.be.instanceOf Dropbox.Http.PollResult
+          expect(['hasChanges', result.hasChanges]).to.deep.equal(
+              ['hasChanges', true])
+          expect(['fileWritten', fileWritten]).to.deep.equal(
+              ['fileWritten', true])
+
+          @client.pullChanges @changes, (error, changes) =>
+            expect(error).to.equal null
+            expect(changes).to.be.instanceOf Dropbox.Http.PulledChanges
+            expect(changes.blankSlate).to.equal false
+            expect(changes.changes).to.have.length.greaterThan 0
+            change = changes.changes[changes.changes.length - 1]
+            expect(change).to.be.instanceOf Dropbox.Http.PulledChange
+            expect(change.path).to.equal @newFile
+            expect(change.wasRemoved).to.equal false
+            expect(change.stat.path).to.equal @newFile
+            done()
+
+        # Called to write the change-triggering file after 3 seconds.
+        writeFile = =>
+          fileWritten = true
+          @client.writeFile @newFile, newFileData, (error, stat) =>
+            expect(error).to.equal null
+            expect(stat).to.have.property 'path'
+            expect(stat.path).to.equal @newFile
+        setTimeout writeFile, 3000
+
+    describe 'with an invalid cursor', ->
+      it 'returns an error', (done) ->
+        # TODO(pwnall): enable browser tests when api-notify gets CORS headers
+        return done() unless @node_js
+
+        @client.pollForChanges '[troll-cursor]', (error, changes) ->
+          expect(changes).not.to.be.ok
+          expect(error).to.be.instanceOf Dropbox.ApiError
+          unless Dropbox.Util.Xhr.ieXdr  # IE's XDR doesn't do status codes.
+            expect(error).to.have.property 'status'
+            expect(error.status).to.equal Dropbox.ApiError.INVALID_PARAM
+            done()
 
   describe '#appInfo', ->
     it 'returns an error for non-existing app keys', (done) ->
@@ -1764,3 +1864,4 @@ describe 'Dropbox.Client', ->
       it 'depends on the app key', ->
         client = new Dropbox.Client testFullDropboxKeys
         expect(client.appHash()).not.to.equal @client.appHash()
+

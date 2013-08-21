@@ -26,6 +26,7 @@ class Dropbox.Client
     @_authServer = options.authServer or @_defaultAuthServer()
     @_fileServer = options.fileServer or @_defaultFileServer()
     @_downloadServer = options.downloadServer or @_defaultDownloadServer()
+    @_notifyServer = options.notifyServer or @_defaultNotifyServer()
 
     @onXhr = new Dropbox.Util.EventSource cancelable: true
     @onError = new Dropbox.Util.EventSource
@@ -1051,9 +1052,9 @@ class Dropbox.Client
   # to obtain all the changes that happened in the user's Dropbox (or
   # application directory) between the two calls.
   #
-  # @param {Dropbox.Http.PulledChanges, String} cursor the result of a previous
-  #   {Dropbox.Client#pullChanges} call, or a string containing a tag
-  #   representing the Dropbox state that is used as the baseline for the
+  # @param {Dropbox.Http.PulledChanges, String} cursor (optional) the result of
+  #   a previous {Dropbox.Client#pullChanges} call, or a string containing a
+  #   tag representing the Dropbox state that is used as the baseline for the
   #   change list; this should either be the {Dropbox.Http.PulledChanges}
   #   obtained from a previous call to {Dropbox.Client#pullChanges}, the return
   #   value of {Dropbox.Http.PulledChanges#cursor}, or null / omitted on the
@@ -1070,7 +1071,7 @@ class Dropbox.Client
       cursor = null
 
     if cursor
-      if cursor.cursorTag
+      if cursor.cursorTag  # cursor is a Dropbox.Http.PulledChanges instance
         params = { cursor: cursor.cursorTag }
       else
         params = { cursor: cursor }
@@ -1087,6 +1088,44 @@ class Dropbox.Client
   # @see Dropbox.Client#pullChanges
   delta: (cursor, callback) ->
     @pullChanges cursor, callback
+
+  # Checks whether changes have occurred in a user's Dropbox.
+  #
+  # This method can be used together with {Dropbox.Client#pullChanges} to react
+  # to changes in Dropbox in a timely manner.
+  #
+  # @param {Dropbox.Http.PulledChanges, String} cursor the result of a previous
+  #   {Dropbox.Client#pullChanges} call, or a string containing a tag
+  #   representing the Dropbox state that is used as the baseline for the
+  #   change list; this should either be the {Dropbox.Http.PulledChanges}
+  #   obtained from a previous call to {Dropbox.Client#pullChanges} or the
+  #   return value of {Dropbox.Http.PulledChanges#cursor}
+  # @param {Object} options
+  # @param {function(Dropbox.ApiError, Boolean, Number} callback called with
+  #   the result of the /longpoll_delta HTTP request; if the call succeeds, the
+  #   second parameter is true if
+  pollForChanges: (cursor, options, callback) ->
+    if (not callback) and (typeof options is 'function')
+      callback = options
+      options = null
+
+    if cursor.cursorTag  # cursor is a Dropbox.Http.PulledChanges
+      params = { cursor: cursor.cursorTag }
+    else
+      params = { cursor: cursor }
+
+    if options and 'timeout' of options
+      params.timeout = options.timeout
+
+    xhr = new Dropbox.Util.Xhr 'GET', @_urls.longpollDelta
+    xhr.setParams params
+    @_dispatchXhr xhr, (error, response) ->
+      if typeof response is 'string'
+        try
+          response = JSON.parse response
+        catch jsonError
+          response = null
+      callback error, Dropbox.Http.PollResult.parse(response)
 
   # Creates a folder in a user's Dropbox.
   #
@@ -1355,6 +1394,7 @@ class Dropbox.Client
       putFile: "#{@_fileServer}/1/files_put/auto"
       metadata: "#{@_apiServer}/1/metadata/auto"
       delta: "#{@_apiServer}/1/delta"
+      longpollDelta: "#{@_notifyServer}/1/longpoll_delta"
       revisions: "#{@_apiServer}/1/revisions/auto"
       restore: "#{@_apiServer}/1/restore/auto"
       search: "#{@_apiServer}/1/search/auto"
@@ -1548,6 +1588,11 @@ class Dropbox.Client
     'https://dl.dropboxusercontent.com'
 
   # @private
+  # @return {String} to the default value for the "notifyServer" option
+  _defaultNotifyServer: ->
+    @_serverRoot.replace 'api$', 'api-notify'
+
+  # @private
   # @return {Number} the default value for the "maxApiServer" option
   _defaultMaxApiServer: ->
     30
@@ -1571,6 +1616,9 @@ class Dropbox.Client
       value.fileServer = @_fileServer
     if @_downloadServer isnt @_defaultDownloadServer()
       value.downloadServer = @_downloadServer
+    if @_notifyServer isnt @_defaultNotifyServer()
+      value.notifyServer = @_notifyServer
+
     @_credentials = value
     return
 

@@ -20,6 +20,10 @@ describe 'Dropbox.Client', ->
           'https://www.sandbox.dropbox-proxy.com')
       expect(client._fileServer).to.equal(
           'https://api-content.sandbox.dropbox-proxy.com')
+      expect(client._notifyServer).to.equal(
+          'https://api-notify.sandbox.dropbox-proxy.com')
+      expect(client._downloadServer).to.equal(
+          'https://dl.dropboxusercontent.com')
 
   describe '#_normalizePath', ->
     it "doesn't touch relative paths", ->
