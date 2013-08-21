@@ -1,4 +1,5 @@
 glob = require 'glob'
+open = require 'open'
 
 run = require './run'
 
@@ -24,15 +25,17 @@ fasttest = (callback) ->
 webtest = (callback) ->
   WebFileServer = require '../test/js/helpers/web_file_server.js'
   webFileServer = new WebFileServer()
+  url = webFileServer.testUrl()
   if 'BROWSER' of process.env
     if process.env['BROWSER'] is 'false'
-      url = webFileServer.testUrl()
       console.log "Please open the URL below in your browser:\n    #{url}"
+      callback() if callback?
     else
-      webFileServer.openBrowser process.env['BROWSER']
+      open url, process.env['BROWSER'], ->
+        callback() if callback?
   else
-    webFileServer.openBrowser()
-  callback() if callback?
+    open url, ->
+      callback() if callback?
 
 module.exports.fast = fasttest
 module.exports.node = nodetest

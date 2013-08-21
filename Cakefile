@@ -6,6 +6,7 @@ watch = require 'watch'
 
 build = require './tasks/build'
 clean = require './tasks/clean'
+dconsole = require './tasks/dconsole'
 download = require './tasks/download'
 siteDoc = require './tasks/site_doc'
 run = require './tasks/run'
@@ -50,6 +51,11 @@ task 'webtest', ->
       ssl_cert ->
         tokens ->
           test.web()
+
+task 'webconsole', ->
+  build ->
+    tokens ->
+      dconsole.web()
 
 task 'cert', ->
   fs.removeSync 'test/ssl' if fs.existsSync 'test/ssl'

@@ -394,6 +394,7 @@ class Dropbox.Util.Oauth
     @_token = null
     @_tokenKey = null
     @_tokenKid = null
+    @_error = null
     @
 
   # The timestamp used for an OAuth 2 request.

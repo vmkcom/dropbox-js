@@ -2,7 +2,6 @@ express = require 'express'
 fs = require 'fs'
 http = require 'http'
 https = require 'https'
-open = require 'open'
 
 # express.js app server for the Web files and XHR tests.
 class WebFileServer
@@ -13,10 +12,6 @@ class WebFileServer
     @protocol = if @noSsl then 'http' else 'https'
     @createApp()
 
-  # Opens the test URL in a browser.
-  openBrowser: (appName) ->
-    open @testUrl(), appName
-
   # The root URL for XHR tests.
   testOrigin: ->
     "#{@protocol}://localhost:#{@port}"
@@ -24,6 +19,10 @@ class WebFileServer
   # The URL that should be used to start the tests.
   testUrl: ->
     "#{@protocol}://localhost:#{@port}/test/html/browser_test.html"
+
+  # The URL that should be used to open the debugging environment.
+  consoleUrl: ->
+    "#{@protocol}://localhost:#{@port}/test/html/browser_console.html"
 
   # The self-signed certificate used by this server.
   certificate: ->

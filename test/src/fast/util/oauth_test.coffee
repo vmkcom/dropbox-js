@@ -96,6 +96,10 @@ describe 'Dropbox.Util.Oauth', ->
           expect(error.description).to.equal(
               "The application didn't seem trustworthy")
 
+        it 'lets #reset() return to RESET', ->
+          @oauth.reset()
+          expect(@oauth.step()).to.equal Dropbox.Client.RESET
+
       describe 'without a code or token', ->
         beforeEach ->
           @oldStep = @oauth.step()
@@ -103,6 +107,13 @@ describe 'Dropbox.Util.Oauth', ->
 
         it 'does not change the auth step', ->
           expect(@oauth.step()).to.equal @oldStep
+
+    describe '#reset', ->
+      beforeEach ->
+        @oauth.reset()
+
+      it 'makes #step() return RESET', ->
+        expect(@oauth.step()).to.equal Dropbox.Client.RESET
 
   buildSecretTransitionTests = ->
     describe '#setAuthStateParam', ->
@@ -192,6 +203,10 @@ describe 'Dropbox.Util.Oauth', ->
           expect(@oauth.credentials()).to.deep.equal(
               key: 'client-id', secret: 'client-secret')
 
+        it 'lets #reset() return to RESET', ->
+          @oauth.reset()
+          expect(@oauth.step()).to.equal Dropbox.Client.RESET
+
       describe 'without a code or token', ->
         beforeEach ->
           @oldStep = @oauth.step()
@@ -199,6 +214,13 @@ describe 'Dropbox.Util.Oauth', ->
 
         it 'does not change the step', ->
           expect(@oauth.step()).to.equal @oldStep
+
+    describe '#reset', ->
+      beforeEach ->
+        @oauth.reset()
+
+      it 'makes #step() return RESET', ->
+        expect(@oauth.step()).to.equal Dropbox.Client.RESET
 
   buildKeylessTransitionTests = ->
     describe '#setAuthStateParam', ->
@@ -261,6 +283,13 @@ describe 'Dropbox.Util.Oauth', ->
 
         it 'does not change the auth step', ->
           expect(@oauth.step()).to.equal @oldStep
+
+    describe '#reset', ->
+      beforeEach ->
+        @oauth.reset()
+
+      it 'makes #step() return RESET', ->
+        expect(@oauth.step()).to.equal Dropbox.Client.RESET
 
   describe 'with an app key', ->
     beforeEach ->
