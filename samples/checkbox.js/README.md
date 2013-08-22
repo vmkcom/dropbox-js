@@ -32,7 +32,7 @@ information, such as deadlines, in the task files.
 This sample uses the following `Dropbox.Client` methods:
 
 * authenticate
-* signOff
+* signOut
 * getAccountInfo
 * mkdir
 * readdir
