@@ -1,0 +1,18 @@
+{
+  "dropbox": {
+    "key": "79638npml3ioxpf",
+    "secret": "l426gjxku0u5fko"
+  },
+  "database": {
+    "url": "sqlite://file:data.sqlite3",
+    "logging": true,
+    "concurrency": 1
+  },
+  "server": {
+    "port": 3000
+  },
+  "session": {
+    "key": "netsend.session",
+    "secret": "YknMRwXmxu0ZoQtXkKT0wx3UYimbYwy/8kMUHdH/mcI="
+  }
+}
