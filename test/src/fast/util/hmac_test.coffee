@@ -18,9 +18,28 @@ describe 'Dropbox.Util.hmac', ->
 describe 'Dropbox.Util.sha1', ->
   it 'works for an empty message', ->
     expect(Dropbox.Util.sha1('')).to.equal '2jmj7l5rSw0yVb/vlWAYkK/YBwk='
-  it 'works for the FIPS-180 Appendix A sample', ->
+  it 'works for the FIPS-180 Appendix A sample 1', ->
     expect(Dropbox.Util.sha1('abc')).to.equal 'qZk+NkcGgWq6PiVxeFDCbJzQ2J0='
-  it 'works for the FIPS-180 Appendix B sample', ->
+  it 'works for the FIPS-180 Appendix A sample 2', ->
     string = 'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'
     expect(Dropbox.Util.sha1(string)).to.equal 'hJg+RBw70m66rkqh+VEp5eVGcPE='
 
+describe 'Dropbox.Util.sha256', ->
+  it 'works for an empty message', ->
+    expect(Dropbox.Util.sha256('')).to.equal(
+        '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=')
+  it 'works for the FIPS-180 Appendix A sample 1', ->
+    expect(Dropbox.Util.sha256('abc')).to.equal(
+        'ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=')
+  it 'works for the FIPS-180 Appendix A sample 2', ->
+    string = 'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'
+    expect(Dropbox.Util.sha256(string)).to.equal(
+        'JI1qYdIGOLjlwCaTDD5gOaM85Flk/yFn9uzt1BnbBsE=')
+  it 'works for the FIPS-180 Appendix A additional sample 8', ->
+    string = (new Array(1001)).join 'A'
+    expect(Dropbox.Util.sha256(string)).to.equal(
+        'wuaGgjSJztIBf2BZuLI5MYtjZPbc2DXQpRkQWh6t1uQ=')
+  it 'works for the FIPS-180 Appendix A additional sample 9', ->
+    string = (new Array(1006)).join 'U'
+    expect(Dropbox.Util.sha256(string)).to.equal(
+        '9NYt3sDz3ZDqE4D6FqX/jcTFSyF0BlDySvxBIJA1UrA=')
