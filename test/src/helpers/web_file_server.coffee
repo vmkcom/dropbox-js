@@ -48,7 +48,8 @@ class WebFileServer
 
     # Disable HTTP caching, for IE.
     @app.use (request, response, next) ->
-      response.header 'Cache-Control', 'nocache'
+      response.header 'Cache-Control', 'no-cache'
+      # For IE. Invalid dates should be parsed as "already expired".
       response.header 'Expires', '-1'
       next()
 
