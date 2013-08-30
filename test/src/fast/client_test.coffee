@@ -168,8 +168,18 @@ describe 'Dropbox.Client', ->
           done()
         @client.authenticate null
 
-      it 'raises an exception when AuthDriver.autoConfigure fails', ->
+      it 'raises an exception when AuthDriver.autoConfigure fails in RESET', ->
         @client.reset()
+        expect(@client.authStep).to.equal Dropbox.Client.RESET
+        @client.authDriver null
+        @stubDriver = null
+        expect(=> @client.authenticate null).to.
+            throw Error, /auto-configuration failed/i
+
+      it 'raises an exception when autoConfigure fails in AUTHORIZED', ->
+        @client.setCredentials(
+            key: 'app-key', secret: 'app-secret', oauthCode: 'auth-code')
+        expect(@client.authStep).to.equal Dropbox.Client.AUTHORIZED
         @client.authDriver null
         @stubDriver = null
         expect(=> @client.authenticate null).to.
