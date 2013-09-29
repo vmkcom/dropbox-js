@@ -47,7 +47,7 @@ should be used: `arrayBuffer`, `blob` (only works in browsers),
 `buffer` (node.js only).
 
 ```javascript
-client.readFile("an_image.png", arrayBuffer: true, function(error, data) {
+client.readFile("an_image.png", { arrayBuffer: true }, function(error, data) {
   if (error) {
     return handleError(error);
   }
