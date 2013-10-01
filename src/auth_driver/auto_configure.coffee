@@ -9,10 +9,13 @@
 #
 # @throw Error if the current enviornment does not support auto-configuration
 Dropbox.AuthDriver.autoConfigure = (client) ->
-  if typeof chrome isnt 'undefined' and (chrome.extension or
-      (chrome.app and chrome.app.runtime))
-    # Chrome extensions.
-    client.authDriver new Dropbox.AuthDriver.Chrome()
+  if typeof chrome isnt 'undefined' and chrome.runtime and chrome.runtime.id
+    if chrome.tabs and chrome.tabs.create
+      # Chrome extensions.
+      client.authDriver new Dropbox.AuthDriver.ChromeExtension()
+    else
+      # Chrome packaged applications.
+      client.authDriver new Dropbox.AuthDriver.ChromeApp()
     return
 
   if typeof window isnt 'undefined'

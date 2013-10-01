@@ -220,6 +220,7 @@ Both applications should whitelist the following OAuth redirect URLs:
 * IE VM tests: https://10.0.2.2:8911/test/html/oauth_receiver.html
 * IE VM tests: https://10.0.2.2:8911/test/html/redirect_driver_test.html
 * Chrome tests: chrome-extension://nibiohflpcgopggnnboelamnhcnnpinm/test/html/chrome_oauth_receiver.html
+* Chrome tests: https://nibiohflpcgopggnnboelamnhcnnpinm.chromiumapp.org/
 * Cordova tests: https://www.dropbox.com/1/oauth2/redirect_receiver
 
 Second, open `test/config/api.json` in a text editor. Plug in the "Full

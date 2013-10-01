@@ -54,14 +54,8 @@ class Dropbox.AuthDriver.BrowserBase
           unless @rememberUser
             return @forgetCredentials(callback)
 
-          # Verify that the old access token still works.
           client.setCredentials credentials
-          client.getAccountInfo (error) =>
-            if error and error.status is Dropbox.ApiError.INVALID_TOKEN
-              client.reset()
-              @forgetCredentials callback
-            else
-              callback()
+          callback()
       when Dropbox.Client.DONE
         if @rememberUser
           return @storeCredentials(client.credentials(), callback)

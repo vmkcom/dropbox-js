@@ -29,12 +29,19 @@ if global? and require? and module? and (not cordova?)
   buffer = fs.readFileSync testImagePath
   exports.testImageBytes = (buffer.readUInt8(i) for i in [0...buffer.length])
 else
-  if chrome? and chrome.runtime
-    # Chrome app
+  if chrome?.runtime?.id
+    # Chrome.app or extension.
     exports = window
-    exports.authDriver = new Dropbox.AuthDriver.Chrome(
-        receiverPath: 'test/html/chrome_oauth_receiver.html',
-        rememberUser: false, scope: 'helper-chrome')
+    if chrome.tabs and chrome.tabs.create
+      # Chrome extension.
+      exports.authDriver = new Dropbox.AuthDriver.ChromeExtension(
+          receiverPath: 'test/html/chrome_oauth_receiver.html',
+          scope: 'helper-chrome')
+    else
+      # Chrome app.
+      exports.authDriver = new Dropbox.AuthDriver.ChromeApp(
+          scope: 'helper-chrome')
+
     # Hack-implement "rememberUser: false" in the Chrome driver.
     exports.authDriver.storeCredentials = (credentials, callback) -> callback()
     exports.authDriver.loadCredentials = (callback) -> callback null

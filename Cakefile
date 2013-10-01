@@ -187,16 +187,12 @@ testChromeApp = (callback) ->
   # Clean up the profile.
   fs.mkdirSync 'test/chrome_profile' unless fs.existsSync 'test/chrome_profile'
 
-  # TODO(pwnall): remove experimental flag when the identity API gets stable
   command = "\"#{chromeCommand()}\" " +
       '--load-extension=test/chrome_app ' +
-      # TODO(pwnall): figure out a way to get the app auto-loaded; the flag
-      #               below is documented but doesn't work
-      # '--app-id nibiohflpcgopggnnboelamnhcnnpinm ' +
-      '--enable-experimental-extension-apis ' +
+      '--load-and-launch-app=test/chrome_app ' +
       '--user-data-dir=test/chrome_profile --no-default-browser-check ' +
       '--no-first-run --no-service-autorun --disable-default-apps ' +
-      '--homepage=about:blank --v=-1 '
+      '--homepage=about:blank --v=-1 chrome://extensions'
 
   run command, ->
     callback() if callback

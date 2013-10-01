@@ -9,6 +9,9 @@ token authorization step by redirecting the browser to the Dropbox page that
 performs the authorization and having that page redirect back to the
 application page.
 
+Driver autodetection will automatically set up the Redirect driver in Web
+applications, so calling `client.authDriver` is not necessary.
+
 This driver's constructor takes the following options.
 
 * `rememberUser` can be set to false to stop the driver from storing the user's
@@ -57,13 +60,10 @@ The popup driver implements the `rememberUser` option with the same semantics
 and caveats as the Redirect driver.
 
 
-### Dropbox.AuthDriver.Chrome
+### Dropbox.AuthDriver.ChromeExtension
 
-Google Chrome [extensions](http://developer.chrome.com/extensions/) and
-[applications](http://developer.chrome.com/apps/) are supported by a driver
-that opens a new browser tab (in the case of extensions and legacy
-applications) or an application window (for new applications) to complete the
-OAuth authorization.
+Google Chrome [extensions](http://developer.chrome.com/extensions/) are
+supported by a driver that performs the OAuth 2 flow in a dedicated tab.
 
 To use this driver, first add the following files to your extension.
 
@@ -75,14 +75,38 @@ to reflect the paths to `dropbox.js` and to the receiver script file
 Point the driver constructor to the receiver page:
 
 ```javascript
-client.authDriver(new Dropbox.AuthDriver.Chrome({
+client.authDriver(new Dropbox.AuthDriver.ChromeExtension({
   receiverPath: "path/to/chrome_oauth_receiver.html"}));
 ```
 
 This driver caches the user's credentials so that users don't have to authorize
-applications / extensions on every browser launch. Applications and extensions'
-UI should include a method for the user to sign out of Dropbox, which can be
-implemented by calling the `signOut` instance method of `Dropbox.Client`.
+extensions on every browser launch. Extensions' UI should include a method
+for the user to sign out of Dropbox, which can be implemented by calling the
+`signOut` instance method of `Dropbox.Client`.
+
+
+### Dropbox.AuthDriver.ChromeApp
+
+Google Chrome
+[packaged applications](http://developer.chrome.com/apps/) are supported by a
+driver that uses the
+[identity API](http://developer.chrome.com/apps/identity.html)
+to complete the OAuth 2 flow.
+
+To use this driver, add the `identity` permission to your application's
+`manifest.json` file.
+
+Driver autodetection will automatically set up the ChromeApp driver in Chrome
+packaged applications, so calling `client.authDriver` is not necessary.
+
+This driver caches the user's credentials so that users don't have to authorize
+applications on every browser launch. Applications' UI should include a method
+for the user to sign out of Dropbox, which can be implemented by calling the
+`signOut` instance method of `Dropbox.Client`.
+
+This drive can be used with Chrome extensions. However, to avoid
+[these user experience issues](http://crbug.com/281676), the
+Dropbox.AuthDriver.ChromeExtension driver should be used instead.
 
 
 ### Dropbox.AuthDriver.Cordova
