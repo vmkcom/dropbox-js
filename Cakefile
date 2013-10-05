@@ -259,8 +259,7 @@ scaffoldCordovaApp = (platform, callback) ->
         'test/cordova_app/plugins/org.apache.cordova.core.inappbrowser')
       commands.push(
           'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
-          'plugin add ' +
-          'https://git-wip-us.apache.org/repos/asf/cordova-plugin-inappbrowser.git')
+          'plugin add org.apache.cordova.inappbrowser')
     unless fs.existsSync "test/cordova_app/platforms/#{platform}"
       commands.push(
           'cd test/cordova_app && ../../node_modules/cordova/bin/cordova ' +
