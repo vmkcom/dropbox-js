@@ -54,8 +54,10 @@ task 'webtest', ->
 
 task 'webconsole', ->
   build ->
-    tokens ->
-      dconsole.web()
+    build.package ->
+      ssl_cert ->
+        tokens ->
+          dconsole.web()
 
 task 'cert', ->
   fs.removeSync 'test/ssl' if fs.existsSync 'test/ssl'
