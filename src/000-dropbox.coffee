@@ -2,7 +2,9 @@
 #
 # For now, it only serves as the dropbox.js namespace.
 class Dropbox
-  # In the future, this will have a constructor defined.
+  constructor: ->
+    # In the future, this class will implement a high-level API.
+    throw new Error("Not implemented. Did you mean to use Dropbox.Client?")
 
 # Namespace for internal functions that are only exposed for testing purposes.
 #
