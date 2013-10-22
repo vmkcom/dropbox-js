@@ -1,7 +1,7 @@
-describe 'Dropbox.AuthDriver.BrowserBase', ->
+describe.only 'Dropbox.AuthDriver.BrowserBase', ->
   beforeEach ->
     @node_js = module? and module?.exports? and require?
-    @chrome_app = chrome? and (chrome.extension or chrome.app)
+    @chrome_app = chrome?.runtime?.id
     @client = new Dropbox.Client testKeys
 
   describe 'with rememberUser: false', ->
@@ -9,11 +9,20 @@ describe 'Dropbox.AuthDriver.BrowserBase', ->
       return done() if @node_js or @chrome_app
       @driver = new Dropbox.AuthDriver.BrowserBase rememberUser: false
       @driver.setStorageKey @client
-      @driver.forgetCredentials done
+
+      @scopedDriver = new Dropbox.AuthDriver.BrowserBase(
+          rememberUser: false, scope: 'other')
+      @scopedDriver.setStorageKey @client
+
+      @driver.forgetCredentials =>
+        @scopedDriver.forgetCredentials =>
+          done()
 
     afterEach (done) ->
       return done() if @node_js or @chrome_app
-      @driver.forgetCredentials done
+      @driver.forgetCredentials =>
+        @scopedDriver.forgetCredentials ->
+          done()
 
     describe '#loadCredentials', ->
       it 'produces the credentials passed to storeCredentials', (done) ->
@@ -34,13 +43,82 @@ describe 'Dropbox.AuthDriver.BrowserBase', ->
 
       it 'produces null if a different scope is provided', (done) ->
         return done() if @node_js or @chrome_app
-        @driver.setStorageKey @client
+        goldCredentials = @client.credentials()
+        @driver.storeCredentials goldCredentials, =>
+          @scopedDriver.loadCredentials (credentials) =>
+            expect(credentials).to.equal null
+            @driver.loadCredentials (credentials) =>
+              expect(credentials).to.deep.equal goldCredentials
+              done()
+
+  describe 'without localStorage support', ->
+    beforeEach (done) ->
+      return if @node_js or @chrome_app
+      @stub = sinon.stub Dropbox.AuthDriver.BrowserBase, 'localStorage'
+      @stub.returns {}
+
+      return done() if @node_js or @chrome_app
+      @driver = new Dropbox.AuthDriver.BrowserBase rememberUser: false
+      @driver.setStorageKey @client
+
+      @scopedDriver = new Dropbox.AuthDriver.BrowserBase(
+          rememberUser: false, scope: 'other')
+      @scopedDriver.setStorageKey @client
+
+      @driver.forgetCredentials =>
+        @scopedDriver.forgetCredentials ->
+          done()
+
+    afterEach (done) ->
+      return done() if @node_js or @chrome_app
+      @stub.restore()
+      @driver.forgetCredentials =>
+        @scopedDriver.forgetCredentials ->
+          done()
+
+    describe '#loadCredentials', ->
+      it 'produces the credentials passed to storeCredentials', (done) ->
+        return done() if @node_js or @chrome_app
+        goldCredentials = @client.credentials()
+        @driver.storeCredentials goldCredentials, =>
+          @driver.loadCredentials (credentials) ->
+            expect(credentials).to.deep.equal goldCredentials
+            done()
+
+      it 'works in the presence of other cookies', (done) ->
+        return done() if @node_js or @chrome_app
+        goldCredentials = @client.credentials()
+        document.cookie = 'answer=42; path=/'
+        @driver.storeCredentials goldCredentials, =>
+          document.cookie = 'zzz_answer=42; path=/'
+          @driver.loadCredentials (credentials) ->
+            expect(credentials).to.deep.equal goldCredentials
+            done()
+
+      it 'produces null after forgetCredentials was called', (done) ->
+        return done() if @node_js or @chrome_app
         @driver.storeCredentials @client.credentials(), =>
           @driver.forgetCredentials =>
             @driver.loadCredentials (credentials) ->
               expect(credentials).to.equal null
               done()
 
+      it 'produces null if a different scope is provided', (done) ->
+        return done() if @node_js or @chrome_app
+        goldCredentials = @client.credentials()
+        @driver.storeCredentials goldCredentials, =>
+          @scopedDriver.loadCredentials (credentials) =>
+            expect(credentials).to.equal null
+            @driver.loadCredentials (credentials) =>
+              expect(credentials).to.deep.equal goldCredentials
+              done()
+
+    describe '#storeCredentials', ->
+      it 'falls back to cookies', (done) ->
+        return done() if @node_js or @chrome_app
+        @driver.storeCredentials @client.credentials(), =>
+          expect(document.cookie).to.contain 'dropbox-auth'
+          done()
 
 describe 'Dropbox.AuthDriver.Redirect', ->
   describe '#loadCredentials', ->

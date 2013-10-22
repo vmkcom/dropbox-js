@@ -25,6 +25,7 @@ class Dropbox.AuthDriver.BrowserBase
       @rememberUser = true
       @scope = 'default'
     @storageKey = null
+    @storage = Dropbox.AuthDriver.BrowserBase.localStorage()
 
     @stateRe = /^[^#]+\#(.*&)?state=([^&]+)(&|$)/
 
@@ -91,7 +92,15 @@ class Dropbox.AuthDriver.BrowserBase
   # @param {function()} callback called when the storing operation is complete
   # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   storeCredentials: (credentials, callback) ->
-    localStorage.setItem @storageKey, JSON.stringify(credentials)
+    jsonString = JSON.stringify credentials
+    try
+      @storage.setItem @storageKey, jsonString
+    catch storageError
+      # Safari disables localStorage in Private Browsing mode.
+      name = encodeURIComponent @storageKey
+      value = encodeURIComponent jsonString
+      document.cookie = "#{name}=#{value}; path=/"
+
     callback()
     @
 
@@ -107,7 +116,29 @@ class Dropbox.AuthDriver.BrowserBase
   #   were deleted
   # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   loadCredentials: (callback) ->
-    jsonString = localStorage.getItem @storageKey
+    try
+      jsonString = @storage.getItem @storageKey
+    catch storageError
+      # Safari disables localStorage in Private Browsing mode, but
+      # localStorage.getItem exists and returns null. This is here to mimic
+      # that behavior in environments that have localStorage disabled for some
+      # reason.
+      jsonString = null
+
+    if jsonString is null
+      # Safari disables localStorage in Private Browsing mode. We need to check
+      # for cookies as well.
+      name = encodeURIComponent @storageKey
+
+      # Characters unescaped by encodeURIComponent:
+      # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+      # Characters that must be escaped in regular expressions:
+      # http://stackoverflow.com/a/3561711/537046
+      nameRegexp = name.replace(/[.*+()]/g, '\\$&')
+      cookieRegexp = new RegExp "(^|(;\\s*))#{name}=([^;]*)(;|$)"
+      if match = cookieRegexp.exec(document.cookie)
+        jsonString = decodeURIComponent match[3]
+
     unless jsonString
       callback null
       return @
@@ -127,7 +158,13 @@ class Dropbox.AuthDriver.BrowserBase
   # @param {function()} callback called after the credentials are deleted
   # @return {Dropbox.AuthDriver.BrowserBase} this, for easy call chaining
   forgetCredentials: (callback) ->
-    localStorage.removeItem @storageKey
+    try
+      @storage.removeItem @storageKey
+    catch storageError
+      # Safari disables localStorage in Private Browsing mode.
+      name = encodeURIComponent @storageKey
+      expires = (new Date(0)).toGMTString()
+      document.cookie = "#{name}={}; expires=#{expires}; path=/"
     callback()
     @
 
@@ -165,7 +202,23 @@ class Dropbox.AuthDriver.BrowserBase
     fragments[fragments.length - 1] = basename
     fragments.join '/'
 
-  # Wrapper for window.location, for testing purposes.
+  # Wrapper for window.localStorage.
+  #
+  # Drivers should call this method instead of using localStorage directly, to
+  # simplify stubbing.
+  #
+  # @return {Storage} the browser's implementation of the WindowLocalStorage
+  #   interface in the Web Storage specification
+  @localStorage: ->
+    if typeof window isnt 'undefined'
+      window.localStorage
+    else
+      null
+
+  # Wrapper for window.location.
+  #
+  # Drivers should call this method instead of using browser APIs directly, to
+  # simplify stubbing.
   #
   # @return {String} the current page's URL
   @currentLocation: ->
