@@ -72,6 +72,10 @@ file is both valid JavaScript and valid CoffeeScript
 * the [receiver page](../test/html/chrome_oauth_receiver.html); change the page
 to reflect the paths to `dropbox.js` and to the receiver script file
 
+The receiver page (the `chrome_oauth_receiver.html` file) must be added to the
+[web_accessible_resources section](http://developer.chrome.com/extensions/manifest/web_accessible_resources.html)
+of your extension's `manifest.json`.
+
 Point the driver constructor to the receiver page:
 
 ```javascript
