@@ -1,4 +1,4 @@
-describe.only 'Dropbox.AuthDriver.BrowserBase', ->
+describe 'Dropbox.AuthDriver.BrowserBase', ->
   beforeEach ->
     @node_js = module? and module?.exports? and require?
     @chrome_app = chrome?.runtime?.id
