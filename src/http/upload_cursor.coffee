@@ -29,10 +29,15 @@ class Dropbox.Http.UploadCursor
   # @return {Object} an object that can be serialized using JSON; the object
   #   can be passed to {Dropbox.Http.UploadCursor.parse} to obtain an
   #   UploadCursor instance with the same information
-  json: ->
+  toJSON: ->
     # NOTE: the assignment only occurs if
     @_json ||=
         upload_id: @tag, offset: @offset, expires: @expiresAt.toUTCString()
+
+  # @deprecated
+  # @see Dropbox.Http.UploadCursor#toJSON
+  json: ->
+    @toJSON()
 
   # Creates an UploadCursor instance from a raw reference or API response.
   #

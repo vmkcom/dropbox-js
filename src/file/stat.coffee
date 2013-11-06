@@ -86,8 +86,13 @@ class Dropbox.File.Stat
   # @return {Object} an object that can be serialized using JSON; the object
   #   can be passed to {Dropbox.File.Stat.parse} to obtain a Stat instance with
   #   the same information
-  json: ->
+  toJSON: ->
     @_json
+
+  # @deprecated
+  # @see Dropbox.File.Stat#toJSON
+  json: ->
+    @toJSON()
 
   # Creates a Stat instance from a raw "metadata" response.
   #

@@ -28,10 +28,18 @@ describe 'Dropbox.File.ShareUrl', ->
         expect(@url).to.have.property 'isPreview'
         expect(@url.isPreview).to.equal true
 
-      it 'round-trips through json / parse correctly', ->
-        newUrl = Dropbox.File.ShareUrl.parse @url.json()
-        newUrl.json()  # Get _json populated for newUrl.
+      it 'round-trips through toJSON / parse correctly', ->
+        newUrl = Dropbox.File.ShareUrl.parse @url.toJSON()
+        newUrl.toJSON()  # Get _json populated for newUrl.
         expect(newUrl).to.deep.equal @url
+
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newUrl = Dropbox.File.ShareUrl.parse JSON.parse(JSON.stringify(@url))
+        newUrl.toJSON()  # Get _json populated for newUrl.
+        expect(newUrl).to.deep.equal @url
+
+      it 'supports deprecated json()', ->
+        expect(@url.toJSON()).to.deep.equal @url.json()
 
     it 'passes null through', ->
       expect(Dropbox.File.ShareUrl.parse(null)).to.equal null
@@ -62,9 +70,17 @@ describe 'Dropbox.File.CopyReference', ->
             'Fri, 31 Jan 2042 21:01:05 UTC'   # Internet Explorer
             ]).to.contain(@ref.expiresAt.toUTCString())
 
-      it 'round-trips through json / parse correctly', ->
+      it 'round-trips through toJSON / parse correctly', ->
         newRef = Dropbox.File.CopyReference.parse @ref.json()
         expect(newRef).to.deep.equal @ref
+
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newRef = Dropbox.File.CopyReference.parse JSON.parse(
+            JSON.stringify(@ref))
+        expect(newRef).to.deep.equal @ref
+
+      it 'supports deprecated json()', ->
+        expect(@ref.toJSON()).to.deep.equal @ref.json()
 
     describe 'on a reference string', ->
       beforeEach ->
@@ -80,8 +96,13 @@ describe 'Dropbox.File.CopyReference', ->
         expect(@ref.expiresAt).to.be.instanceOf Date
         expect(@ref.expiresAt - (new Date())).to.be.below 1000
 
-      it 'round-trips through json / parse correctly', ->
-        newRef = Dropbox.File.CopyReference.parse @ref.json()
+      it 'round-trips through toJSON / parse correctly', ->
+        newRef = Dropbox.File.CopyReference.parse @ref.toJSON()
+        expect(newRef).to.deep.equal @ref
+
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newRef = Dropbox.File.CopyReference.parse JSON.parse(
+            JSON.stringify(@ref))
         expect(newRef).to.deep.equal @ref
 
     it 'passes null through', ->

@@ -39,10 +39,15 @@ class Dropbox.File.ShareUrl
   # @return {Object} an object that can be serialized using JSON; the object
   #   can be passed to {Dropbox.File.CopyReference.parse} to obtain a ShareUrl
   #   instance with the same information
-  json: ->
+  toJSON: ->
     # HACK: this can break if the Dropbox API ever decides to use 'direct' in
     #       its link info
     @_json ||= url: @url, expires: @expiresAt.toUTCString(), direct: @isDirect
+
+  # @deprecated
+  # @see Dropbox.File.ShareUrl#toJSON
+  json: ->
+    @toJSON()
 
   # Creates a ShareUrl instance from a raw API response.
   #
@@ -103,11 +108,16 @@ class Dropbox.File.CopyReference
   # @return {Object} an object that can be serialized using JSON; the object
   #   can be passed to {Dropbox.File.CopyReference.parse} to obtain a
   #   CopyReference instance with the same information
-  json: ->
+  toJSON: ->
     # NOTE: the assignment only occurs if the CopyReference was built around a
     #       string; CopyReferences parsed from API responses hold onto the
     #       original JSON
     @_json ||= copy_ref: @tag, expires: @expiresAt.toUTCString()
+
+  # @deprecated
+  # @see Dropbox.File.CopyReference#toJSON
+  json: ->
+    @toJSON()
 
   # Creates a CopyReference instance from a raw reference or API response.
   #
