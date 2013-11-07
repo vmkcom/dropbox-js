@@ -1361,6 +1361,21 @@ buildClientTests = (clientKeys) ->
       expect(url).to.contain 'png'
       expect(url).to.contain 'medium'
 
+    it 'produces an URL that can be used to read the image', (done) ->
+      # Using ArrayBuffer because it works on most platforms.
+      return done() unless ArrayBuffer?
+
+      url = @client.thumbnailUrl @imageFile, { png: true, size: 'medium' }
+      xhr = new Dropbox.Util.Xhr 'GET', url
+      xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf ArrayBuffer
+        view = new Uint8Array buffer
+        length = buffer.byteLength
+        bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
+        expect(bytes).to.contain 'PNG'
+        done()
+
   describe '#readThumbnail', ->
     it 'reads the image into a string', (done) ->
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
@@ -1390,8 +1405,7 @@ buildClientTests = (clientKeys) ->
         onBufferAvailable = (buffer) ->
           view = new Uint8Array buffer
           length = buffer.byteLength
-          bytes = (String.fromCharCode view[i] for i in [0...length]).
-              join('')
+          bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
           expect(bytes).to.contain 'PNG'
           done()
         if typeof FileReaderSync isnt 'undefined'
@@ -1418,8 +1432,7 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
         length = buffer.byteLength
-        bytes = (String.fromCharCode view[i] for i in [0...length]).
-            join('')
+        bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
         expect(bytes).to.contain 'PNG'
         done()
 
