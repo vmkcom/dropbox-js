@@ -123,6 +123,14 @@ to open a popup-like activity that completes the OAuth authorization.
 client.authDriver(new Dropbox.AuthDriver.Cordova());
 ```
 
+In order to use the driver, add the following URL to your application's list of
+OAuth redirect URIs in the
+[Dropbox App Console](https://www.dropbox.com/developers/apps).
+
+```
+https://www.dropbox.com/1/oauth2/redirect_receiver
+```
+
 This driver implements the `rememberUser` option with the same semantics and
 caveats as the redirecting driver.
 
