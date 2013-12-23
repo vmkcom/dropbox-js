@@ -21,7 +21,9 @@ buildClientTests = (clientKeys) ->
     # All test data should go here.
     test.testFolder = '/js tests.' + Math.random().toString(36)
     test.__client.mkdir test.testFolder, (error, stat) ->
-      expect(error).to.equal null
+      if error isnt null
+        console.error error
+        throw new Error("Unexpected setup error");
       done()
 
   # Creates the binary image file in the test directory.
@@ -83,7 +85,9 @@ buildClientTests = (clientKeys) ->
     test.__client.writeFile(test.imageFile, stringChars.join(''),
         { binary: true },
         (error, stat) ->
-          expect(error).to.equal null
+          if error isnt null
+            console.error error
+            throw new Error("Unexpected setup error");
           test.imageFileTag = stat.versionTag
           done()
         )
@@ -94,7 +98,9 @@ buildClientTests = (clientKeys) ->
     test.textFileData = "Plaintext test file #{Math.random().toString(36)}.\n"
     test.__client.writeFile(test.textFile, test.textFileData,
         (error, stat) ->
-          expect(error).to.equal null
+          if error isnt null
+            console.error error
+            throw new Error("Unexpected setup error");
           test.textFileTag = stat.versionTag
           done()
         )
@@ -1772,7 +1778,7 @@ buildClientTests = (clientKeys) ->
             expect(error.code).to.equal Dropbox.AuthError.INVALID_GRANT
             expect(error).to.have.property 'description'
             expect(error.description).to.
-                match(/code.*not valid/i)
+                match(/code.*exist.*expired/i)
           done()
 
 describe 'Dropbox.Client', ->

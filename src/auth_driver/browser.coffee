@@ -211,7 +211,11 @@ class Dropbox.AuthDriver.BrowserBase
   #   interface in the Web Storage specification
   @localStorage: ->
     if typeof window isnt 'undefined'
-      window.localStorage
+      try
+        window.localStorage
+      catch deprecationError
+        # Simply accessing window.localStorage in Chrome apps is deprecated.
+        null
     else
       null
 
