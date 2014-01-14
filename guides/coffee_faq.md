@@ -23,6 +23,22 @@ The [sample apps](../samples/), are written in CoffeeScript. Please use the
 page to quickly compile the sample CoffeeScript into very readable JavaScript.
 
 
+## How do I serve dropbox.js to browsers?
+
+The easiest method is to use the `<script>` tag in the
+[getting started guide](./getting_started.md), which loads dropbox.js from a
+CDN.
+
+If you wish to server dropbox.js from your own server, the easiest solution is
+to download the
+[cdnjs copy of dropbox.js](http://cdnjs.com/libraries/dropbox.js/).
+
+If you want to keep up with new dropbox.js releases, a reasonably convenient
+method is to install the `dropbox` package via [npm](https://npmjs.org/), and
+serve `node_modules/dropbox/lib/dropbox.js.min`. Updating the npm package will
+keep you up to date.
+
+
 ## Do I need to learn CoffeeScript to know how dropbox.js works?
 
 **No.**
