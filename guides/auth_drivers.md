@@ -50,23 +50,26 @@ A simple driver can get away with implementing `url` and `doAuthorize`. The
 following example shows an awfully unusable node.js driver that asks the user
 to visit the authorization URL in a browser.
 
-TODO(pwnall): rewrite this example, because OAuth2 broke the simple model below
-
 ```javascript
-var util = require("util");
+var readline = require('readline');
 var simpleDriver = {
-  url: function() { return ""; },
-  doAuthorize: function(authUrl, stateParm, client, callback) {
-    util.print("Visit the following in a browser, then press Enter\n" +
-                authUrl + "\n");
-    var onEnterKey = function() {
-      process.stdin.removeListener("data", onEnterKey);
-      callback(token);
+    authType: function(){return "code";},
+    url: function() { return ""; },
+    doAuthorize: function(authUrl, stateParm, client, callback) {
+        var rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        rl.question("Visit the following in a browser, authenticate, then paste the code provided by dropbox. " + authUrl, function(token) {
+            rl.close();
+            var ret = {"state": stateParm, "code": token}
+            callback(ret);
+
+        });
     }
-    process.stdin.addListener("data", onEnterKey);
-    process.stdin.resume();
-  }
-};
+}
+
 ```
 
 Complex drivers can take control of the OAuth process by implementing
