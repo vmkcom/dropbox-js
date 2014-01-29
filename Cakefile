@@ -4,6 +4,7 @@ glob = require 'glob'
 path = require 'path'
 watch = require 'watch'
 
+require 'coffee-script/register'
 build = require './tasks/build'
 clean = require './tasks/clean'
 dconsole = require './tasks/dconsole'
