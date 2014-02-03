@@ -90,7 +90,7 @@ class Dropbox.AuthDriver.ChromeApp extends Dropbox.AuthDriver.ChromeBase
     super options
     @receiverUrl = "https://#{chrome.runtime.id}.chromiumapp.org/"
 
-  # Uses the Chrome identity API to drive the OAut 2 flow.
+  # Uses the Chrome identity API to drive the OAuth 2 flow.
   #
   # @see Dropbox.AuthDriver#doAuthorize
   # @see http://developer.chrome.com/apps/identity.html
