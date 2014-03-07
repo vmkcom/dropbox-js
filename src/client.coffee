@@ -1107,9 +1107,10 @@ class Dropbox.Client
   #   obtained from a previous call to {Dropbox.Client#pullChanges} or the
   #   return value of {Dropbox.Http.PulledChanges#cursor}
   # @param {Object} options
-  # @param {function(Dropbox.ApiError, Boolean, Number} callback called with
+  # @param {function(Dropbox.ApiError, Dropbox.Http.PollResult)} callback called with
   #   the result of the /longpoll_delta HTTP request; if the call succeeds, the
-  #   second parameter is true if
+  #   second parameter is a {Dropbox.Http.PollResult} instance providing feedback
+  #   about potential new changes, and the first parameter is null
   pollForChanges: (cursor, options, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
