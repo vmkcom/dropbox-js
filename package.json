@@ -28,7 +28,7 @@
     "chai": ">= 1.8.1",
     "codo": "git+https://github.com/pwnall/codo#npm-themes",
     "codo-theme-yaml": "git+https://github.com/pwnall/codo-theme-yaml",
-    "coffee-script": ">= 1.6.3",
+    "coffee-script": "~ 1.6.3",
     "cordova": ">= 3.1.0-0.1.0",
     "fs-extra": ">= 0.8.0",
     "express": ">= 3.4.2",
