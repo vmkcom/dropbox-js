@@ -66,6 +66,6 @@ class Dropbox.Util.EventSource
   dispatch: (event) ->
     for listener in @_listeners
       returnValue = listener event
-      if @_cancelable and returnValue is false
+      if @_cancelable and (returnValue is false)
         return false
     true

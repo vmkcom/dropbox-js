@@ -5,24 +5,24 @@ describe 'Dropbox.Util.EventSource', ->
 
     # 3 listeners, 1 and 2 are already hooked up
     @event1 = null
-    @return1 = true
     @listener1 = (event) =>
       @event1 = event
-      @return1
+      @listener1.returnValue
+    @listener1.returnValue = true
     @source.addListener @listener1
     @cancelable.addListener @listener1
     @event2 = null
-    @return2 = false
     @listener2 = (event) =>
       @event2 = event
-      @return2
+      @listener2.returnValue
+    @listener2.returnValue = false
     @source.addListener @listener2
     @cancelable.addListener @listener2
     @event3 = null
-    @return3 = true
     @listener3 = (event) =>
       @event3 = event
-      @return3
+      @listener3.returnValue
+    @listener3.returnValue = true
 
   describe '#addListener', ->
     it 'adds a new listener', ->
@@ -137,7 +137,7 @@ describe 'Dropbox.Util.EventSource', ->
         expect(@returnValue).to.equal false
 
       it 'calls all listeners if no cancelation occurs', ->
-        @return2 = true
+        @listener2.returnValue = true
         @returnValue = @cancelable.dispatch @event
 
         expect(@returnValue).to.equal true

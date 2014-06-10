@@ -53,8 +53,6 @@ class WebFileServer
       response.header 'Expires', '-1'
       next()
 
-    @app.use @app.router
-
     @app.use express.static(fs.realpathSync(__dirname + '/../../../'),
                             { hidden: true })
 

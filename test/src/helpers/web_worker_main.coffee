@@ -2,7 +2,14 @@
 
 importScripts '../../../lib/dropbox.js'
 
+# HACK(pwnall): workaround for https://github.com/cjohansen/Sinon.JS/pull/491
+self.global = self
+
 importScripts '../../../test/vendor/sinon.js'
+
+# HACK(pwnall): workaround for https://github.com/cjohansen/Sinon.JS/pull/491
+delete self['global']
+
 importScripts '../../../test/vendor/chai.js'
 importScripts '../../../node_modules/sinon-chai/lib/sinon-chai.js'
 importScripts '../../../node_modules/mocha/mocha.js'

@@ -509,7 +509,6 @@ buildClientTests = (clientKeys) ->
       newBytes = new Uint8Array newBuffer
       for i in [0...@imageFileBytes.length]
         newBytes[i] = @imageFileBytes[i]
-      newBlob = buildBlob [newBytes], type: 'image/png'
 
       # Called when we have a File wrapping newBlob.
       actualTestCase = (file) =>
@@ -533,19 +532,22 @@ buildClientTests = (clientKeys) ->
                 expect(bytes).to.deep.equal @imageFileBytes
                 done()
 
-      # TODO(pwnall): use lighter method of constructing a File, when available
-      #               http://crbug.com/164933
-      return done() if typeof webkitRequestFileSystem is 'undefined'
-      webkitRequestFileSystem window.TEMPORARY, 1024 * 1024, (fileSystem) ->
-        # NOTE: the File name is different from the uploaded file name, to
-        #       catch bugs such as http://crbug.com/165095
-        fileSystem.root.getFile 'test image file.png',
-            create: true, exclusive: false, (fileEntry) ->
-              fileEntry.createWriter (fileWriter) ->
-                fileWriter.onwriteend = ->
-                  fileEntry.file (file) ->
-                    actualTestCase file
-                fileWriter.write newBlob
+      try
+        file = new File [newBuffer], 'test image file.png', type: 'image/png'
+        actualTestCase file
+      catch noFileConstructorError
+        newBlob = buildBlob [newBytes], type: 'image/png'
+        return done() if typeof webkitRequestFileSystem is 'undefined'
+        webkitRequestFileSystem window.TEMPORARY, 1024 * 1024, (fileSystem) ->
+          # NOTE: the File name is different from the uploaded file name, to
+          #       catch bugs such as http://crbug.com/165095
+          fileSystem.root.getFile 'test image file.png',
+              create: true, exclusive: false, (fileEntry) ->
+                fileEntry.createWriter (fileWriter) ->
+                  fileWriter.onwriteend = ->
+                    fileEntry.file (file) ->
+                      actualTestCase file
+                  fileWriter.write newBlob
 
     it 'writes an ArrayBuffer to a binary file', (done) ->
       return done() unless ArrayBuffer?
