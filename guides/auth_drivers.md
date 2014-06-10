@@ -46,37 +46,35 @@ in the
 [Dropbox.AuthDriver class](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver.html).
 This class exists solely for the purpose of documenting these methods.
 
-A simple driver can get away with implementing `url` and `doAuthorize`. The
-following example shows an awfully unusable node.js driver that asks the user
-to visit the authorization URL in a browser.
+A simple driver can get away with implementing `authType`, `url`, and
+`doAuthorize`. The following example shows an awfully unusable node.js driver
+that asks the user to visit the authorization URL in a browser.
 
 ```javascript
-var readline = require('readline');
+var readline = require("readline");
 var simpleDriver = {
-    authType: function(){return "code";},
-    url: function() { return ""; },
-    doAuthorize: function(authUrl, stateParm, client, callback) {
-        var rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
-        });
-
-        rl.question("Visit the following in a browser, authenticate, then paste the code provided by dropbox. " + authUrl, function(token) {
-            rl.close();
-            var ret = {"state": stateParm, "code": token}
-            callback(ret);
-
-        });
-    }
-}
-
+  authType: function() { return "code"; },
+  url: function() { return ""; },
+  doAuthorize: function(authUrl, stateParm, client, callback) {
+    var interface = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    interface.write("Open the URL below in a browser and paste the " +
+        "provided authentication code.\n" + authUrl + "\n");
+    interface.question("> ", function(authCode) {
+      interface.close();
+      callback({code: authCode});
+    });
+  }
+};
 ```
 
-Complex drivers can take control of the OAuth process by implementing
+Complex drivers can take control of the OAuth 2 process by implementing
 `onAuthStepChange`. Implementations of this method should read the `authStep`
 field of the `Dropbox.Client` instance they are given to make decisions.
 Implementations should call the `credentials` and `setCredentials` methods on
-the client to control the OAuth process.
+the client to control the OAuth 2 process.
 
 See the
 [Dropbox.AuthDriver.Chrome source](../src/auth_driver/chrome.coffee)

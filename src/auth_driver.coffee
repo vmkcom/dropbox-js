@@ -107,10 +107,18 @@ class Dropbox.AuthDriver
 
   # If defined, called when there is some progress in the OAuth 2 process.
   #
-  # The OAuth process goes through the following states:
+  # The OAuth 2 process goes through the following states:
   #
-  # * Dropbox.Client.RESET - the client has no OAuth credentials, and is about
-  #   to ask for an authorization code or access token
+  # * Dropbox.Client.RESET - the client has no OAuth 2 credentials, and is
+  #   about to generate an OAuth 2 state nonce
+  # * Dropbox.Client.PARAM_SET - the client (or driver) has generated an OAuth
+  #   2 state nonce, and is about to attempt to obtain an access token or
+  #   authorization code
+  # * Dropbox.Client.PARAM_LOADED - the client (or driver) has loaded a
+  #   previously generated OAuth 2 state nonce, and is about to resume the
+  #   process of obtaining an access token or authorization code; this step is
+  #   only used when the OAuth 2 process requires page reloads, e.g. in a
+  #   redirect-based process
   # * Dropbox.Client.AUTHORIZED - the client has an authorization code, and is
   #   about to exchange it for an access token
   # * Dropbox.Client.DONE - the client has an OAuth 2 access token that can be
@@ -125,7 +133,7 @@ class Dropbox.AuthDriver
   # @param {Dropbox.Client} client the client performing the OAuth process
   # @param {function()} callback called when onAuthStateChange acknowledges the
   #   state change
-  onAuthStateChange: (client, callback) ->
+  onAuthStepChange: (client, callback) ->
     callback()
 
   # Query parameters that should be processed by doAuthorize.
