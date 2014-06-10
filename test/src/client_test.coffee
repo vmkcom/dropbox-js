@@ -21,7 +21,9 @@ buildClientTests = (clientKeys) ->
     # All test data should go here.
     test.testFolder = '/js tests.' + Math.random().toString(36)
     test.__client.mkdir test.testFolder, (error, stat) ->
-      expect(error).to.equal null
+      if error isnt null
+        console.error error
+        throw new Error("Unexpected setup error");
       done()
 
   # Creates the binary image file in the test directory.
@@ -83,7 +85,9 @@ buildClientTests = (clientKeys) ->
     test.__client.writeFile(test.imageFile, stringChars.join(''),
         { binary: true },
         (error, stat) ->
-          expect(error).to.equal null
+          if error isnt null
+            console.error error
+            throw new Error("Unexpected setup error");
           test.imageFileTag = stat.versionTag
           done()
         )
@@ -94,7 +98,9 @@ buildClientTests = (clientKeys) ->
     test.textFileData = "Plaintext test file #{Math.random().toString(36)}.\n"
     test.__client.writeFile(test.textFile, test.textFileData,
         (error, stat) ->
-          expect(error).to.equal null
+          if error isnt null
+            console.error error
+            throw new Error("Unexpected setup error");
           test.textFileTag = stat.versionTag
           done()
         )
@@ -503,7 +509,6 @@ buildClientTests = (clientKeys) ->
       newBytes = new Uint8Array newBuffer
       for i in [0...@imageFileBytes.length]
         newBytes[i] = @imageFileBytes[i]
-      newBlob = buildBlob [newBytes], type: 'image/png'
 
       # Called when we have a File wrapping newBlob.
       actualTestCase = (file) =>
@@ -527,19 +532,22 @@ buildClientTests = (clientKeys) ->
                 expect(bytes).to.deep.equal @imageFileBytes
                 done()
 
-      # TODO(pwnall): use lighter method of constructing a File, when available
-      #               http://crbug.com/164933
-      return done() if typeof webkitRequestFileSystem is 'undefined'
-      webkitRequestFileSystem window.TEMPORARY, 1024 * 1024, (fileSystem) ->
-        # NOTE: the File name is different from the uploaded file name, to
-        #       catch bugs such as http://crbug.com/165095
-        fileSystem.root.getFile 'test image file.png',
-            create: true, exclusive: false, (fileEntry) ->
-              fileEntry.createWriter (fileWriter) ->
-                fileWriter.onwriteend = ->
-                  fileEntry.file (file) ->
-                    actualTestCase file
-                fileWriter.write newBlob
+      try
+        file = new File [newBuffer], 'test image file.png', type: 'image/png'
+        actualTestCase file
+      catch noFileConstructorError
+        newBlob = buildBlob [newBytes], type: 'image/png'
+        return done() if typeof webkitRequestFileSystem is 'undefined'
+        webkitRequestFileSystem window.TEMPORARY, 1024 * 1024, (fileSystem) ->
+          # NOTE: the File name is different from the uploaded file name, to
+          #       catch bugs such as http://crbug.com/165095
+          fileSystem.root.getFile 'test image file.png',
+              create: true, exclusive: false, (fileEntry) ->
+                fileEntry.createWriter (fileWriter) ->
+                  fileWriter.onwriteend = ->
+                    fileEntry.file (file) ->
+                      actualTestCase file
+                  fileWriter.write newBlob
 
     it 'writes an ArrayBuffer to a binary file', (done) ->
       return done() unless ArrayBuffer?
@@ -1361,6 +1369,21 @@ buildClientTests = (clientKeys) ->
       expect(url).to.contain 'png'
       expect(url).to.contain 'medium'
 
+    it 'produces an URL that can be used to read the image', (done) ->
+      # Using ArrayBuffer because it works on most platforms.
+      return done() unless ArrayBuffer?
+
+      url = @client.thumbnailUrl @imageFile, { png: true, size: 'medium' }
+      xhr = new Dropbox.Util.Xhr 'GET', url
+      xhr.setResponseType('arraybuffer').prepare().send (error, buffer) =>
+        expect(error).to.equal null
+        expect(buffer).to.be.instanceOf ArrayBuffer
+        view = new Uint8Array buffer
+        length = buffer.byteLength
+        bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
+        expect(bytes).to.contain 'PNG'
+        done()
+
   describe '#readThumbnail', ->
     it 'reads the image into a string', (done) ->
       @client.readThumbnail @imageFile, { png: true }, (error, data, stat) =>
@@ -1390,8 +1413,7 @@ buildClientTests = (clientKeys) ->
         onBufferAvailable = (buffer) ->
           view = new Uint8Array buffer
           length = buffer.byteLength
-          bytes = (String.fromCharCode view[i] for i in [0...length]).
-              join('')
+          bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
           expect(bytes).to.contain 'PNG'
           done()
         if typeof FileReaderSync isnt 'undefined'
@@ -1418,8 +1440,7 @@ buildClientTests = (clientKeys) ->
           expect(stat.isFile).to.equal true
         view = new Uint8Array buffer
         length = buffer.byteLength
-        bytes = (String.fromCharCode view[i] for i in [0...length]).
-            join('')
+        bytes = (String.fromCharCode view[i] for i in [0...length]).join('')
         expect(bytes).to.contain 'PNG'
         done()
 
@@ -1759,7 +1780,7 @@ buildClientTests = (clientKeys) ->
             expect(error.code).to.equal Dropbox.AuthError.INVALID_GRANT
             expect(error).to.have.property 'description'
             expect(error.description).to.
-                match(/code.*not valid/i)
+                match(/code.*exist.*expired/i)
           done()
 
 describe 'Dropbox.Client', ->

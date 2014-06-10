@@ -272,13 +272,13 @@ class Dropbox.Util.Xhr
     @body = body
     @
 
-  # Sends off an HTTP request and requests a custom response type.
+  # Changes the type of the response that will be passed to the callback.
   #
   # This method requires XMLHttpRequest Level 2 support, which is not available
   # in Internet Explorer 9 and older.
   #
   # @param {String} responseType the value that will be assigned to the XHR's
-  #   responseType property
+  #   responseType property, such as "blob" or "arraybuffer"
   # @return {Dropbox.Util.Xhr} this, for easy call chaining
   setResponseType: (@responseType) ->
     @
@@ -380,13 +380,14 @@ class Dropbox.Util.Xhr
                fileData,
                "\r\n", '--', boundary, '--', "\r\n"].join ''
 
-  # Generates a
+  # Generates a MIME multipart boundary.
   #
   # @private
   # This should only be called by {Dropbox.Util.Xhr#prepare}.
   #
   # @return {String} a nonce suitable for use as a part boundary in a multipart
-  #   MIME message
+  #   MIME message; it is highly unlikely that the parts of the MIME message
+  #   will contain the nonce
   multipartBoundary: ->
     [Date.now().toString(36), Math.random().toString(36)].join '----'
 

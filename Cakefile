@@ -4,6 +4,7 @@ glob = require 'glob'
 path = require 'path'
 watch = require 'watch'
 
+require 'coffee-script/register'
 build = require './tasks/build'
 clean = require './tasks/clean'
 dconsole = require './tasks/dconsole'
@@ -107,13 +108,15 @@ task 'chrometest', ->
   vendor ->
     build ->
       buildChromeApp 'app_v1', ->
-        testChromeApp()
+        testChromeApp ->
+          process.exit 0
 
 task 'chrometest2', ->
   vendor ->
     build ->
       buildChromeApp 'app_v2', ->
-        testChromeApp()
+        testChromeApp ->
+          process.exit 0
 
 task 'cordova', ->
   platform = process.env['CORDOVA_PLATFORM'] or 'android'

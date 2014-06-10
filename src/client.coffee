@@ -865,7 +865,7 @@ class Dropbox.Client
   #   the given file
   thumbnailUrl: (path, options) ->
     xhr = @thumbnailXhr path, options
-    xhr.paramsToUrl().url
+    xhr.addOauthParams(@_oauth).paramsToUrl().url
 
   # Retrieves the image data of a thumbnail for a file in the user's Dropbox.
   #
@@ -914,15 +914,21 @@ class Dropbox.Client
       responseType = 'buffer' if options.buffer
 
     xhr = @thumbnailXhr path, options
-    xhr.setResponseType responseType
+    xhr.setResponseType(responseType).signWithOauth(@_oauth)
     @_dispatchXhr xhr, (error, data, metadata) ->
       callback error, data, Dropbox.File.Stat.parse(metadata)
 
   # Sets up an XHR for reading a thumbnail for a file in the user's Dropbox.
   #
+  # @private
+  # Call {Dropbox.Client#thumbnailUrl} or {Dropbox.Client#readThumbnail}
+  # instead of using this directly.
+  #
   # @see Dropbox.Client#thumbnailUrl
   # @return {Dropbox.Util.Xhr} an XMLHttpRequest wrapper configured for
-  #   fetching the thumbnail
+  #   fetching the thumbnail; the {Dropbox.Util.Xhr} instance does not have
+  #   OAuth credentials applied to it, and the caller is responsible for
+  #   calling {Dropbox.Util.Xhr#signWithOauth} before using it
   thumbnailXhr: (path, options) ->
     params = {}
     if options
@@ -936,7 +942,7 @@ class Dropbox.Client
 
     xhr = new Dropbox.Util.Xhr 'GET',
                                "#{@_urls.thumbnails}/#{@_urlEncodePath(path)}"
-    xhr.setParams(params).signWithOauth(@_oauth)
+    xhr.setParams params
 
   # Reverts a file's contents to a previous version.
   #
@@ -1101,9 +1107,11 @@ class Dropbox.Client
   #   obtained from a previous call to {Dropbox.Client#pullChanges} or the
   #   return value of {Dropbox.Http.PulledChanges#cursor}
   # @param {Object} options
-  # @param {function(Dropbox.ApiError, Boolean, Number} callback called with
-  #   the result of the /longpoll_delta HTTP request; if the call succeeds, the
-  #   second parameter is true if
+  # @param {function(Dropbox.ApiError, Dropbox.Http.PollResult)} callback
+  #   called with the result of the /longpoll_delta HTTP request; if the call
+  #   succeeds, the second parameter is a {Dropbox.Http.PollResult} instance
+  #   indicating whether {Dropbox.Client#pullChanges} might return new changes,
+  #   and the first parameter is null
   pollForChanges: (cursor, options, callback) ->
     if (not callback) and (typeof options is 'function')
       callback = options
@@ -1376,7 +1384,7 @@ class Dropbox.Client
   #
   # @private
   # This is called by the constructor, and used by the other methods. It should
-  # not be used directly.
+  # not be called directly.
   setupUrls: ->
     @_apiServer = @_chooseApiServer()
     @_urls =

@@ -66,7 +66,7 @@ describe 'Dropbox.Client', ->
       expect(@authSteps).to.deep.equal [Dropbox.Client.RESET]
 
     it 'does not trigger onAuthStep if already reset', ->
-      @authSteps = []
+      @authSteps.length = 0
       @client.reset()
       expect(@authSteps).to.deep.equal []
 
@@ -147,7 +147,7 @@ describe 'Dropbox.Client', ->
 
     it 'does not trigger onAuthStepChange when not switching', ->
       @client.setCredentials key: 'app-key', secret: 'app-secret'
-      @authSteps = []
+      @authSteps.length = 0
       @client.setCredentials key: 'app-key', secret: 'app-secret'
       expect(@authSteps).to.deep.equal []
 
@@ -268,9 +268,9 @@ describe 'Dropbox.Client', ->
         @client.authDriver onAuthStepChange: (client, callback) =>
           @onAuthStepChangeCalled.push client.authStep
           callback()
-        @xhrErrorStatus = 0
+        @xhrErrorMock = { status: 0 }
         @client._dispatchXhr = (xhr, callback) =>
-          callback new Dropbox.ApiError(status: @xhrErrorStatus, 'POST', 'url')
+          callback new Dropbox.ApiError(@xhrErrorMock, 'POST', 'url')
 
       describe 'unset', ->
         it 'ignores API server errors', (done) ->
@@ -291,7 +291,7 @@ describe 'Dropbox.Client', ->
             done()
 
         it 'succeeds if the API server says the token is invalid', (done) ->
-          @xhrErrorStatus = Dropbox.ApiError.INVALID_TOKEN
+          @xhrErrorMock.status = Dropbox.ApiError.INVALID_TOKEN
           @client.signOff mustInvalidate: true, (error) =>
             expect(error).to.equal null
             expect(@onAuthStepChangeCalled).to.deep.equal(

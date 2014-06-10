@@ -252,7 +252,7 @@ client.writeFile("hello_world.txt", "Hello, world!\n", function(error, stat) {
     return showError(error);  // Something went wrong.
   }
 
-  alert("File saved as revision " + stat.revisionTag);
+  alert("File saved as revision " + stat.versionTag);
 });
 ```
 

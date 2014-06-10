@@ -2,7 +2,7 @@
 
 This document explains the structure and functionality of a `dropbox.js` OAuth
 driver, and is intended to help the development of custom OAuth drivers.
-[builtin_drivers.md](The built-in OAuth drivers) are a good starting point for
+[The built-in OAuth drivers](builtin_drivers.md) are a good starting point for
 new implementations.
 
 
@@ -46,34 +46,35 @@ in the
 [Dropbox.AuthDriver class](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/AuthDriver.html).
 This class exists solely for the purpose of documenting these methods.
 
-A simple driver can get away with implementing `url` and `doAuthorize`. The
-following example shows an awfully unusable node.js driver that asks the user
-to visit the authorization URL in a browser.
-
-TODO(pwnall): rewrite this example, because OAuth2 broke the simple model below
+A simple driver can get away with implementing `authType`, `url`, and
+`doAuthorize`. The following example shows an awfully unusable node.js driver
+that asks the user to visit the authorization URL in a browser.
 
 ```javascript
-var util = require("util");
+var readline = require("readline");
 var simpleDriver = {
+  authType: function() { return "code"; },
   url: function() { return ""; },
   doAuthorize: function(authUrl, stateParm, client, callback) {
-    util.print("Visit the following in a browser, then press Enter\n" +
-                authUrl + "\n");
-    var onEnterKey = function() {
-      process.stdin.removeListener("data", onEnterKey);
-      callback(token);
-    }
-    process.stdin.addListener("data", onEnterKey);
-    process.stdin.resume();
+    var interface = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    interface.write("Open the URL below in a browser and paste the " +
+        "provided authentication code.\n" + authUrl + "\n");
+    interface.question("> ", function(authCode) {
+      interface.close();
+      callback({code: authCode});
+    });
   }
 };
 ```
 
-Complex drivers can take control of the OAuth process by implementing
+Complex drivers can take control of the OAuth 2 process by implementing
 `onAuthStepChange`. Implementations of this method should read the `authStep`
 field of the `Dropbox.Client` instance they are given to make decisions.
 Implementations should call the `credentials` and `setCredentials` methods on
-the client to control the OAuth process.
+the client to control the OAuth 2 process.
 
 See the
 [Dropbox.AuthDriver.Chrome source](../src/auth_driver/chrome.coffee)

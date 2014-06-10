@@ -86,9 +86,16 @@ describe 'Dropbox.File.Stat', ->
             'Mon, 18 Jul 2011 18:04:35 UTC'    # Internet Explorer
             ]).to.contain(@stat.clientModifiedAt.toUTCString())
 
-      it 'round-trips through json / parse correctly', ->
-        newStat = Dropbox.File.Stat.parse @stat.json()
+      it 'round-trips through toJSON / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse @stat.toJSON()
         expect(newStat).to.deep.equal @stat
+
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse JSON.parse(JSON.stringify(@stat))
+        expect(newStat).to.deep.equal @stat
+
+      it 'supports deprecated json()', ->
+        expect(@stat.toJSON()).to.deep.equal @stat.json()
 
 
     describe 'on the API directory example', ->
@@ -173,8 +180,12 @@ describe 'Dropbox.File.Stat', ->
         expect(@stat).to.have.property 'clientModifiedAt'
         expect(@stat.clientModifiedAt).to.equal null
 
-      it 'round-trips through json / parse correctly', ->
-        newStat = Dropbox.File.Stat.parse @stat.json()
+      it 'round-trips through toJSON / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse @stat.toJSON()
+        expect(newStat).to.deep.equal @stat
+
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse JSON.parse(JSON.stringify(@stat))
         expect(newStat).to.deep.equal @stat
 
     it 'passes null through', ->
@@ -209,4 +220,10 @@ describe 'Dropbox.File.Stat', ->
         expect(@stat).to.have.property 'name'
         expect(@stat.name).to.equal 'Getting_Started.pdf'
 
+      it 'round-trips through toJSON / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse @stat.toJSON()
+        expect(newStat).to.deep.equal @stat
 
+      it 'round-trips through JSON.{stringify, parse} / parse correctly', ->
+        newStat = Dropbox.File.Stat.parse JSON.parse(JSON.stringify(@stat))
+        expect(newStat).to.deep.equal @stat

@@ -36,7 +36,7 @@ class Dropbox.AuthDriver.ChromeBase extends Dropbox.AuthDriver.BrowserBase
   url: ->
     @receiverUrl
 
-  # Stores a Dropbox.Client's credentials in local storage.
+  # Stores a Dropbox.Client's credentials in chrome.storage.local.
   #
   # @private
   # onAuthStepChange calls this method during the authentication flow.
@@ -50,7 +50,7 @@ class Dropbox.AuthDriver.ChromeBase extends Dropbox.AuthDriver.BrowserBase
     chrome.storage.local.set items, callback
     @
 
-  # Retrieves a token and secret from localStorage.
+  # Retrieves a token and secret from chrome.storage.local.
   #
   # @private
   # onAuthStepChange calls this method during the authentication flow.
