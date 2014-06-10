@@ -2,7 +2,7 @@
 
 This document explains the structure and functionality of a `dropbox.js` OAuth
 driver, and is intended to help the development of custom OAuth drivers.
-[builtin_drivers.md](The built-in OAuth drivers) are a good starting point for
+[The built-in OAuth drivers](builtin_drivers.md) are a good starting point for
 new implementations.
 
 
