@@ -55,7 +55,7 @@ var Dropbox = require("dropbox");
 
 [Register your application](https://www.dropbox.com/developers/apps) to obtain
 an API key. Read the brief
-[API core concepts intro](https://www.dropbox.com/developers/start/core).
+[API core concepts intro](https://www.dropbox.com/developers/core/start).
 
 Once you have an API key, use it to create a
 [Dropbox.Client](http://coffeedoc.info/github/dropbox/dropbox-js/master/classes/Dropbox/Client.html).
