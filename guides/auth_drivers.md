@@ -19,7 +19,7 @@ depending on whether the application developers control and trust the
 environment that runs the code using `dropbox.js`
 
 * If `dropbox.js` runs in an application server (for example, in a node.js
-  applcation), the environment is considered trusted. The documentation refers
+  application), the environment is considered trusted. The documentation refers
   to this as the _server-side application_ case.
 
 * If `dropbox.js` runs in a client-side environment, such as in a Web browser
