@@ -8,5 +8,5 @@ Build products are not checked into the dropbox.js git repository, so this
 directory will be empty when browsing the source code on GitHub, or in a fresh
 checkout.
 
-To populate the directory, follow the step-by-step guide in ihe
+To populate the directory, follow the step-by-step guide in the
 [development guide](../guides/development.md).
