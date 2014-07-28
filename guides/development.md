@@ -284,43 +284,14 @@ cake tokens
     git push origin --tags
     ```
 
-1. If you haven't already, go to the
-   [cdnjs GitHub page](https://github.com/cdnjs/cdnjs) and fork it.
+1. Wait until the release shows up on the
+   [the cdn.js page for dropbox.js](http://cdnjs.com/libraries/dropbox.js/).
+   The automated pull process is advertised to take 15 minutes or less. If you
+   ever need to tweak the process, the configuration is
+   [here](https://github.com/cdnjs/cdnjs/blob/master/ajax/libs/dropbox.js/package.json).
 
-1. If you haven't already, set up cdnjs on your machine.
-
-    ```bash
-    cd ..
-    git clone git@github.com:you/cdnjs.git
-    cd cdnjs
-    git remote add up https://github.com/cdnjs/cdnjs.git
-    cd ../dropbox-js
-    ```
-
-1. Add the new release to your cdnjs fork.
-
-    ```bash
-    cd ../cdnjs
-    git checkout master
-    git pull up master
-    npm install
-    git checkout -b dbXYZ
-    mkdir ajax/libs/dropbox.js/X.Y.Z
-    cp ../dropbox-js/lib/dropbox.* ajax/libs/dropbox.js/X.Y.Z/
-    vim ajax/libs/dropbox.js/package.json  # Replace "version"'s value with "X.Y.Z"
-    npm test
-    git add -A
-    git commit -m "Added dropbox.js X.Y.Z"
-    git push origin dbXYZ
-    ```
-
-1. Go to your cdnjs for on GitHub and open a pull request. Use these examples
-of accepted
-[major release pull request](https://github.com/cdnjs/cdnjs/pull/735) and
-[minor release pull request](https://github.com/cdnjs/cdnjs/pull/753).
-
-1. When the pull request is accepted, merge the master branch into the stable
-branch.
+1. When the release is pulled into cdn.js, merge the master branch into the
+   stable branch.
 
     ```bash
     cd ../dropbox-js
