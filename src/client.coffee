@@ -165,7 +165,7 @@ class Dropbox.Client
           if @_driver.getStateParam
             @_driver.getStateParam (stateParam) =>
               # NOTE: the driver might have injected the state param itself
-              if @client.authStep is DbxClient.RESET
+              if @authStep is DbxClient.RESET
                 @_oauth.setAuthStateParam stateParam
               _fsmNextStep()
           @_oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
