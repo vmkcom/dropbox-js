@@ -54,7 +54,7 @@ class WebFileServer
       next()
 
     @app.use express.static(fs.realpathSync(__dirname + '/../../../'),
-                            { hidden: true })
+                            { dotfiles: 'allow' })
 
     ## Routes
 

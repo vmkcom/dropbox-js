@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "open": ">= 0.0.5",
-    "xhr2": ">= 0.0.7"
+    "xhr2": ">= 0.1.0"
   },
   "devDependencies": {
     "async": ">= 0.9.0",
@@ -29,19 +29,19 @@
     "codo": "git+https://github.com/pwnall/codo#npm-themes.require",
     "codo-theme-yaml": "git+https://github.com/pwnall/codo-theme-yaml",
     "coffee-script": ">= 1.7.1",
-    "cordova": ">= 3.5.0-0.2.4",
-    "fs-extra": ">= 0.9.1",
-    "express": ">= 4.4.1",
-    "glob": ">= 4.0.2",
-    "js-yaml": ">= 3.0.2",
+    "cordova": ">= 3.5.0-0.2.6",
+    "express": ">= 4.8.3",
+    "fs-extra": ">= 0.11.0",
+    "glob": ">= 4.0.5",
+    "js-yaml": ">= 3.1.0",
     "mocha": "git+https://github.com/pwnall/mocha.git#web-workers-2",
-    "mustache": ">= 0.8.1",
-    "sinon": ">= 1.10.2",
+    "mustache": ">= 0.8.2",
+    "sinon": ">= 1.10.3",
     "sinon-chai": ">= 2.5.0",
-    "string": ">= 1.8.1",
-    "source-map-support": ">= 0.2.6",
-    "uglify-js": ">= 2.4.13",
-    "watch": ">= 0.10.0"
+    "string": ">= 1.9.1",
+    "source-map-support": ">= 0.2.7",
+    "uglify-js": ">= 2.4.15",
+    "watch": ">= 0.11.0"
   },
   "main": "lib/dropbox.js",
   "directories": {
