@@ -168,8 +168,9 @@ class Dropbox.Client
               if @authStep is DbxClient.RESET
                 @_oauth.setAuthStateParam stateParam
               _fsmNextStep()
-          @_oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
-          _fsmNextStep()
+          else
+            @_oauth.setAuthStateParam Dropbox.Util.Oauth.randomAuthStateParam()
+            _fsmNextStep()
 
         when DbxClient.PARAM_SET
           # Ask the user for authorization.

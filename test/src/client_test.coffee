@@ -731,7 +731,7 @@ buildClientTests = (clientKeys) ->
       return done() unless @view1
       @timeout 20 * 1000  # This sequence is slow on the current API server.
 
-      @newFile = "#{@testFolder}/test resumable arraybuffer upload.png"
+      @newFile = "#{@testFolder}/test resumable arraybufferview upload.png"
       @client.resumableUploadStep @arrayBuffer1, null, (error, cursor1) =>
         expect(error).to.equal null
         expect(cursor1).to.be.instanceOf Dropbox.Http.UploadCursor

@@ -253,6 +253,39 @@ describe 'Dropbox.Client', ->
           expect('callback_should_not_be_called').to.equal false
           done()
 
+    describe 'with interactive: true', ->
+      beforeEach ->
+        @driver =
+          authType: ->
+            'token'
+          url: ->
+            'https://localhost:8912/oauth_redirect'
+        @client.authDriver @driver
+
+      it 'works when the driver returns state from getStateParam', (done) ->
+        @driver.getStateParam = (callback) ->
+          callback 'oauth-state'
+        @driver.doAuthorize = (url, stateParam, client) ->
+          expect(stateParam).to.equal 'oauth-state'
+          done()
+        @client.reset()
+        @client.authenticate (error, client) ->
+          assert false, 'The OAuth process should not complete'
+          done()
+
+      it 'works when the driver sets client state in getStateParam', (done) ->
+        @driver.getStateParam = (callback) =>
+          credentials = @client.credentials()
+          credentials.oauthStateParam = 'oauth-state'
+          @client.setCredentials credentials
+          callback 'not-the-oauth-state'
+        @driver.doAuthorize = (url, stateParam, client) ->
+          expect(stateParam).to.equal 'oauth-state'
+          done()
+        @client.reset()
+        @client.authenticate (error, client) ->
+          assert false, 'The OAuth process should not complete'
+
   describe '#signOut', ->
     describe 'without a token', ->
       beforeEach ->
