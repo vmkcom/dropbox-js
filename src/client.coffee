@@ -180,9 +180,13 @@ class Dropbox.Client
           authUrl = @authorizeUrl()
           @_driver.doAuthorize authUrl, @_oauth.authStateParam(), @,
               (queryParams) =>
-                @_oauth.processRedirectParams queryParams
-                @_uid = queryParams.uid if queryParams.uid
-                _fsmNextStep()
+                if queryParams
+                  @_oauth.processRedirectParams queryParams
+                  @_uid = queryParams.uid if queryParams.uid
+                  _fsmNextStep()
+                else
+                  @authError = new Error 'User canceled authorization'
+                  _fsmErrorStep()
 
         when DbxClient.PARAM_LOADED
           # Check a previous state parameter.
@@ -193,9 +197,13 @@ class Dropbox.Client
             return
           @_driver.resumeAuthorize @_oauth.authStateParam(), @,
               (queryParams) =>
-                @_oauth.processRedirectParams queryParams
-                @_uid = queryParams.uid if queryParams.uid
-                _fsmNextStep()
+                if queryParams
+                  @_oauth.processRedirectParams queryParams
+                  @_uid = queryParams.uid if queryParams.uid
+                  _fsmNextStep()
+                else
+                  @authError = new Error 'User canceled authorization'
+                  _fsmErrorStep()
 
         when DbxClient.AUTHORIZED
           # Request token authorized, switch it for an access token.

@@ -88,7 +88,7 @@ class Dropbox.AuthDriver.ChromeApp extends Dropbox.AuthDriver.ChromeBase
   #   tokens in a single application
   constructor: (options) ->
     super options
-    @receiverUrl = "https://#{chrome.runtime.id}.chromiumapp.org/"
+    @receiverUrl = chrome.identity.getRedirectURL()
 
   # Uses the Chrome identity API to drive the OAuth 2 flow.
   #
@@ -97,6 +97,8 @@ class Dropbox.AuthDriver.ChromeApp extends Dropbox.AuthDriver.ChromeBase
   doAuthorize: (authUrl, stateParam, client, callback) ->
     chrome.identity.launchWebAuthFlow url: authUrl, interactive: true,
         (redirectUrl) =>
+          unless redirectUrl
+            callback null
           if @locationStateParam(redirectUrl) is stateParam
             stateParam = false  # Avoid having this matched in the future.
             callback Dropbox.Util.Oauth.queryParamsFromUrl(redirectUrl)

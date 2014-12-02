@@ -51,7 +51,9 @@ class Dropbox.AuthDriver
   #   completed the authorization flow; the driver should call this when
   #   Dropbox redirects users to the URL returned by the url() method, and the
   #   "state" query parameter matches the value passed in "state"; the callback
-  #   should receive the query parameters in the redirect URL
+  #   should receive the query parameters in the redirect URL; if the user
+  #   aborts the authorizarion process, the callback should pass null as the
+  #   parameter
   #
   # @see Dropbox.Util.Oauth.queryParamsFromUrl
   doAuthorize: (authUrl, stateParam, client, callback) ->
