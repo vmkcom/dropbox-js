@@ -97,7 +97,8 @@ class Dropbox.AuthDriver.ChromeApp extends Dropbox.AuthDriver.ChromeBase
   doAuthorize: (authUrl, stateParam, client, callback) ->
     chrome.identity.launchWebAuthFlow url: authUrl, interactive: true,
         (redirectUrl) =>
-          unless redirectUrl
+          if chrome.runtime.lastError
+            # TODO(pwnall): pass lastError.message in a custom error
             callback null
           if @locationStateParam(redirectUrl) is stateParam
             stateParam = false  # Avoid having this matched in the future.

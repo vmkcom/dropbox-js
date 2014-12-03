@@ -90,7 +90,7 @@ describe 'Dropbox.AuthDriver.ChromeApp', ->
 describe 'Dropbox.AuthDriver.ChromeExtension', ->
   beforeEach ->
     @chrome = chrome?.runtime?.id
-    @chrome_ext = @chrome and chrome?.tabs
+    @chrome_ext = @chrome and chrome?.extension
     @client = new Dropbox.Client testKeys
 
   describe '#url', ->
