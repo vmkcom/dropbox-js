@@ -25,7 +25,7 @@ class Dropbox.AuthDriver.BrowserBase
       @rememberUser = true
       @scope = 'default'
     @storageKey = null
-    @storage = Dropbox.AuthDriver.BrowserBase.localStorage()
+    @storage = @localStorage()
 
     @stateRe = /^[^#]+\#(.*&)?state=([^&]+)(&|$)/
 
@@ -205,11 +205,11 @@ class Dropbox.AuthDriver.BrowserBase
   # Wrapper for window.localStorage.
   #
   # Drivers should call this method instead of using localStorage directly, to
-  # simplify stubbing.
+  # avoid throwing exceptions in non-browser environments.
   #
   # @return {Storage} the browser's implementation of the WindowLocalStorage
   #   interface in the Web Storage specification
-  @localStorage: ->
+  localStorage: ->
     if typeof window isnt 'undefined'
       try
         window.localStorage

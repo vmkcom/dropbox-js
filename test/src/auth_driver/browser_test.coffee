@@ -54,7 +54,8 @@ describe 'Dropbox.AuthDriver.BrowserBase', ->
   describe 'without localStorage support', ->
     beforeEach (done) ->
       return done() if @node_js or @chrome_app
-      @stub = sinon.stub Dropbox.AuthDriver.BrowserBase, 'localStorage'
+      @stub = sinon.stub Dropbox.AuthDriver.BrowserBase.prototype,
+                         'localStorage'
       @stub.returns {}
 
       return done() if @node_js or @chrome_app
