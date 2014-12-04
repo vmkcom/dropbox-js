@@ -1461,6 +1461,19 @@ buildClientTests = (clientKeys) ->
         expect(bytes).to.contain 'PNG'
         done()
 
+  describe '#subtleFileUrl', ->
+    it 'produces an URL that contains the file name', ->
+      url = @client.subtleFileUrl @textFile
+      expect(url).to.contain 'test-file.txt'
+
+    it 'produces an URL that can be used to read the file', (done) ->
+      url = @client.subtleFileUrl @textFile
+      xhr = new Dropbox.Util.Xhr 'GET', url
+      xhr.prepare().send (error, data) =>
+        expect(error).to.equal null
+        expect(data).to.equal @textFileData
+        done()
+
   describe '#pullChanges', ->
     describe 'with valid args', ->
       beforeEach ->

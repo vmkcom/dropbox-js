@@ -953,6 +953,21 @@ class Dropbox.Client
                                "#{@_urls.thumbnails}/#{@_urlEncodePath(path)}"
     xhr.setParams params
 
+  # Creates an URL that retrieves a file stored in Dropbox.
+  #
+  # This method has subtle security implications! The URL embeds the user's
+  # access token. Power users often share deep URLs assuming that they only
+  # grant access to the resource that they point to.
+  #
+  # @param {String} path the path of the file to be read, relative to the
+  #   user's Dropbox or to the application's folder
+  # @return {String} a URL to the given file that embeds the client's access
+  #   token
+  subtleFileUrl: (path, callback) ->
+    xhr = new Dropbox.Util.Xhr 'GET',
+                               "#{@_urls.getFile}/#{@_urlEncodePath(path)}"
+    xhr.addOauthParams(@_oauth).paramsToUrl().url
+
   # Reverts a file's contents to a previous version.
   #
   # This is an atomic, bandwidth-optimized equivalent of reading the file
