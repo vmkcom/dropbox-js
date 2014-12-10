@@ -15,6 +15,12 @@ class Dropbox.Client
   #   use this option
   # @option options {String} token (optional) the user's OAuth 2.0 access token
   # @option options {String} uid (optional) the user's Dropbox UID
+  # @option options {Number} maxApiServer in order to work around really low
+  #   per-host connection limits in older versions of Internet Explorer,
+  #   dropbox.js uses a random alternative name for the API server, like
+  #   api18.dropbox.com; when set to 0, only api.dropbox.com will be used; this
+  #   can be set to 0 (or a really low number) when using a CSP
+  #   (Content-Security-Policy) to simplify the policy
   #
   # @see Dropbox.Client#credentials
   constructor: (options) ->
