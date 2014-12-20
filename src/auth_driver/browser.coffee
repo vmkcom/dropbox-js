@@ -144,12 +144,11 @@ class Dropbox.AuthDriver.BrowserBase
       return @
 
     try
-      parsed = JSON.parse(jsonString)
+      parsedJson = JSON.parse jsonString
     catch jsonError
-      # Parse errors.
-      callback null
+      parsedJson = null
 
-    callback parsed
+    callback parsedJson
     @
 
   # Deletes information previously stored by a call to storeCredentials.
