@@ -80,7 +80,7 @@ class WebFileServer
     @app.post '/form_encoded', (request, response) ->
       body = 'access_token=test%20token&token_type=Bearer'
       contentType = 'application/x-www-form-urlencoded'
-      if charset = request.param('charset')
+      if charset = request.params.charset
         contentType += "; charset=#{charset}"
       response.header 'Content-Type', contentType
       response.header 'Content-Length', body.length.toString()
@@ -91,7 +91,7 @@ class WebFileServer
       body = JSON.stringify(
           uid: 42, country: 'US', display_name: 'John P. User')
       contentType = 'application/json'
-      if charset = request.param('charset')
+      if charset = request.params.charset
         contentType += "; charset=#{charset}"
       response.header 'Content-Type', contentType
       response.header 'Content-Length', body.length.toString()

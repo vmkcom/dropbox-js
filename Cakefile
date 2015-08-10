@@ -180,8 +180,8 @@ ssl_cert = (callback) ->
     return
 
   fs.mkdirSync 'test/ssl' unless fs.existsSync 'test/ssl'
-  run 'openssl req -new -x509 -days 365 -nodes -batch ' +
-      '-out test/ssl/cert.pem -keyout test/ssl/cert.pem ' +
+  run 'openssl req -new -x509 -days 365 -nodes -sha256 -newkey rsa:2048 ' +
+      '-batch -out test/ssl/cert.pem -keyout test/ssl/cert.pem ' +
       '-subj /O=dropbox.js/OU=Testing/CN=localhost ', callback
 
 testChromeApp = (callback) ->
