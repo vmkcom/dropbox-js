@@ -11,8 +11,6 @@ node_modules
 test/vendor
 
 # Build output.
-lib/dropbox.js
-lib/dropbox.min.js
 lib/dropbox.min.map
 samples/checkbox.js/public/lib
 test/chrome_app/lib

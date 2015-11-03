@@ -1,6 +1,6 @@
 {
   "name": "dropbox",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Client library for the Dropbox API",
   "keywords": ["dropbox", "filesystem", "storage"],
   "homepage": "https://github.com/dropbox/dropbox-js",

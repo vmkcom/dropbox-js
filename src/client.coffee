@@ -1114,6 +1114,10 @@ class Dropbox.Client
     else
       params = {}
 
+
+    delete params.cursor if not cursor.cursorTag and cursor.path_prefix
+    params.path_prefix = cursor.path_prefix if cursor?.path_prefix
+
     xhr = new Dropbox.Util.Xhr 'POST', @_urls.delta
     xhr.setParams(params).signWithOauth @_oauth
     @_dispatchXhr xhr, (error, deltaInfo) ->
